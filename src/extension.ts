@@ -269,8 +269,14 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
+      overflow: hidden;
       color: var(--vscode-foreground);
       background: var(--vscode-sideBar-background);
       font-family: var(--vscode-font-family);
@@ -279,13 +285,15 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
 
     .pi-view {
       display: grid;
-      grid-template-rows: 1fr auto;
-      min-height: 100vh;
+      grid-template-rows: minmax(0, 1fr) auto;
+      height: 100vh;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .messages {
       min-height: 0;
-      padding: 12px;
+      padding: 12px 12px 8px;
       overflow-y: auto;
     }
 
@@ -331,56 +339,105 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
     }
 
     .composer {
-      display: flex;
-      padding: 10px 12px 12px;
-      gap: 8px;
-      align-items: flex-end;
-      border-top: 1px solid var(--vscode-sideBar-border, transparent);
-      background: var(--vscode-sideBar-background);
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) 36px;
+      grid-template-rows: minmax(22px, auto) 36px;
+      align-items: end;
+      gap: 4px 8px;
+      min-height: 84px;
+      max-height: calc(100vh - 16px);
+      margin: 0 8px 8px;
+      padding: 14px 9px 8px;
+      overflow: hidden;
+      background: #303030;
+      border: 1px solid var(--vscode-input-border, transparent);
+      border-radius: 21px;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
     }
 
-    textarea {
+    .composer__input {
+      grid-column: 1 / -1;
+      align-self: start;
       width: 100%;
-      min-height: 38px;
-      max-height: 140px;
-      resize: vertical;
-      padding: 8px 10px;
+      height: auto;
+      min-height: 22px;
+      max-height: 180px;
+      resize: none;
+      overflow-y: hidden;
+      padding: 0 6px 4px;
       color: var(--vscode-input-foreground);
-      background: var(--vscode-input-background);
-      border: 1px solid var(--vscode-input-border, transparent);
-      border-radius: 4px;
+      caret-color: var(--vscode-input-foreground);
+      background: transparent;
+      border: 0;
       font: inherit;
       line-height: 1.4;
     }
 
-    textarea:focus {
-      outline: 1px solid var(--vscode-focusBorder);
-      outline-offset: -1px;
+    .composer__input:focus {
+      outline: none;
     }
 
-    button {
-      flex: 0 0 auto;
-      min-height: 32px;
-      padding: 5px 12px;
-      color: var(--vscode-button-foreground);
-      background: var(--vscode-button-background);
-      border: 1px solid var(--vscode-button-border, transparent);
-      border-radius: 4px;
+    .composer__button {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      color: var(--vscode-descriptionForeground);
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
       font: inherit;
       cursor: pointer;
     }
 
-    button:hover:not(:disabled) {
-      background: var(--vscode-button-hoverBackground);
+    .composer__button:hover:not(:disabled) {
+      color: var(--vscode-foreground);
+      background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
     }
 
-    button:focus {
+    .composer__button:focus-visible {
       outline: 1px solid var(--vscode-focusBorder);
-      outline-offset: 2px;
+      outline-offset: 1px;
     }
 
-    button:disabled {
-      opacity: 0.6;
+    .composer__button svg {
+      display: block;
+    }
+
+    .composer__model {
+      justify-self: end;
+      padding: 0 2px 8px 0;
+      min-width: 0;
+      overflow: hidden;
+      color: var(--vscode-descriptionForeground);
+      font-size: 14px;
+      line-height: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .composer__model-version {
+      color: var(--vscode-input-foreground);
+    }
+
+    .composer__submit {
+      justify-self: end;
+      width: 34px;
+      height: 34px;
+      color: var(--vscode-input-background);
+      background: var(--vscode-foreground);
+      background: color-mix(in srgb, var(--vscode-foreground) 82%, transparent);
+    }
+
+    .composer__submit:hover:not(:disabled) {
+      background: var(--vscode-foreground);
+    }
+
+    .composer__submit:disabled {
+      color: color-mix(in srgb, var(--vscode-input-background) 72%, var(--vscode-foreground) 28%);
+      background: var(--vscode-descriptionForeground);
+      background: color-mix(in srgb, var(--vscode-foreground) 48%, transparent);
       cursor: default;
     }
   </style>
@@ -391,8 +448,18 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
       <p class="empty-state">Ask Pi about this workspace.</p>
     </section>
     <form class="composer" aria-label="Pi message input">
-      <textarea rows="1" aria-label="Message" placeholder="Ask Pi"></textarea>
-      <button type="submit" disabled>Submit</button>
+      <textarea class="composer__input" rows="1" aria-label="Message"></textarea>
+      <button class="composer__button composer__add" type="button" aria-label="Add context" title="Add context">
+        <svg aria-hidden="true" width="19" height="19" viewBox="0 0 19 19" fill="none">
+          <path d="M9.5 3.5V15.5M3.5 9.5H15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="composer__model" aria-hidden="true"><span class="composer__model-version">5.5</span>&nbsp;Medium</div>
+      <button class="composer__button composer__submit" type="submit" aria-label="Send message" title="Send message" disabled>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M9 14.25V3.75M4.75 8L9 3.75L13.25 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </form>
   </main>
 
@@ -401,7 +468,10 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
     const messagesElement = document.querySelector('.messages');
     const form = document.querySelector('.composer');
     const textarea = document.querySelector('textarea');
-    const submitButton = document.querySelector('button');
+    const submitButton = document.querySelector('.composer__submit');
+    const messagesBottomThreshold = 4;
+    const maxTextareaHeight = 180;
+    const minTextareaHeight = 22;
     let state = { messages: [], busy: false };
 
     window.addEventListener('message', (event) => {
@@ -426,7 +496,7 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
 
       vscode.postMessage({ type: 'submit', text });
       textarea.value = '';
-      syncSubmit();
+      syncComposer({ preserveBottom: true });
     });
 
     textarea?.addEventListener('keydown', (event) => {
@@ -436,9 +506,12 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
       }
     });
 
-    textarea?.addEventListener('input', syncSubmit);
+    textarea?.addEventListener('input', () => {
+      syncComposer({ preserveBottom: true });
+    });
 
     function render() {
+      const shouldStickToBottom = isMessagesAtBottom();
       messagesElement.replaceChildren();
 
       if (state.messages.length === 0) {
@@ -459,8 +532,10 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
         messagesElement.append(status);
       }
 
-      messagesElement.scrollTop = messagesElement.scrollHeight;
-      syncSubmit();
+      syncComposer();
+      if (shouldStickToBottom) {
+        scrollMessagesToBottom();
+      }
     }
 
     function createMessageElement(message) {
@@ -495,7 +570,61 @@ class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposabl
       submitButton.disabled = state.busy || textarea.value.trim().length === 0;
     }
 
+    function isMessagesAtBottom() {
+      const distanceFromBottom = messagesElement.scrollHeight - messagesElement.scrollTop - messagesElement.clientHeight;
+      return distanceFromBottom <= messagesBottomThreshold;
+    }
+
+    function scrollMessagesToBottom() {
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+    }
+
+    function syncTextareaHeight() {
+      textarea.style.height = 'auto';
+
+      const maxHeight = getMaxTextareaHeight();
+      const nextHeight = Math.max(minTextareaHeight, Math.min(textarea.scrollHeight, maxHeight));
+      textarea.style.height = nextHeight + 'px';
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    }
+
+    function getMaxTextareaHeight() {
+      const reservedMessagesHeight = getReservedMessagesHeight();
+      const composerChromeHeight = getComposerChromeHeight();
+      const availableHeight = window.innerHeight - reservedMessagesHeight - composerChromeHeight;
+      return Math.max(minTextareaHeight, Math.min(maxTextareaHeight, availableHeight));
+    }
+
+    function getReservedMessagesHeight() {
+      return Math.min(72, Math.max(40, Math.floor(window.innerHeight * 0.18)));
+    }
+
+    function getComposerChromeHeight() {
+      const composerStyles = getComputedStyle(form);
+      const composerMarginHeight = parseCssPixelValue(composerStyles.marginTop) + parseCssPixelValue(composerStyles.marginBottom);
+      const composerHeight = form.getBoundingClientRect().height + composerMarginHeight;
+      const textareaHeight = textarea.getBoundingClientRect().height;
+      return Math.max(0, composerHeight - textareaHeight);
+    }
+
+    function parseCssPixelValue(value) {
+      return Number.parseFloat(value) || 0;
+    }
+
+    function syncComposer(options = {}) {
+      const shouldPreserveBottom = Boolean(options.preserveBottom) && isMessagesAtBottom();
+      syncSubmit();
+      syncTextareaHeight();
+
+      if (shouldPreserveBottom) {
+        scrollMessagesToBottom();
+      }
+    }
+
     vscode.postMessage({ type: 'ready' });
+    window.addEventListener('resize', () => {
+      syncComposer({ preserveBottom: true });
+    });
     render();
   </script>
 </body>
