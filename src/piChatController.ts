@@ -37,6 +37,7 @@ export type PiRpcClientLike = Pick<
   | 'onEvent'
   | 'onError'
   | 'prompt'
+  | 'abort'
   | 'isRunning'
   | 'getState'
   | 'getSessionStats'
@@ -99,6 +100,8 @@ export class PiChatController {
   private contextUsageLevel = '';
   private metadataRefreshing = false;
   private metadataRefreshSequence = 0;
+  private abortRequested = false;
+  private abortNoticeAdded = false;
   private metadataRefreshInFlight: { generation: number; promise: Promise<void> } | undefined;
   private fullRpcAgentCommunication: boolean;
   private readonly session = new ChatSession();
@@ -161,6 +164,11 @@ export class PiChatController {
       return;
     }
 
+    if (message.type === 'abort') {
+      await this.abortActivePrompt();
+      return;
+    }
+
     if (message.type !== 'submit') {
       return;
     }
@@ -171,6 +179,7 @@ export class PiChatController {
       return;
     }
 
+    this.resetAbortState();
     this.postState();
 
     try {
@@ -188,6 +197,7 @@ export class PiChatController {
   public startNewSession(): void {
     this.extensionUiRequestHandler.startNewGeneration();
     this.assistantStreamId = 0;
+    this.resetAbortState();
     this.session.startNewSession();
     this.resetSessionMeta();
     this.disposeClient();
@@ -475,6 +485,41 @@ export class PiChatController {
     }
   }
 
+  private async abortActivePrompt(): Promise<void> {
+    if (!this.session.isBusy) {
+      return;
+    }
+
+    const client = this.getExistingClient();
+
+    if (!client) {
+      return;
+    }
+
+    this.abortRequested = true;
+
+    try {
+      await client.abort();
+    } catch (error) {
+      this.resetAbortState();
+      this.session.addErrorMessage(getErrorMessage(error));
+      this.postState();
+    }
+  }
+
+  private appendAbortNoticeIfNeeded(): void {
+    if (!this.abortRequested || this.abortNoticeAdded) {
+      return;
+    }
+
+    this.abortNoticeAdded = this.session.appendAssistantNotice('Aborted.');
+  }
+
+  private resetAbortState(): void {
+    this.abortRequested = false;
+    this.abortNoticeAdded = false;
+  }
+
   private resetSessionMeta(): void {
     const changed = Boolean(this.contextUsageLabel || this.contextUsageTitle || this.contextUsageLevel);
     this.contextUsageLabel = '';
@@ -539,7 +584,9 @@ export class PiChatController {
         break;
       case 'agent_end':
         this.applyRpcActivity(event);
+        this.appendAbortNoticeIfNeeded();
         this.session.handleAgentEnd();
+        this.resetAbortState();
         this.postState();
         void this.refreshSessionMeta();
         break;
@@ -592,7 +639,12 @@ export class PiChatController {
     }
 
     if (action.type === 'assistant_error') {
-      this.session.markActiveAssistantError(action.message);
+      if (this.abortRequested && isAbortMessage(action.message)) {
+        this.appendAbortNoticeIfNeeded();
+      } else {
+        this.session.markActiveAssistantError(action.message);
+      }
+
       this.postState();
       return;
     }
@@ -779,6 +831,10 @@ function getErrorMessage(error: unknown): string {
   }
 
   return String(error);
+}
+
+function isAbortMessage(message: string): boolean {
+  return message.trim().toLowerCase() === 'aborted';
 }
 
 function isMessageUpdateStart(event: RpcEvent): boolean {

@@ -101,6 +101,26 @@ suite('PiRpcClient', () => {
     client.dispose();
   });
 
+  test('sends abort as a correlated RPC command', async () => {
+    const { client, fakeProcess } = createClient();
+
+    const abortPromise = client.abort();
+    const command = await fakeProcess.nextCommand();
+
+    assert.strictEqual(command.type, 'abort');
+    assert.ok(typeof command.id === 'string');
+
+    fakeProcess.writeRecord({
+      type: 'response',
+      id: command.id,
+      command: 'abort',
+      success: true
+    });
+
+    await abortPromise;
+    client.dispose();
+  });
+
   test('writes extension UI responses without command correlation', async () => {
     const { client, fakeProcess } = createClient();
 

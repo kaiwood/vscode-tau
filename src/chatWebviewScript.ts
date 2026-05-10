@@ -67,6 +67,17 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
       focusPromptInput();
     });
 
+    submitButton?.addEventListener('click', (event) => {
+      if (!isStopSubmitMode()) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      vscode.postMessage({ type: 'abort' });
+      focusPromptInput();
+    });
+
     newSessionButton?.addEventListener('click', startNewSession);
     modelElement?.addEventListener('click', toggleModelMenu);
     modelSelectElement?.addEventListener('change', selectModel);
@@ -330,7 +341,17 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
     }
 
     function syncSubmit() {
-      submitButton.disabled = state.busy || textarea.value.trim().length === 0;
+      const isStopMode = isStopSubmitMode();
+      const hasInput = textarea.value.length > 0;
+      const hasSendableText = textarea.value.trim().length > 0;
+      submitButton.disabled = state.busy ? hasInput : !hasSendableText;
+      submitButton.classList.toggle('composer__submit--stop', isStopMode);
+      submitButton.setAttribute('aria-label', isStopMode ? 'Stop current response' : 'Send message');
+      submitButton.title = isStopMode ? 'Stop current response' : 'Send message';
+    }
+
+    function isStopSubmitMode() {
+      return state.busy && textarea.value.length === 0;
     }
 
     function activityStatusLabel(status) {

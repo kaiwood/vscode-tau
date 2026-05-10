@@ -378,6 +378,28 @@ export const chatWebviewStyles = /* css */ `    :root {
       display: block;
     }
 
+    .composer__submit-arrow,
+    .composer__submit-stop {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+
+    .composer__submit-stop {
+      opacity: 0;
+      transform: scale(0.45);
+    }
+
+    .composer__submit--stop .composer__submit-arrow {
+      opacity: 0;
+      transform: scale(0.45);
+    }
+
+    .composer__submit--stop .composer__submit-stop {
+      opacity: 1;
+      transform: scale(1);
+    }
+
     .composer__info {
       grid-column: 2;
       justify-self: end;

@@ -7,6 +7,7 @@ export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'newSession' }
   | { type: 'refreshMetadata' }
+  | { type: 'abort' }
   | { type: 'submit'; text: string }
   | { type: 'setModel'; provider: string; modelId: string }
   | { type: 'setThinkingLevel'; level: string }
@@ -24,6 +25,8 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return { type: 'newSession' };
     case 'refreshMetadata':
       return { type: 'refreshMetadata' };
+    case 'abort':
+      return { type: 'abort' };
     case 'submit':
       return typeof value.text === 'string'
         ? { type: 'submit', text: value.text }
@@ -158,7 +161,8 @@ ${chatWebviewStyles}
       </div>
       <button class="composer__button composer__submit" type="submit" aria-label="Send message" title="Send message" disabled>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M9 14.25V3.75M4.75 8L9 3.75L13.25 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="composer__submit-arrow" d="M9 14.25V3.75M4.75 8L9 3.75L13.25 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect class="composer__submit-stop" x="4" y="4" width="10" height="10" rx="1.5" fill="currentColor"/>
         </svg>
       </button>
     </form>

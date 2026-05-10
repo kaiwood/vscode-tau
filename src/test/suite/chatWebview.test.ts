@@ -79,6 +79,7 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'ready' }), { type: 'ready' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'newSession' }), { type: 'newSession' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshMetadata' }), { type: 'refreshMetadata' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'abort' }), { type: 'abort' });
     assert.deepStrictEqual(
       parseWebviewMessage({ type: 'submit', text: 'hello' }),
       { type: 'submit', text: 'hello' }

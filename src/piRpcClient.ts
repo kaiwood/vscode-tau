@@ -110,6 +110,10 @@ export class PiRpcClient {
     await this.send({ type: 'prompt', message });
   }
 
+  public async abort(): Promise<void> {
+    await this.send({ type: 'abort' });
+  }
+
   public async getState(): Promise<PiSessionState> {
     const response = await this.send({ type: 'get_state' });
     return isRecord(response.data) ? response.data : {};

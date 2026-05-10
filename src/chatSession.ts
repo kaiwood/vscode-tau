@@ -128,6 +128,21 @@ export class ChatSession {
     this.transcript[index].error = true;
   }
 
+  public appendAssistantNotice(message: string): boolean {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage) {
+      return false;
+    }
+
+    const index = this.ensureActiveAssistantMessage();
+    const currentText = this.transcript[index].text;
+    this.transcript[index].text = currentText
+      ? `${currentText}${currentText.endsWith('\n') ? '\n' : '\n\n'}${trimmedMessage}`
+      : trimmedMessage;
+    return true;
+  }
+
   public addActivity(activity: ChatActivityInput): string {
     const id = this.nextActivityId();
     const index = this.ensureActiveAssistantMessage();

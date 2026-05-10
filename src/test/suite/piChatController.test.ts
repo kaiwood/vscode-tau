@@ -124,6 +124,51 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('abort sends RPC abort while keeping the current turn busy until agent events arrive', async () => {
+    const promptDeferred = createDeferred<void>();
+    const client = new FakePiClient({ promptResult: promptDeferred.promise });
+    const harness = createControllerHarness([client]);
+
+    const submitPromise = harness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+
+    assert.strictEqual(lastState(harness).busy, true);
+    await harness.controller.handleWebviewMessage({ type: 'abort' });
+
+    assert.strictEqual(client.abortCalls, 1);
+    assert.strictEqual(lastState(harness).busy, true);
+
+    promptDeferred.resolve();
+    await submitPromise;
+    harness.controller.dispose();
+  });
+
+  test('aborted responses append a confirmation without replacing partial output', async () => {
+    const promptDeferred = createDeferred<void>();
+    const client = new FakePiClient({ promptResult: promptDeferred.promise });
+    const harness = createControllerHarness([client]);
+
+    const submitPromise = harness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+    client.emit({ type: 'message_update', assistantMessageEvent: { type: 'text_delta', delta: 'partial output' } });
+    await harness.controller.handleWebviewMessage({ type: 'abort' });
+    client.emit({ type: 'message_update', assistantMessageEvent: { type: 'error', reason: 'aborted' } });
+
+    assert.deepStrictEqual(lastState(harness).messages, [
+      { role: 'user', text: 'hello' },
+      { role: 'assistant', text: 'partial output\n\nAborted.' }
+    ]);
+
+    client.emit({ type: 'agent_end' });
+    assert.deepStrictEqual(lastState(harness).messages, [
+      { role: 'user', text: 'hello' },
+      { role: 'assistant', text: 'partial output\n\nAborted.' }
+    ]);
+    assert.strictEqual(lastState(harness).busy, false);
+
+    promptDeferred.resolve();
+    await submitPromise;
+    harness.controller.dispose();
+  });
+
   test('submit failure marks the active assistant message as an error', async () => {
     const client = new FakePiClient({ promptError: new Error('Prompt failed') });
     const harness = createControllerHarness([client]);
@@ -581,6 +626,7 @@ class FakePiClient implements PiRpcClientLike {
   public stateCalls = 0;
   public modelsCalls = 0;
   public statsCalls = 0;
+  public abortCalls = 0;
   public prompts: string[] = [];
   public extensionUiResponses: ExtensionUiResponse[] = [];
   public state: PiSessionState;
@@ -638,6 +684,10 @@ class FakePiClient implements PiRpcClientLike {
     if (this.promptError) {
       throw this.promptError;
     }
+  }
+
+  public async abort(): Promise<void> {
+    this.abortCalls += 1;
   }
 
   public async getState(): Promise<PiSessionState> {
