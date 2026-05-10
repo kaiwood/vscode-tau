@@ -23,6 +23,8 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
     let slashMenuOpen = false;
     let slashMenuActiveIndex = 0;
     let slashMenuItems = [];
+    let slashMenuQuery = '';
+    let slashMenuDismissedQuery;
     let slashCommandsRefreshRequested = false;
     let streamingBehavior = 'steer';
     let busySubmitHideTimeout;
@@ -149,7 +151,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
 
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
-        closeSlashMenu();
+        dismissSlashMenu();
         closeModelMenu();
         return;
       }
@@ -175,11 +177,13 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
     });
 
     textarea?.addEventListener('input', () => {
+      slashMenuDismissedQuery = undefined;
       syncComposer({ preserveBottom: true });
       syncSlashMenu();
     });
 
     textarea?.addEventListener('click', syncSlashMenu);
+    textarea?.addEventListener('blur', closeSlashMenu);
     textarea?.addEventListener('keyup', (event) => {
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) {
         syncSlashMenu();
@@ -665,7 +669,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
     function handleSlashMenuKeydown(event) {
       if (!slashMenuOpen) {
         if (event.key === 'Escape') {
-          closeSlashMenu();
+          dismissSlashMenu();
         }
 
         return false;
@@ -698,7 +702,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
-        closeSlashMenu();
+        dismissSlashMenu();
         return true;
       }
 
@@ -718,6 +722,19 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
       }
 
       const query = getSlashCommandQuery();
+      if (query === slashMenuDismissedQuery) {
+        closeSlashMenu();
+        return;
+      }
+
+      if (query !== slashMenuQuery) {
+        slashMenuQuery = query;
+        slashMenuActiveIndex = 0;
+        if (slashMenuElement) {
+          slashMenuElement.scrollTop = 0;
+        }
+      }
+
       slashMenuItems = getFilteredSlashCommands(query);
       slashMenuActiveIndex = Math.min(slashMenuActiveIndex, Math.max(0, slashMenuItems.length - 1));
       renderSlashMenu(query);
@@ -725,7 +742,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
     }
 
     function shouldShowSlashMenu() {
-      if (!textarea || state.busy) {
+      if (!textarea || state.busy || document.activeElement !== textarea) {
         return false;
       }
 
@@ -898,10 +915,16 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
       syncSlashMenuActiveDescendant();
     }
 
+    function dismissSlashMenu() {
+      slashMenuDismissedQuery = textarea ? getSlashCommandQuery() : undefined;
+      closeSlashMenu();
+    }
+
     function closeSlashMenu() {
       slashMenuOpen = false;
       slashMenuItems = [];
       slashMenuActiveIndex = 0;
+      slashMenuQuery = '';
       slashMenuElement?.removeAttribute('open');
       textarea?.setAttribute('aria-expanded', 'false');
       textarea?.removeAttribute('aria-activedescendant');
