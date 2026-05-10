@@ -3,6 +3,10 @@
   "displayName": "Pi UI",
   "description": "A VS Code sidebar UI for the Pi agent.",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaiwood/vscode-piui.git"
+  },
   "license": "MIT",
   "engines": {
     "vscode": "^1.118.0"
