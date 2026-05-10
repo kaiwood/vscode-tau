@@ -8,6 +8,10 @@ export type WebviewStreamingBehavior = 'steer' | 'followUp';
 export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'newSession' }
+  | { type: 'showSessions' }
+  | { type: 'hideSessions' }
+  | { type: 'refreshSessions' }
+  | { type: 'selectSession'; sessionPath: string }
   | { type: 'refreshMetadata' }
   | { type: 'refreshSlashCommands' }
   | { type: 'abort' }
@@ -26,6 +30,16 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return { type: 'ready' };
     case 'newSession':
       return { type: 'newSession' };
+    case 'showSessions':
+      return { type: 'showSessions' };
+    case 'hideSessions':
+      return { type: 'hideSessions' };
+    case 'refreshSessions':
+      return { type: 'refreshSessions' };
+    case 'selectSession':
+      return typeof value.sessionPath === 'string' && value.sessionPath
+        ? { type: 'selectSession', sessionPath: value.sessionPath }
+        : { type: 'unknown' };
     case 'refreshMetadata':
       return { type: 'refreshMetadata' };
     case 'refreshSlashCommands':
@@ -75,6 +89,24 @@ export type WebviewSlashCommand = {
   path?: string;
 };
 
+export type WebviewViewMode = 'chat' | 'sessions';
+
+export type WebviewSessionItem = {
+  path: string;
+  id: string;
+  cwd: string;
+  name?: string;
+  parentSessionPath?: string;
+  created: string;
+  modified: string;
+  messageCount: number;
+  firstMessage: string;
+  depth: number;
+  isLast: boolean;
+  ancestorContinues: boolean[];
+  current: boolean;
+};
+
 export type WebviewStateMessage = ChatState & {
   type: 'state';
   modelLabel: string;
@@ -89,6 +121,11 @@ export type WebviewStateMessage = ChatState & {
   metadataRefreshing: boolean;
   slashCommands: WebviewSlashCommand[];
   slashCommandsRefreshing: boolean;
+  viewMode?: WebviewViewMode;
+  sessions?: WebviewSessionItem[];
+  sessionsRefreshing?: boolean;
+  sessionsError?: string;
+  currentSessionFile?: string;
 };
 
 type CreateWebviewStateMessageOptions = {
@@ -109,6 +146,13 @@ type CreateWebviewStateMessageOptions = {
   metadataRefreshing?: boolean;
   slashCommands?: WebviewSlashCommand[];
   slashCommandsRefreshing?: boolean;
+  sessionView?: {
+    viewMode?: WebviewViewMode;
+    sessions?: WebviewSessionItem[];
+    refreshing?: boolean;
+    error?: string;
+    currentSessionFile?: string;
+  };
 };
 
 export function createWebviewStateMessage({
@@ -117,9 +161,10 @@ export function createWebviewStateMessage({
   contextUsage = {},
   metadataRefreshing = false,
   slashCommands = [],
-  slashCommandsRefreshing = false
+  slashCommandsRefreshing = false,
+  sessionView
 }: CreateWebviewStateMessageOptions): WebviewStateMessage {
-  return {
+  const message: WebviewStateMessage = {
     type: 'state',
     messages: state.messages,
     busy: state.busy,
@@ -136,6 +181,16 @@ export function createWebviewStateMessage({
     slashCommands,
     slashCommandsRefreshing
   };
+
+  if (sessionView) {
+    message.viewMode = sessionView.viewMode ?? 'chat';
+    message.sessions = sessionView.sessions ?? [];
+    message.sessionsRefreshing = sessionView.refreshing ?? false;
+    message.sessionsError = sessionView.error ?? '';
+    message.currentSessionFile = sessionView.currentSessionFile ?? '';
+  }
+
+  return message;
 }
 
 export type WebviewScriptUris = {
@@ -160,9 +215,18 @@ ${chatWebviewStyles}
 </head>
 <body>
   <main class="pi-view">
+    <header class="pi-toolbar">
+      <button class="pi-toolbar__sessions" type="button" aria-label="Show sessions" title="Show sessions">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <span class="pi-toolbar__title">Pi</span>
+    </header>
     <section class="messages" aria-live="polite" aria-label="Pi conversation">
       <p class="empty-state">Ask Pi about this workspace.</p>
     </section>
+    <section class="sessions" aria-label="Pi sessions" role="listbox" tabindex="0" hidden></section>
     <form class="composer" aria-label="Pi message input">
       <div id="slash-command-list" class="composer__slash-menu" role="listbox" aria-label="Slash commands"></div>
       <textarea class="composer__input" rows="1" aria-label="Message" placeholder="Write your prompt…" aria-autocomplete="list" aria-controls="slash-command-list" aria-expanded="false"></textarea>

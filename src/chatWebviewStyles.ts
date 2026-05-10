@@ -22,10 +22,49 @@ export const chatWebviewStyles = /* css */ `    :root {
 
     .pi-view {
       display: grid;
-      grid-template-rows: minmax(0, 1fr) auto auto;
+      grid-template-rows: auto minmax(0, 1fr) auto;
       height: 100vh;
       min-height: 0;
       overflow: hidden;
+    }
+
+    .pi-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 6px 8px 2px;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .pi-toolbar__sessions {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .pi-toolbar__sessions:hover,
+    .pi-toolbar__sessions:focus-visible {
+      color: var(--vscode-foreground);
+      background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
+      outline: none;
+    }
+
+    .pi-toolbar__title {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 11px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .messages {
@@ -37,6 +76,95 @@ export const chatWebviewStyles = /* css */ `    :root {
     .empty-state {
       margin: 0;
       color: var(--vscode-descriptionForeground);
+    }
+
+    .sessions {
+      min-height: 0;
+      padding: 8px 8px 12px;
+      overflow-y: auto;
+      outline: none;
+    }
+
+    .sessions__header,
+    .sessions__empty,
+    .sessions__error {
+      padding: 6px 4px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+    }
+
+    .sessions__error {
+      color: var(--vscode-errorForeground);
+    }
+
+    .sessions__item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 2px 8px;
+      width: 100%;
+      min-width: 0;
+      padding: 7px 8px;
+      color: var(--vscode-foreground);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sessions__item:hover:not(:disabled),
+    .sessions__item--active {
+      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+      background: var(--vscode-list-activeSelectionBackground, color-mix(in srgb, var(--vscode-foreground) 14%, transparent));
+    }
+
+    .sessions__item:disabled {
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .sessions__prefix {
+      grid-row: 1 / 3;
+      color: var(--vscode-descriptionForeground);
+      font-family: var(--vscode-editor-font-family, monospace);
+      white-space: pre;
+    }
+
+    .sessions__title {
+      min-width: 0;
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sessions__item--current .sessions__title {
+      color: var(--vscode-focusBorder);
+    }
+
+    .sessions__meta {
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .sessions__cwd {
+      grid-column: 2 / -1;
+      min-width: 0;
+      overflow: hidden;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sessions__item--active .sessions__meta,
+    .sessions__item--active .sessions__cwd,
+    .sessions__item--active .sessions__prefix {
+      color: inherit;
+      opacity: 0.78;
     }
 
     .message {

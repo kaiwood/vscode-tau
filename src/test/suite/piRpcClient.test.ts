@@ -153,6 +153,28 @@ suite('PiRpcClient', () => {
     client.dispose();
   });
 
+  test('switches sessions', async () => {
+    const { client, fakeProcess } = createClient();
+
+    const switchPromise = client.switchSession('/sessions/next.jsonl');
+    const command = await fakeProcess.nextCommand();
+
+    assert.strictEqual(command.type, 'switch_session');
+    assert.strictEqual(command.sessionPath, '/sessions/next.jsonl');
+    assert.ok(typeof command.id === 'string');
+
+    fakeProcess.writeRecord({
+      type: 'response',
+      id: command.id,
+      command: 'switch_session',
+      success: true,
+      data: { cancelled: false }
+    });
+
+    assert.deepStrictEqual(await switchPromise, { cancelled: false });
+    client.dispose();
+  });
+
   test('sends streaming behavior with queued prompts', async () => {
     const { client, fakeProcess } = createClient();
 

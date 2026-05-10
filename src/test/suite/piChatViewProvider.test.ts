@@ -347,6 +347,10 @@ class FakePiClient implements PiRpcClientLike {
     return { messages: this.messages };
   }
 
+  public async switchSession(_sessionPath: string): Promise<{ cancelled?: boolean }> {
+    return { cancelled: false };
+  }
+
   public async setModel(_provider: string, _modelId: string): Promise<PiModel> {
     return {};
   }

@@ -27,6 +27,7 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 - `src/nonce.ts` owns nonce generation for CSP-protected inline scripts.
 - `src/piEventMapper.ts` owns pure Pi RPC event-to-UI action mapping helpers.
 - `src/extensionUiRequestHandler.ts` owns extension UI request routing through an injected VS Code UI adapter, safe cancellation, and stale request cleanup.
+- `src/piSessionList.ts` owns extension-side discovery/parsing of persisted Pi session JSONL files for the sidebar session switcher.
 - `src/piRpcClient.ts` owns the `pi --mode rpc` subprocess, strict JSONL parsing, request/response tracking, stderr collection, and process cleanup.
 - There is no bundler. Keep the implementation compatible with the current direct `tsc` build.
 
@@ -63,6 +64,7 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 - Keep the sidebar simple, clean, and VS Code-native.
 - Use VS Code theme CSS variables for colors, fonts, focus, inputs, buttons, and borders.
 - Keep transcript state in memory until persistence is explicitly requested.
+- The sidebar `/tree` command currently opens the session switcher screen for switching session files; true in-session branch-tree navigation is not implemented yet.
 - Disable submit while Pi is streaming; do not invent steering or follow-up queue behavior without a specific iteration goal.
 - Avoid broad frontend rewrites. Preserve the existing webview structure unless the task requires changing it.
 

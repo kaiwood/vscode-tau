@@ -12,6 +12,7 @@ import {
   type PiRpcClientFactory
 } from './piChatController';
 import { PiRpcClient } from './piRpcClient';
+import { listPiSessions } from './piSessionList';
 import type { WebviewModelOption } from './chatWebview';
 
 export const chatViewType = 'piui.chatView';
@@ -58,7 +59,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       initialSessionMeta: readCachedSessionMeta(this.workspaceState),
       initialSessionFile: readCurrentSessionFile(this.workspaceState),
       onSessionMetaChange: (metadata) => this.writeCachedSessionMeta(metadata),
-      onSessionFileChange: (sessionFile) => this.writeCurrentSessionFile(sessionFile)
+      onSessionFileChange: (sessionFile) => this.writeCurrentSessionFile(sessionFile),
+      listSessions: (cwd, currentSessionFile) => listPiSessions({ cwd, currentSessionFile })
     });
 
     this.disposables.push(

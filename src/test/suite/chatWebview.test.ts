@@ -83,6 +83,13 @@ suite('Chat webview helpers', () => {
   test('parseWebviewMessage narrows valid inbound messages', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'ready' }), { type: 'ready' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'newSession' }), { type: 'newSession' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'showSessions' }), { type: 'showSessions' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'hideSessions' }), { type: 'hideSessions' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSessions' }), { type: 'refreshSessions' });
+    assert.deepStrictEqual(
+      parseWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/current.jsonl' }),
+      { type: 'selectSession', sessionPath: '/sessions/current.jsonl' }
+    );
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshMetadata' }), { type: 'refreshMetadata' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSlashCommands' }), { type: 'refreshSlashCommands' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'abort' }), { type: 'abort' });
@@ -112,6 +119,7 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage(undefined), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({}), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'submit', text: 42 }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'selectSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'submit', text: 'hello', streamingBehavior: 'later' }), { type: 'unknown' });
     assert.deepStrictEqual(
       parseWebviewMessage({ type: 'setModel', provider: 'openai' }),
@@ -144,7 +152,9 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://highlight.js"></script>'));
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://markdown-it.js"></script>'));
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://dompurify.js"></script>'));
+    assert.ok(html.includes('class="pi-toolbar__sessions"'));
     assert.ok(html.includes('class="messages" aria-live="polite" aria-label="Pi conversation"'));
+    assert.ok(html.includes('class="sessions" aria-label="Pi sessions" role="listbox"'));
     assert.ok(html.includes('<form class="composer" aria-label="Pi message input">'));
     assert.ok(!html.includes('Full RPC Agent communication'));
     assert.ok(!html.includes('setFullRpcAgentCommunication'));
@@ -166,6 +176,7 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('state.modelOptions.length === 0 && !state.metadataRefreshing'));
     assert.ok(html.includes("vscode.postMessage({ type: 'refreshMetadata' });"));
     assert.ok(html.includes("vscode.postMessage({ type: 'refreshSlashCommands' });"));
+    assert.ok(html.includes("vscode.postMessage({ type: 'showSessions' });"));
     assert.ok(html.includes("vscode.postMessage({ type: 'ready' });"));
   });
 });

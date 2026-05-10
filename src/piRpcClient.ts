@@ -82,6 +82,10 @@ export type PiLastAssistantText = {
   text?: string | null;
 };
 
+export type PiSwitchSessionResult = {
+  cancelled?: boolean;
+};
+
 export type PiAgentMessage = {
   role?: string;
   content?: unknown;
@@ -234,6 +238,11 @@ export class PiRpcClient {
 
   public async getMessages(): Promise<PiMessagesResult> {
     const response = await this.send({ type: 'get_messages' });
+    return isRecord(response.data) ? response.data : {};
+  }
+
+  public async switchSession(sessionPath: string): Promise<PiSwitchSessionResult> {
+    const response = await this.send({ type: 'switch_session', sessionPath });
     return isRecord(response.data) ? response.data : {};
   }
 

@@ -5,7 +5,7 @@ import {
   type PiChatSessionMetaSnapshot,
   type PiRpcClientLike
 } from '../../piChatController';
-import type { WebviewStateMessage } from '../../chatWebview';
+import type { WebviewSessionItem, WebviewStateMessage } from '../../chatWebview';
 import type { StatePublisherScheduler } from '../../statePublisher';
 import type {
   ExtensionUiResponse,
@@ -126,6 +126,64 @@ suite('PiChatController', () => {
       { role: 'user', text: 'Earlier question' },
       { role: 'assistant', text: 'Earlier answer' },
       { role: 'assistant', text: 'Earlier failure', error: true }
+    ]);
+    harness.controller.dispose();
+  });
+
+  test('session switcher lists sessions and restores selected session messages', async () => {
+    const sessionFiles: Array<string | undefined> = [];
+    const sessions: WebviewSessionItem[] = [
+      {
+        path: '/sessions/next.jsonl',
+        id: 'next',
+        cwd: '/workspace',
+        created: '2026-01-01T00:00:00.000Z',
+        modified: '2026-01-01T00:01:00.000Z',
+        messageCount: 2,
+        firstMessage: 'Next question',
+        depth: 0,
+        isLast: true,
+        ancestorContinues: [],
+        current: false
+      }
+    ];
+    const client = new FakePiClient({
+      state: {
+        model: { provider: 'openai', id: 'gpt-test', reasoning: false },
+        thinkingLevel: 'off',
+        sessionFile: '/sessions/next.jsonl'
+      },
+      messages: [
+        { role: 'user', content: 'Next question' },
+        { role: 'assistant', content: [{ type: 'text', text: 'Next answer' }] }
+      ]
+    });
+    const harness = createControllerHarness([client], {
+      cwd: '/workspace',
+      onSessionFileChange: (sessionFile) => sessionFiles.push(sessionFile),
+      listSessions: async (cwd, currentSessionFile) => sessions.map((session) => ({
+        ...session,
+        current: session.path === currentSessionFile,
+        cwd: cwd ?? session.cwd
+      }))
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'showSessions' });
+
+    assert.strictEqual(lastState(harness).viewMode, 'sessions');
+    assert.strictEqual(lastState(harness).sessionsRefreshing, false);
+    assert.deepStrictEqual(lastState(harness).sessions, sessions);
+
+    await harness.controller.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/next.jsonl' });
+    await flushPromises();
+
+    assert.deepStrictEqual(client.switchedSessions, ['/sessions/next.jsonl']);
+    assert.strictEqual(client.messagesCalls, 1);
+    assert.deepStrictEqual(sessionFiles, ['/sessions/next.jsonl']);
+    assert.strictEqual(lastState(harness).viewMode, undefined);
+    assert.deepStrictEqual(lastState(harness).messages, [
+      { role: 'user', text: 'Next question' },
+      { role: 'assistant', text: 'Next answer' }
     ]);
     harness.controller.dispose();
   });
@@ -817,6 +875,7 @@ type ControllerHarnessOptions = {
   initialSessionFile?: string;
   onSessionMetaChange?: (metadata: PiChatSessionMetaSnapshot) => void;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
+  listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
 };
 
 function createControllerHarness(
@@ -850,7 +909,8 @@ function createControllerHarness(
     initialSessionMeta: options.initialSessionMeta,
     initialSessionFile: options.initialSessionFile,
     onSessionMetaChange: options.onSessionMetaChange,
-    onSessionFileChange: options.onSessionFileChange
+    onSessionFileChange: options.onSessionFileChange,
+    listSessions: options.listSessions
   };
 
   const controller = new PiChatController(controllerOptions);
@@ -879,6 +939,8 @@ type FakePiClientOptions = {
   commandsResult?: Promise<PiCommand[]>;
   commandsError?: unknown;
   reloadError?: unknown;
+  switchSessionResult?: { cancelled?: boolean };
+  switchSessionError?: unknown;
   promptResult?: Promise<void>;
   promptError?: unknown;
 };
@@ -943,6 +1005,9 @@ class FakePiClient implements PiRpcClientLike {
   public messagesCalls = 0;
   public commandsError: unknown;
   public reloadError: unknown;
+  public switchSessionResult: { cancelled?: boolean };
+  public switchSessionError: unknown;
+  public switchedSessions: string[] = [];
   public promptResult: Promise<void> | undefined;
   public promptError: unknown;
   private readonly eventListeners = new Set<(event: RpcEvent) => void>();
@@ -964,6 +1029,8 @@ class FakePiClient implements PiRpcClientLike {
     this.messagesResult = options.messagesResult;
     this.commandsError = options.commandsError;
     this.reloadError = options.reloadError;
+    this.switchSessionResult = options.switchSessionResult ?? { cancelled: false };
+    this.switchSessionError = options.switchSessionError;
     this.promptResult = options.promptResult;
     this.promptError = options.promptError;
   }
@@ -1041,6 +1108,16 @@ class FakePiClient implements PiRpcClientLike {
   public async getMessages(): Promise<{ messages?: PiAgentMessage[] }> {
     this.messagesCalls += 1;
     return { messages: await (this.messagesResult ?? this.messages) };
+  }
+
+  public async switchSession(sessionPath: string): Promise<{ cancelled?: boolean }> {
+    this.switchedSessions.push(sessionPath);
+
+    if (this.switchSessionError) {
+      throw this.switchSessionError;
+    }
+
+    return this.switchSessionResult;
   }
 
   public async setModel(_provider: string, _modelId: string): Promise<PiModel> {

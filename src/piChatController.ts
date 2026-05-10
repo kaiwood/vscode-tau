@@ -3,6 +3,7 @@ import {
   createWebviewStateMessage,
   type WebviewMessage,
   type WebviewModelOption,
+  type WebviewSessionItem,
   type WebviewSlashCommand,
   type WebviewStateMessage
 } from './chatWebview';
@@ -55,6 +56,7 @@ export type PiRpcClientLike = Pick<
   | 'exportHtml'
   | 'getLastAssistantText'
   | 'getMessages'
+  | 'switchSession'
   | 'respondExtensionUiRequest'
   | 'dispose'
 >;
@@ -94,6 +96,7 @@ export type PiChatControllerOptions = {
   onSessionMetaChange?: (metadata: PiChatSessionMetaSnapshot) => void;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
   writeClipboard?: (text: string) => PromiseLike<void> | Promise<void> | void;
+  listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
 };
 
 type DisposableLike = {
@@ -115,6 +118,11 @@ export class PiChatController {
   private metadataRefreshing = false;
   private slashCommands: WebviewSlashCommand[] = [];
   private slashCommandsRefreshing = false;
+  private sessionViewMode: 'chat' | 'sessions' = 'chat';
+  private sessions: WebviewSessionItem[] = [];
+  private sessionsRefreshing = false;
+  private sessionsError = '';
+  private sessionsRefreshSequence = 0;
   private metadataRefreshSequence = 0;
   private slashCommandsRefreshSequence = 0;
   private currentSessionFile: string | undefined;
@@ -166,6 +174,26 @@ export class PiChatController {
 
     if (message.type === 'newSession') {
       this.startNewSession();
+      return;
+    }
+
+    if (message.type === 'showSessions') {
+      this.showSessions();
+      return;
+    }
+
+    if (message.type === 'hideSessions') {
+      this.hideSessions();
+      return;
+    }
+
+    if (message.type === 'refreshSessions') {
+      await this.refreshSessions();
+      return;
+    }
+
+    if (message.type === 'selectSession') {
+      await this.switchSession(message.sessionPath);
       return;
     }
 
@@ -251,6 +279,8 @@ export class PiChatController {
     this.assistantStreamId = 0;
     this.resetAbortState();
     this.session.startNewSession();
+    this.sessionViewMode = 'chat';
+    this.sessionsError = '';
     this.currentSessionFile = undefined;
     this.nextClientSessionFile = undefined;
     this.shouldRestoreInitialSessionHistory = false;
@@ -288,7 +318,16 @@ export class PiChatController {
         title: this.contextUsageTitle,
         level: this.contextUsageLevel
       },
-      metadataRefreshing: this.metadataRefreshing
+      metadataRefreshing: this.metadataRefreshing,
+      sessionView: this.sessionViewMode === 'sessions'
+        ? {
+          viewMode: this.sessionViewMode,
+          sessions: this.sessions,
+          refreshing: this.sessionsRefreshing,
+          error: this.sessionsError,
+          currentSessionFile: this.currentSessionFile
+        }
+        : undefined
     });
   }
 
@@ -336,6 +375,98 @@ export class PiChatController {
     this.slashCommandsRefreshInFlight = { generation: sessionGeneration, promise: refreshPromise };
 
     return refreshPromise;
+  }
+
+  private showSessions(): void {
+    this.sessionViewMode = 'sessions';
+    this.sessionsError = '';
+    this.postState();
+    void this.refreshSessions();
+  }
+
+  private hideSessions(): void {
+    if (this.sessionViewMode === 'chat') {
+      return;
+    }
+
+    this.sessionViewMode = 'chat';
+    this.sessionsError = '';
+    this.postState();
+  }
+
+  private async refreshSessions(): Promise<void> {
+    const refreshId = ++this.sessionsRefreshSequence;
+    this.sessionsRefreshing = true;
+    this.sessionsError = '';
+    this.postState();
+
+    try {
+      const listSessions = this.options.listSessions ?? defaultListSessions;
+      const sessions = await listSessions(this.options.getCwd?.(), this.currentSessionFile);
+
+      if (refreshId !== this.sessionsRefreshSequence) {
+        return;
+      }
+
+      this.sessions = sessions.map((session) => ({ ...session }));
+    } catch (error) {
+      if (refreshId === this.sessionsRefreshSequence) {
+        this.sessionsError = getErrorMessage(error);
+      }
+    } finally {
+      if (refreshId === this.sessionsRefreshSequence) {
+        this.sessionsRefreshing = false;
+        this.postState();
+      }
+    }
+  }
+
+  private async switchSession(sessionPath: string): Promise<void> {
+    if (this.session.isBusy) {
+      this.options.showNotification('Wait for Pi to finish before switching sessions.', 'warning');
+      return;
+    }
+
+    const trimmedPath = sessionPath.trim();
+
+    if (!trimmedPath) {
+      return;
+    }
+
+    this.sessionsError = '';
+    this.sessionsRefreshing = true;
+    this.postState();
+
+    try {
+      const result = await this.getClient().switchSession(trimmedPath);
+
+      if (result.cancelled) {
+        return;
+      }
+
+      this.extensionUiRequestHandler.startNewGeneration();
+      this.assistantStreamId = 0;
+      this.resetAbortState();
+      this.metadataRefreshSequence += 1;
+      this.slashCommandsRefreshSequence += 1;
+      this.shouldRestoreInitialSessionHistory = false;
+      this.applyCurrentSessionFile(trimmedPath);
+      this.resetSessionMeta();
+
+      const messages = formatAgentMessages((await this.getClient().getMessages()).messages);
+      this.session.replaceMessages(messages);
+      this.sessionViewMode = 'chat';
+      this.postState();
+      void this.refreshSessionMeta({ startClient: true, force: true });
+    } catch (error) {
+      this.sessionsError = getErrorMessage(error);
+      this.postState();
+    } finally {
+      this.sessionsRefreshing = false;
+      if (this.sessionViewMode === 'sessions') {
+        this.postState();
+      }
+    }
   }
 
   private async runSessionMetaRefresh(
@@ -725,6 +856,9 @@ export class PiChatController {
           return;
         case 'session':
           await this.handleSessionSlashCommand();
+          return;
+        case 'tree':
+          this.showSessions();
           return;
         case 'copy':
           await this.handleCopySlashCommand();
@@ -1151,6 +1285,10 @@ export class PiChatController {
   }
 }
 
+async function defaultListSessions(): Promise<WebviewSessionItem[]> {
+  return [];
+}
+
 function formatContextUsage(stats: PiSessionStats): PiChatContextUsage {
   const usage = stats.contextUsage;
 
@@ -1427,6 +1565,7 @@ const supportedBuiltinSlashCommandNames = new Set([
   'copy',
   'name',
   'session',
+  'tree',
   'new',
   'compact',
   'reload'
