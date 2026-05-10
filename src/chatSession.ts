@@ -36,6 +36,7 @@ export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   text: string;
   error?: boolean;
+  variant?: 'thinking';
   activities?: ChatActivity[];
 };
 
@@ -55,6 +56,7 @@ export class ChatSession {
   private busy = false;
   private sessionGeneration = 0;
   private readonly activeActivityIds = new Map<string, string>();
+  private readonly activeThinkingIndexes = new Map<string, number>();
   private readonly transcript: ChatMessage[] = [];
 
   public get generation(): number {
@@ -99,6 +101,7 @@ export class ChatSession {
     this.transcript.length = 0;
     this.activeAssistantIndex = undefined;
     this.activeActivityIds.clear();
+    this.activeThinkingIndexes.clear();
     this.busy = false;
   }
 
@@ -108,6 +111,7 @@ export class ChatSession {
     this.transcript.push(...messages.map(cloneMessage));
     this.activeAssistantIndex = undefined;
     this.activeActivityIds.clear();
+    this.activeThinkingIndexes.clear();
     this.busy = false;
   }
 
@@ -119,6 +123,7 @@ export class ChatSession {
     this.busy = false;
     this.activeAssistantIndex = undefined;
     this.activeActivityIds.clear();
+    this.activeThinkingIndexes.clear();
   }
 
   public setBusy(busy: boolean): void {
@@ -139,6 +144,39 @@ export class ChatSession {
     const index = this.ensureActiveAssistantMessage();
     this.transcript[index].text = limitErrorMessage(message);
     this.transcript[index].error = true;
+  }
+
+  public startThinking(sourceId: string): boolean {
+    if (this.activeThinkingIndexes.has(sourceId)) {
+      return false;
+    }
+
+    const index = this.createThinkingMessage();
+    this.activeThinkingIndexes.set(sourceId, index);
+    return true;
+  }
+
+  public appendThinkingDelta(sourceId: string, delta: string): boolean {
+    if (!delta) {
+      return false;
+    }
+
+    const index = this.ensureThinkingMessage(sourceId);
+    this.transcript[index].text += delta;
+    return true;
+  }
+
+  public finishThinking(sourceId: string, content: string | undefined): boolean {
+    let changed = false;
+
+    if (content !== undefined) {
+      const index = this.ensureThinkingMessage(sourceId);
+      this.transcript[index].text = content;
+      changed = true;
+    }
+
+    this.activeThinkingIndexes.delete(sourceId);
+    return changed;
   }
 
   public appendAssistantNotice(message: string): boolean {
@@ -245,17 +283,61 @@ export class ChatSession {
 
   private ensureActiveAssistantMessage(): number {
     if (this.activeAssistantIndex !== undefined) {
-      return this.activeAssistantIndex;
+      const message = this.transcript[this.activeAssistantIndex];
+
+      if (message && message.role === 'assistant' && message.variant !== 'thinking') {
+        return this.activeAssistantIndex;
+      }
     }
 
     this.activeAssistantIndex = this.transcript.push({ role: 'assistant', text: '' }) - 1;
     return this.activeAssistantIndex;
   }
 
+  private ensureThinkingMessage(sourceId: string): number {
+    const existingIndex = this.activeThinkingIndexes.get(sourceId);
+
+    if (existingIndex !== undefined && this.transcript[existingIndex]?.variant === 'thinking') {
+      return existingIndex;
+    }
+
+    const index = this.createThinkingMessage();
+    this.activeThinkingIndexes.set(sourceId, index);
+    return index;
+  }
+
+  private createThinkingMessage(): number {
+    if (this.activeAssistantIndex !== undefined) {
+      const activeMessage = this.transcript[this.activeAssistantIndex];
+
+      if (isEmptyAssistantMessage(activeMessage)) {
+        const index = this.activeAssistantIndex;
+        activeMessage.variant = 'thinking';
+        this.activeAssistantIndex = undefined;
+        return index;
+      }
+    }
+
+    this.activeAssistantIndex = undefined;
+    return this.transcript.push({ role: 'assistant', text: '', variant: 'thinking' }) - 1;
+  }
+
   private nextActivityId(): string {
     this.activitySequence += 1;
     return `activity-${this.sessionGeneration}-${this.activitySequence}`;
   }
+}
+
+function isEmptyAssistantMessage(message: ChatMessage | undefined): message is ChatMessage {
+  if (!message) {
+    return false;
+  }
+
+  return message.role === 'assistant'
+    && message.variant !== 'thinking'
+    && !message.text
+    && !message.error
+    && (!message.activities || message.activities.length === 0);
 }
 
 function mergeActivity(

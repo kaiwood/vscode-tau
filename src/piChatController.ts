@@ -1321,6 +1321,30 @@ export class PiChatController {
       return;
     }
 
+    if (action.type === 'thinking_start') {
+      if (this.session.startThinking(action.sourceId)) {
+        this.postState();
+      }
+
+      return;
+    }
+
+    if (action.type === 'thinking_delta') {
+      if (this.session.appendThinkingDelta(action.sourceId, action.delta)) {
+        this.scheduleState();
+      }
+
+      return;
+    }
+
+    if (action.type === 'thinking_end') {
+      if (this.session.finishThinking(action.sourceId, action.content)) {
+        this.postState();
+      }
+
+      return;
+    }
+
     if (action.type === 'assistant_error') {
       if (this.abortRequested && isAbortMessage(action.message)) {
         this.appendAbortNoticeIfNeeded();

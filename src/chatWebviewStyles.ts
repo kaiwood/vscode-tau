@@ -491,6 +491,10 @@ export const chatWebviewStyles = /* css */ `    :root {
       color: var(--vscode-input-foreground);
     }
 
+    .message--thinking .message__body {
+      color: var(--vscode-descriptionForeground);
+    }
+
     .message--error .message__body {
       color: var(--vscode-errorForeground);
     }

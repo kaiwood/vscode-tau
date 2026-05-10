@@ -6,6 +6,9 @@ import type { RpcEvent } from './piRpcClient';
 
 export type MessageUpdateAction =
   | { type: 'text_delta'; delta: string }
+  | { type: 'thinking_start'; sourceId: string }
+  | { type: 'thinking_delta'; sourceId: string; delta: string }
+  | { type: 'thinking_end'; sourceId: string; content?: string }
   | { type: 'assistant_error'; message: string }
   | ActivityUpdateAction
   | ActivityAddAction
@@ -92,36 +95,25 @@ export function mapMessageUpdate(
         summary: summarizeLength(getRecordString(assistantMessageEvent, 'content'))
       });
     case 'thinking_start':
-      return updateActivity(`thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`, {
-        kind: 'thinking',
-        title: 'Thinking',
-        status: 'running',
-        body: '',
-        code: false
-      });
+      return {
+        type: 'thinking_start',
+        sourceId: `thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`
+      };
     case 'thinking_delta':
-      return updateActivity(
-        `thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`,
-        {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'running',
-          body: getRecordString(assistantMessageEvent, 'delta') ?? '',
-          code: false
-        },
-        'append'
-      );
+      return {
+        type: 'thinking_delta',
+        sourceId: `thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`,
+        delta: getRecordString(assistantMessageEvent, 'delta') ?? ''
+      };
     case 'thinking_end': {
       const content = getRecordString(assistantMessageEvent, 'content')
         ?? getPartialThinkingContent(assistantMessageEvent);
 
-      return updateActivity(`thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`, {
-        kind: 'thinking',
-        title: 'Thinking',
-        status: 'completed',
-        summary: 'Completed',
-        ...(content ? { body: content, code: false } : {})
-      });
+      return {
+        type: 'thinking_end',
+        sourceId: `thinking:${streamId}:${getContentIndex(assistantMessageEvent)}`,
+        ...(content ? { content } : {})
+      };
     }
     case 'toolcall_start':
       return updateActivity(`toolcall:${streamId}:${getContentIndex(assistantMessageEvent)}`, {

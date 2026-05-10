@@ -724,7 +724,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
 
     function createMessageElement(message) {
       const article = document.createElement('article');
-      article.className = \`message message--\${message.role}\${message.error ? ' message--error' : ''}\`;
+      article.className = \`message message--\${message.role}\${message.error ? ' message--error' : ''}\${message.variant === 'thinking' ? ' message--thinking' : ''}\`;
 
       const role = document.createElement('div');
       role.className = 'message__role';
@@ -733,7 +733,7 @@ export const chatWebviewScript = /* javascript */ `    const vscode = acquireVsC
       const body = document.createElement('div');
       body.className = 'message__body';
 
-      if (message.role === 'assistant' && !message.error) {
+      if (message.role === 'assistant' && !message.error && message.variant !== 'thinking') {
         renderMarkdownInto(body, message.text || '');
       } else {
         body.textContent = message.text || '';

@@ -55,6 +55,32 @@ suite('ChatSession', () => {
     });
   });
 
+  test('thinking streams inline in event order without overwriting previous thinking', () => {
+    const session = new ChatSession();
+
+    session.beginSubmit('hello');
+    assert.strictEqual(session.startThinking('thinking:0'), true);
+    assert.strictEqual(session.appendThinkingDelta('thinking:0', 'first'), true);
+    assert.strictEqual(session.appendThinkingDelta('thinking:0', ' thought'), true);
+    assert.strictEqual(session.finishThinking('thinking:0', undefined), false);
+    assert.strictEqual(session.appendAssistantDelta('answer'), true);
+    assert.strictEqual(session.startThinking('thinking:1'), true);
+    assert.strictEqual(session.appendThinkingDelta('thinking:1', 'second'), true);
+    assert.strictEqual(session.finishThinking('thinking:1', 'final second'), true);
+    assert.strictEqual(session.appendAssistantDelta(' after'), true);
+
+    assert.deepStrictEqual(session.snapshot(), {
+      messages: [
+        { role: 'user', text: 'hello' },
+        { role: 'assistant', text: 'first thought', variant: 'thinking' },
+        { role: 'assistant', text: 'answer' },
+        { role: 'assistant', text: 'final second', variant: 'thinking' },
+        { role: 'assistant', text: ' after' }
+      ],
+      busy: true
+    });
+  });
+
   test('agent lifecycle updates busy state and clears the active assistant on end', () => {
     const session = new ChatSession();
 

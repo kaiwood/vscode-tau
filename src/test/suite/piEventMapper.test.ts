@@ -146,22 +146,15 @@ suite('Pi event mapper', () => {
     );
   });
 
-  test('mapMessageUpdate maps thinking stream activity', () => {
+  test('mapMessageUpdate maps thinking stream messages', () => {
     assert.deepStrictEqual(
       mapMessageUpdate({
         type: 'message_update',
         assistantMessageEvent: { type: 'thinking_start', contentIndex: 0 }
       }, 2),
       {
-        type: 'activity_update',
-        sourceId: 'thinking:2:0',
-        activity: {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'running',
-          body: '',
-          code: false
-        }
+        type: 'thinking_start',
+        sourceId: 'thinking:2:0'
       }
     );
 
@@ -171,16 +164,9 @@ suite('Pi event mapper', () => {
         assistantMessageEvent: { type: 'thinking_delta', contentIndex: 0, delta: 'step' }
       }, 2),
       {
-        type: 'activity_update',
+        type: 'thinking_delta',
         sourceId: 'thinking:2:0',
-        activity: {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'running',
-          body: 'step',
-          code: false
-        },
-        bodyMode: 'append'
+        delta: 'step'
       }
     );
 
@@ -190,14 +176,8 @@ suite('Pi event mapper', () => {
         assistantMessageEvent: { type: 'thinking_end', contentIndex: 0 }
       }, 2),
       {
-        type: 'activity_update',
-        sourceId: 'thinking:2:0',
-        activity: {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'completed',
-          summary: 'Completed'
-        }
+        type: 'thinking_end',
+        sourceId: 'thinking:2:0'
       }
     );
 
@@ -207,16 +187,9 @@ suite('Pi event mapper', () => {
         assistantMessageEvent: { type: 'thinking_end', contentIndex: 0, content: 'final thinking' }
       }, 2),
       {
-        type: 'activity_update',
+        type: 'thinking_end',
         sourceId: 'thinking:2:0',
-        activity: {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'completed',
-          summary: 'Completed',
-          body: 'final thinking',
-          code: false
-        }
+        content: 'final thinking'
       }
     );
   });
@@ -389,16 +362,9 @@ suite('Pi event mapper', () => {
         assistantMessageEvent: { type: 'thinking_delta', contentIndex: 0, delta: 'step' }
       }, 2, { fullCommunication: false }),
       {
-        type: 'activity_update',
+        type: 'thinking_delta',
         sourceId: 'thinking:2:0',
-        activity: {
-          kind: 'thinking',
-          title: 'Thinking',
-          status: 'running',
-          body: 'step',
-          code: false
-        },
-        bodyMode: 'append'
+        delta: 'step'
       }
     );
   });
