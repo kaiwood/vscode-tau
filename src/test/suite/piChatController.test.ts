@@ -1123,6 +1123,55 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('context usage refresh updates only session stats', async () => {
+    const client = new FakePiClient({
+      stats: { contextUsage: { tokens: 250, contextWindow: 1000, percent: 25 } }
+    });
+    const harness = createControllerHarness([client]);
+
+    await harness.controller.handleWebviewMessage({ type: 'refreshMetadata' });
+    const stateCallsBefore = client.stateCalls;
+    const modelsCallsBefore = client.modelsCalls;
+    client.stats = { contextUsage: { tokens: 600, contextWindow: 1000 } };
+
+    await harness.controller.refreshContextUsage({ silent: true });
+
+    assert.strictEqual(client.statsCalls, 2);
+    assert.strictEqual(client.stateCalls, stateCallsBefore);
+    assert.strictEqual(client.modelsCalls, modelsCallsBefore);
+    assert.strictEqual(lastState(harness).contextUsageLabel, '60%');
+    assert.strictEqual(lastState(harness).contextUsageLevel, 'medium');
+    harness.controller.dispose();
+  });
+
+  test('context usage refresh dedupes overlapping requests', async () => {
+    const statsDeferred = createDeferred<PiSessionStats>();
+    const client = new FakePiClient({ statsResult: statsDeferred.promise });
+    const harness = createControllerHarness([client]);
+
+    const firstRefresh = harness.controller.refreshContextUsage({ startClient: true, silent: true });
+    const secondRefresh = harness.controller.refreshContextUsage({ startClient: true, silent: true });
+    await flushPromises();
+
+    assert.strictEqual(client.statsCalls, 1);
+
+    statsDeferred.resolve({ contextUsage: { tokens: 100, contextWindow: 1000, percent: 10 } });
+    await Promise.all([firstRefresh, secondRefresh]);
+
+    assert.strictEqual(lastState(harness).contextUsageLabel, '10%');
+    harness.controller.dispose();
+  });
+
+  test('silent context usage refresh errors do not append transcript errors', async () => {
+    const client = new FakePiClient({ statsError: new Error('stats failed') });
+    const harness = createControllerHarness([client]);
+
+    await harness.controller.refreshContextUsage({ startClient: true, silent: true });
+
+    assert.strictEqual(harness.states.length, 0);
+    harness.controller.dispose();
+  });
+
   test('refresh slash commands includes filtered slash commands', async () => {
     const client = new FakePiClient({
       commands: [
@@ -1242,6 +1291,7 @@ type FakePiClientOptions = {
   stateResult?: Promise<PiSessionState>;
   modelsResult?: Promise<PiModel[]>;
   statsResult?: Promise<PiSessionStats>;
+  statsError?: unknown;
   commands?: PiCommand[];
   messages?: PiAgentMessage[];
   messagesResult?: Promise<PiAgentMessage[]>;
@@ -1315,6 +1365,7 @@ class FakePiClient implements PiRpcClientLike {
   public commandsResult: Promise<PiCommand[]> | undefined;
   public messagesResult: Promise<PiAgentMessage[]> | undefined;
   public messagesCalls = 0;
+  public statsError: unknown;
   public commandsError: unknown;
   public reloadError: unknown;
   public switchSessionResult: { cancelled?: boolean };
@@ -1345,6 +1396,7 @@ class FakePiClient implements PiRpcClientLike {
     this.statsResult = options.statsResult;
     this.commandsResult = options.commandsResult;
     this.messagesResult = options.messagesResult;
+    this.statsError = options.statsError;
     this.commandsError = options.commandsError;
     this.reloadError = options.reloadError;
     this.switchSessionResult = options.switchSessionResult ?? { cancelled: false };
@@ -1408,6 +1460,11 @@ class FakePiClient implements PiRpcClientLike {
 
   public async getSessionStats(): Promise<PiSessionStats> {
     this.statsCalls += 1;
+
+    if (this.statsError) {
+      throw this.statsError;
+    }
+
     return this.statsResult ?? this.stats;
   }
 

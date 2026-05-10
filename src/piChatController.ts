@@ -159,6 +159,7 @@ export class PiChatController {
   private abortRequested = false;
   private abortNoticeAdded = false;
   private metadataRefreshInFlight: { generation: number; promise: Promise<void> } | undefined;
+  private contextUsageRefreshInFlight: { generation: number; promise: Promise<void> } | undefined;
   private slashCommandsRefreshInFlight: { generation: number; promise: Promise<void> } | undefined;
   private fullRpcAgentCommunication: boolean;
   private readonly session = new ChatSession();
@@ -529,6 +530,28 @@ export class PiChatController {
     return refreshPromise;
   }
 
+  public refreshContextUsage(options: { startClient?: boolean; silent?: boolean } = {}): Promise<void> {
+    const sessionGeneration = this.session.generation;
+    const existingRefresh = this.contextUsageRefreshInFlight;
+
+    if (existingRefresh?.generation === sessionGeneration) {
+      return existingRefresh.promise;
+    }
+
+    let refreshPromise!: Promise<void>;
+
+    refreshPromise = this.runContextUsageRefresh(options, sessionGeneration)
+      .finally(() => {
+        if (this.contextUsageRefreshInFlight?.promise === refreshPromise) {
+          this.contextUsageRefreshInFlight = undefined;
+        }
+      });
+
+    this.contextUsageRefreshInFlight = { generation: sessionGeneration, promise: refreshPromise };
+
+    return refreshPromise;
+  }
+
   public refreshSlashCommands(options: { startClient?: boolean; force?: boolean } = {}): Promise<void> {
     const sessionGeneration = this.session.generation;
     const existingRefresh = this.slashCommandsRefreshInFlight;
@@ -700,7 +723,7 @@ export class PiChatController {
       await Promise.all([
         this.restoreInitialSessionHistory(client, sessionGeneration, refreshId),
         this.refreshModelMeta(client, sessionGeneration, refreshId),
-        this.refreshContextUsage(client, sessionGeneration, refreshId),
+        this.refreshContextUsageForMetadata(client, sessionGeneration, refreshId),
         this.refreshModelOptions(client, sessionGeneration, refreshId)
       ].map((refresh) => refresh.catch(handleRefreshError)));
     } finally {
@@ -763,7 +786,7 @@ export class PiChatController {
     }
   }
 
-  private async refreshContextUsage(
+  private async refreshContextUsageForMetadata(
     client: PiRpcClientLike,
     sessionGeneration: number,
     refreshId: number
@@ -774,6 +797,45 @@ export class PiChatController {
       return;
     }
 
+    this.applySessionStats(stats);
+  }
+
+  private async runContextUsageRefresh(
+    options: { startClient?: boolean; silent?: boolean },
+    sessionGeneration: number
+  ): Promise<void> {
+    let client: PiRpcClientLike | undefined;
+
+    try {
+      client = options.startClient ? this.getClient() : this.getExistingClient();
+    } catch (error) {
+      if (!options.silent && sessionGeneration === this.session.generation) {
+        this.handleClientError(getErrorMessage(error));
+      }
+
+      return;
+    }
+
+    if (!client) {
+      return;
+    }
+
+    try {
+      const stats = await client.getSessionStats();
+
+      if (sessionGeneration !== this.session.generation) {
+        return;
+      }
+
+      this.applySessionStats(stats);
+    } catch (error) {
+      if (!options.silent && sessionGeneration === this.session.generation) {
+        this.handleClientError(getErrorMessage(error));
+      }
+    }
+  }
+
+  private applySessionStats(stats: PiSessionStats): void {
     const statsSessionFile = getSessionFile(stats);
 
     if (statsSessionFile && this.applyCurrentSessionFile(statsSessionFile)) {
@@ -1603,6 +1665,7 @@ export class PiChatController {
     this.metadataRefreshSequence += 1;
     this.slashCommandsRefreshSequence += 1;
     this.metadataRefreshInFlight = undefined;
+    this.contextUsageRefreshInFlight = undefined;
     this.slashCommandsRefreshInFlight = undefined;
     this.metadataRefreshing = false;
     this.slashCommandsRefreshing = false;

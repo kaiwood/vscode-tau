@@ -22,12 +22,14 @@ export type { PiRpcClientLike } from './piChatController';
 const cachedSessionMetaStorageKey = 'piui.cachedSessionMeta';
 const cachedModelMetaStorageKey = 'piui.cachedModelMeta';
 const currentSessionFileStorageKey = 'piui.currentSessionFile';
+const contextUsagePollingIntervalMs = 2000;
 
 export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private webviewView: vscode.WebviewView | undefined;
   private pendingInputFocus = false;
   private webviewReady = false;
   private readonly controller: PiChatController;
+  private contextUsagePollTimer: NodeJS.Timeout | undefined;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly webviewDisposables: vscode.Disposable[] = [];
 
@@ -79,6 +81,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   public dispose(): void {
+    this.stopContextUsagePolling();
     this.disposeWebviewDisposables();
 
     for (const disposable of this.disposables.splice(0)) {
@@ -89,6 +92,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   public resolveWebviewView(webviewView: vscode.WebviewView): void {
+    this.stopContextUsagePolling();
     this.disposeWebviewDisposables();
     this.webviewView = webviewView;
     this.webviewReady = false;
@@ -125,6 +129,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
         this.webviewView = undefined;
         this.webviewReady = false;
+        this.stopContextUsagePolling();
         this.disposeWebviewDisposables();
       }),
       webviewView.webview.onDidReceiveMessage((message: unknown) => {
@@ -133,12 +138,16 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       webviewView.onDidChangeVisibility(() => {
         if (webviewView.visible) {
           this.refreshLiveMetadata();
+          this.startContextUsagePolling();
+        } else {
+          this.stopContextUsagePolling();
         }
       })
     );
 
     this.controller.postState();
     this.refreshLiveMetadata();
+    this.startContextUsagePolling();
   }
 
   public async focus(): Promise<void> {
@@ -152,6 +161,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     this.postInputFocusSoon();
     this.refreshLiveMetadata();
+    this.startContextUsagePolling();
   }
 
   public async newSession(): Promise<void> {
@@ -245,6 +255,30 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   private refreshLiveMetadata(): void {
     void this.controller.refreshSessionMeta({ startClient: true }).then(undefined, () => undefined);
+  }
+
+  private startContextUsagePolling(): void {
+    if (this.contextUsagePollTimer || !this.webviewView?.visible) {
+      return;
+    }
+
+    this.contextUsagePollTimer = setInterval(() => {
+      if (!this.webviewView?.visible) {
+        this.stopContextUsagePolling();
+        return;
+      }
+
+      void this.controller.refreshContextUsage({ silent: true }).then(undefined, () => undefined);
+    }, contextUsagePollingIntervalMs);
+  }
+
+  private stopContextUsagePolling(): void {
+    if (!this.contextUsagePollTimer) {
+      return;
+    }
+
+    clearInterval(this.contextUsagePollTimer);
+    this.contextUsagePollTimer = undefined;
   }
 
   private writeCachedSessionMeta(metadata: PiChatSessionMetaSnapshot): void {
