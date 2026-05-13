@@ -98,7 +98,8 @@
     }
   },
   "scripts": {
-    "compile": "npm run compile:webview && tsc -p ./",
+    "clean": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
+    "compile": "npm run clean && npm run compile:webview && tsc -p ./",
     "compile:webview": "esbuild src/webview/main.ts --bundle --format=iife --target=es2022 --outfile=resources/webview/chat.js --sourcemap",
     "install:local": "npm run compile && npx --yes @vscode/vsce package --out piui-local.vsix && code --install-extension piui-local.vsix --force && node scripts/restart-vscode-extension-host.js",
     "test": "npm run compile -- --pretty false && vscode-test",
