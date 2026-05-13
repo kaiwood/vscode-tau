@@ -72,13 +72,6 @@
           "when": "editorTextFocus",
           "group": "navigation@90"
         }
-      ],
-      "editor/title": [
-        {
-          "command": "piui.addContext",
-          "when": "resourceScheme == file",
-          "group": "navigation@90"
-        }
       ]
     },
     "configuration": {
