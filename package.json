@@ -53,7 +53,7 @@
         {
           "id": "tau",
           "title": "Tau",
-          "icon": "resources/pi.svg"
+          "icon": "resources/tau.svg"
         }
       ]
     },
@@ -63,7 +63,7 @@
           "id": "tau.chatView",
           "name": "Tau",
           "type": "webview",
-          "icon": "resources/pi.svg"
+          "icon": "resources/tau.svg"
         }
       ]
     },
