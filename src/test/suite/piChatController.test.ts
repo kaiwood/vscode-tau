@@ -5,7 +5,7 @@ import {
   type PiChatSessionMetaSnapshot,
   type PiRpcClientLike
 } from '../../piChatController';
-import type { WebviewSessionItem, WebviewStateMessage } from '../../chatWebview';
+import type { WebviewSessionItem, WebviewStateMessage, WebviewTreeItem } from '../../chatWebview';
 import type { StatePublisherScheduler } from '../../statePublisher';
 import type {
   ExtensionUiResponse,
@@ -658,6 +658,40 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('stale session tree refresh results are ignored after starting a new session', async () => {
+    const treeRefresh = createDeferred<WebviewTreeItem[]>();
+    const treeRefreshCalls: Array<string | undefined> = [];
+    const harness = createControllerHarness([new FakePiClient()], {
+      initialSessionFile: '/sessions/current.jsonl',
+      listSessionTree: async (sessionFile) => {
+        treeRefreshCalls.push(sessionFile);
+        return treeRefresh.promise;
+      }
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/tree' });
+    await flushPromises();
+
+    assert.deepStrictEqual(treeRefreshCalls, ['/sessions/current.jsonl']);
+    assert.strictEqual(lastState(harness).treeRefreshing, true);
+
+    harness.controller.startNewSession();
+    treeRefresh.resolve([{
+      entryId: 'old-entry',
+      role: 'user',
+      text: 'Old prompt',
+      depth: 0,
+      isLast: true,
+      ancestorContinues: [],
+      current: true
+    }]);
+    await flushPromises();
+
+    assert.strictEqual(lastState(harness).treeItems, undefined);
+    assert.strictEqual(lastState(harness).treeRefreshing, undefined);
+    harness.controller.dispose();
+  });
+
   test('resume slash command opens the session switcher', async () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);
@@ -1295,6 +1329,7 @@ type ControllerHarnessOptions = {
   onSessionMetaChange?: (metadata: PiChatSessionMetaSnapshot) => void;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
   listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
+  listSessionTree?: (sessionFile: string | undefined) => Promise<WebviewTreeItem[]>;
 };
 
 function createControllerHarness(
@@ -1334,7 +1369,8 @@ function createControllerHarness(
     initialSessionFile: options.initialSessionFile,
     onSessionMetaChange: options.onSessionMetaChange,
     onSessionFileChange: options.onSessionFileChange,
-    listSessions: options.listSessions
+    listSessions: options.listSessions,
+    listSessionTree: options.listSessionTree
   };
 
   const controller = new PiChatController(controllerOptions);

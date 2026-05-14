@@ -125,6 +125,7 @@ export type PiChatControllerOptions = {
   onSessionFileChange?: (sessionFile: string | undefined) => void;
   writeClipboard?: (text: string) => PromiseLike<void> | Promise<void> | void;
   listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
+  listSessionTree?: (sessionFile: string | undefined) => Promise<WebviewTreeItem[]>;
 };
 
 type DisposableLike = {
@@ -158,6 +159,7 @@ export class PiChatController {
   private pendingComposerText: { text: string; revision: number } | undefined;
   private composerTextRevision = 0;
   private sessionsRefreshSequence = 0;
+  private treeRefreshSequence = 0;
   private metadataRefreshSequence = 0;
   private slashCommandsRefreshSequence = 0;
   private currentSessionFile: string | undefined;
@@ -351,7 +353,9 @@ export class PiChatController {
     this.session.startNewSession();
     this.sessionViewMode = 'chat';
     this.sessionsError = '';
+    this.treeRefreshSequence += 1;
     this.treeItems = [];
+    this.treeRefreshing = false;
     this.treeError = '';
     this.currentSessionFile = undefined;
     this.currentSessionName = '';
@@ -672,17 +676,30 @@ export class PiChatController {
   }
 
   private async refreshTree(): Promise<void> {
+    const refreshId = ++this.treeRefreshSequence;
+    const sessionFile = this.currentSessionFile;
     this.treeRefreshing = true;
     this.treeError = '';
     this.postState();
 
     try {
-      this.treeItems = await listPiSessionTree(this.currentSessionFile);
+      const listSessionTree = this.options.listSessionTree ?? listPiSessionTree;
+      const treeItems = await listSessionTree(sessionFile);
+
+      if (!this.isCurrentTreeRefresh(refreshId, sessionFile)) {
+        return;
+      }
+
+      this.treeItems = treeItems;
     } catch (error) {
-      this.treeError = getErrorMessage(error);
+      if (this.isCurrentTreeRefresh(refreshId, sessionFile)) {
+        this.treeError = getErrorMessage(error);
+      }
     } finally {
-      this.treeRefreshing = false;
-      this.postState();
+      if (this.isCurrentTreeRefresh(refreshId, sessionFile)) {
+        this.treeRefreshing = false;
+        this.postState();
+      }
     }
   }
 
@@ -1024,6 +1041,11 @@ export class PiChatController {
       && refreshId === this.slashCommandsRefreshSequence;
   }
 
+  private isCurrentTreeRefresh(refreshId: number, sessionFile: string | undefined): boolean {
+    return refreshId === this.treeRefreshSequence
+      && sessionFile === this.currentSessionFile;
+  }
+
   private applyModelMeta(modelMeta: PiChatModelMeta): boolean {
     if (
       modelMeta.label === this.modelLabel
@@ -1089,6 +1111,9 @@ export class PiChatController {
     }
 
     this.currentSessionFile = sessionFile;
+    this.treeRefreshSequence += 1;
+    this.treeRefreshing = false;
+    this.treeItems = [];
     this.sessions = this.sessions.map((session) => ({
       ...session,
       current: Boolean(sessionFile) && session.path === sessionFile
