@@ -169,6 +169,21 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     await this.focus();
   }
 
+  public async resume(): Promise<void> {
+    await this.controller.runLocalSlashCommand('resume');
+    await this.focus();
+  }
+
+  public async fork(): Promise<void> {
+    await this.controller.runLocalSlashCommand('fork');
+    await this.focus();
+  }
+
+  public async clone(): Promise<void> {
+    await this.controller.runLocalSlashCommand('clone');
+    await this.focus();
+  }
+
   public async addContext(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
 

@@ -25,6 +25,9 @@ suite('Pi UI extension', () => {
 
     assert.ok(commands.includes('piui.focus'));
     assert.ok(commands.includes('piui.newSession'));
+    assert.ok(commands.includes('piui.resume'));
+    assert.ok(commands.includes('piui.fork'));
+    assert.ok(commands.includes('piui.clone'));
     assert.ok(commands.includes('piui.addContext'));
   });
 });

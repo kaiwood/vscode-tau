@@ -327,6 +327,15 @@ export class PiChatController {
     }
   }
 
+  public async runLocalSlashCommand(name: string, args = ''): Promise<void> {
+    if (this.session.isBusy) {
+      this.addBusySlashCommandNotice(name);
+      return;
+    }
+
+    await this.handleLocalSlashCommand({ name, args });
+  }
+
   public startNewSession(): void {
     this.extensionUiRequestHandler.startNewGeneration();
     this.assistantStreamId = 0;

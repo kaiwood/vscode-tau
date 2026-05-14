@@ -28,6 +28,21 @@
         "category": "PiUI"
       },
       {
+        "command": "piui.resume",
+        "title": "Resume Session",
+        "category": "PiUI"
+      },
+      {
+        "command": "piui.fork",
+        "title": "Fork Session",
+        "category": "PiUI"
+      },
+      {
+        "command": "piui.clone",
+        "title": "Clone Session",
+        "category": "PiUI"
+      },
+      {
         "command": "piui.addContext",
         "title": "Add Context",
         "category": "PiUI"
