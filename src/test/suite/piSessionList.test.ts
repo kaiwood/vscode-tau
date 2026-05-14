@@ -6,7 +6,7 @@ import { listPiSessions } from '../../piSessionList';
 
 suite('Pi session list', () => {
   test('falls back to current session file directory when cwd is unavailable', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'piui-sessions-'));
+    const dir = await mkdtemp(join(tmpdir(), 'tau-sessions-'));
 
     try {
       const sessionPath = join(dir, 'current.jsonl');
@@ -26,7 +26,7 @@ suite('Pi session list', () => {
   });
 
   test('falls back to all default sessions when the workspace session directory is empty', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'piui-home-'));
+    const home = await mkdtemp(join(tmpdir(), 'tau-home-'));
 
     try {
       const sessionDir = join(home, '.pi', 'agent', 'sessions', '--project--');
@@ -56,7 +56,7 @@ suite('Pi session list', () => {
   });
 
   test('lists sessions with names, message counts, current marker, and fork tree metadata', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'piui-sessions-'));
+    const dir = await mkdtemp(join(tmpdir(), 'tau-sessions-'));
 
     try {
       const parentPath = join(dir, 'parent.jsonl');

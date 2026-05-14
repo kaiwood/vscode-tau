@@ -318,7 +318,7 @@ export class PiRpcClient {
 
   private async send(command: RpcCommand): Promise<RpcResponse> {
     const child = await this.ensureStarted();
-    const id = `piui-${++this.requestId}`;
+    const id = `tau-${++this.requestId}`;
     const fullCommand = { ...command, id };
 
     return new Promise<RpcResponse>((resolve, reject) => {

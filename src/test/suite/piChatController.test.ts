@@ -334,7 +334,7 @@ suite('PiChatController', () => {
     await harness.controller.handleWebviewMessage({ type: 'submit', text: 'explain this' });
 
     assert.strictEqual(client.prompts.length, 1);
-    assert.ok(client.prompts[0].includes('<!-- piui:ide-context:start -->'));
+    assert.ok(client.prompts[0].includes('<!-- tau:ide-context:start -->'));
     assert.ok(client.prompts[0].includes('<selection path="src/foo.ts" start_line="2" end_line="4" language="typescript">'));
     assert.ok(client.prompts[0].includes('```typescript\nconst answer = 42;\n```'));
     assert.ok(client.prompts[0].endsWith('\n\nexplain this'));
@@ -444,12 +444,12 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
-  test('restored history hides PiUI IDE context wrappers from user messages', async () => {
+  test('restored history hides Tau IDE context wrappers from user messages', async () => {
     const client = new FakePiClient({
       messages: [
         {
           role: 'user',
-          content: '<!-- piui:ide-context:start -->\n<ide_context source="vscode-piui">\n<file path="src/foo.ts" />\n</ide_context>\n<!-- piui:ide-context:end -->\n\nexplain this'
+          content: '<!-- tau:ide-context:start -->\n<ide_context source="vscode-tau">\n<file path="src/foo.ts" />\n</ide_context>\n<!-- tau:ide-context:end -->\n\nexplain this'
         }
       ]
     });

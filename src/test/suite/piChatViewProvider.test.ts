@@ -14,7 +14,7 @@ import type {
 suite('PiChatViewProvider', () => {
   test('posts cached legacy model metadata and persists refreshed session metadata', async () => {
     const workspaceState = new FakeMemento({
-      'piui.cachedModelMeta': {
+      'tau.cachedModelMeta': {
         label: 'cached-model High',
         provider: 'anthropic',
         id: 'cached-model',
@@ -49,7 +49,7 @@ suite('PiChatViewProvider', () => {
     assert.strictEqual(lastPostedState(view).modelLabel, 'live-model Medium');
     assert.strictEqual(lastPostedState(view).contextUsageLabel, '60%');
     assert.strictEqual(lastPostedState(view).metadataRefreshing, false);
-    assert.deepStrictEqual(workspaceState.get<unknown>('piui.cachedSessionMeta'), {
+    assert.deepStrictEqual(workspaceState.get<unknown>('tau.cachedSessionMeta'), {
       model: {
         label: 'live-model Medium',
         provider: 'openai',
@@ -70,13 +70,13 @@ suite('PiChatViewProvider', () => {
         level: 'medium'
       }
     });
-    assert.strictEqual(workspaceState.get<unknown>('piui.cachedModelMeta'), undefined);
+    assert.strictEqual(workspaceState.get<unknown>('tau.cachedModelMeta'), undefined);
     provider.dispose();
   });
 
   test('restores and persists current session file through workspace state', async () => {
     const workspaceState = new FakeMemento({
-      'piui.currentSessionFile': '/sessions/current.jsonl'
+      'tau.currentSessionFile': '/sessions/current.jsonl'
     });
     const clientOptions: unknown[] = [];
     const client = new FakePiClient({
@@ -106,7 +106,7 @@ suite('PiChatViewProvider', () => {
     assert.deepStrictEqual(lastPostedState(view).messages, [
       { role: 'user', text: 'Restored prompt' }
     ]);
-    assert.strictEqual(workspaceState.get<unknown>('piui.currentSessionFile'), '/sessions/updated.jsonl');
+    assert.strictEqual(workspaceState.get<unknown>('tau.currentSessionFile'), '/sessions/updated.jsonl');
     provider.dispose();
   });
 

@@ -16,7 +16,7 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 
 ## Current Architecture
 
-- `package.json` defines a VS Code extension with an Activity Bar view container named `Pi`.
+- `package.json` defines a VS Code extension with an Activity Bar view container named `Tau`.
 - The extension is TypeScript, CommonJS, and compiles `src` to `out`.
 - `src/extension.ts` is only the activation entrypoint and command/view registration.
 - `src/piChatViewProvider.ts` owns VS Code webview/provider integration, focus handling, notifications, workspace `cwd` lookup, cached selected-model metadata, and Pi client lifecycle.

@@ -16,12 +16,12 @@ import { PiRpcClient } from './piRpcClient';
 import { listPiSessions } from './piSessionList';
 import type { WebviewModelOption } from './chatWebview';
 
-export const chatViewType = 'piui.chatView';
+export const chatViewType = 'tau.chatView';
 export type { PiRpcClientLike } from './piChatController';
 
-const cachedSessionMetaStorageKey = 'piui.cachedSessionMeta';
-const cachedModelMetaStorageKey = 'piui.cachedModelMeta';
-const currentSessionFileStorageKey = 'piui.currentSessionFile';
+const cachedSessionMetaStorageKey = 'tau.cachedSessionMeta';
+const cachedModelMetaStorageKey = 'tau.cachedModelMeta';
+const currentSessionFileStorageKey = 'tau.currentSessionFile';
 const contextUsagePollingIntervalMs = 2000;
 
 export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -69,11 +69,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-        if (event.affectsConfiguration('piui.fullRpcAgentCommunication')) {
+        if (event.affectsConfiguration('tau.fullRpcAgentCommunication')) {
           this.controller.setFullRpcAgentCommunication(getFullRpcAgentCommunicationSetting());
         }
 
-        if (event.affectsConfiguration('piui.piPath')) {
+        if (event.affectsConfiguration('tau.piPath')) {
           this.controller.handlePiPathChanged();
         }
       })
@@ -396,14 +396,14 @@ function getPathBasename(path: string): string {
 }
 
 function getFullRpcAgentCommunicationSetting(): boolean {
-  return vscode.workspace.getConfiguration('piui').get<boolean>(
+  return vscode.workspace.getConfiguration('tau').get<boolean>(
     'fullRpcAgentCommunication',
     false
   );
 }
 
 function getPiPathSetting(): string | undefined {
-  const value = vscode.workspace.getConfiguration('piui').get<string>('piPath', 'pi').trim();
+  const value = vscode.workspace.getConfiguration('tau').get<string>('piPath', 'pi').trim();
   return value && value !== 'pi' ? value : undefined;
 }
 

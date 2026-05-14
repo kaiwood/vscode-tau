@@ -1,11 +1,11 @@
 {
-  "name": "piui",
-  "displayName": "Pi UI",
+  "name": "tau",
+  "displayName": "Tau",
   "description": "A VS Code sidebar UI for the Pi agent.",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kaiwood/vscode-piui.git"
+    "url": "https://github.com/kaiwood/vscode-tau.git"
   },
   "license": "MIT",
   "engines": {
@@ -18,50 +18,50 @@
   "contributes": {
     "commands": [
       {
-        "command": "piui.focus",
-        "title": "Focus on PiUI",
-        "category": "PiUI"
+        "command": "tau.focus",
+        "title": "Focus on Tau",
+        "category": "Tau"
       },
       {
-        "command": "piui.newSession",
+        "command": "tau.newSession",
         "title": "New Session",
-        "category": "PiUI"
+        "category": "Tau"
       },
       {
-        "command": "piui.resume",
+        "command": "tau.resume",
         "title": "Resume Session",
-        "category": "PiUI"
+        "category": "Tau"
       },
       {
-        "command": "piui.fork",
+        "command": "tau.fork",
         "title": "Fork Session",
-        "category": "PiUI"
+        "category": "Tau"
       },
       {
-        "command": "piui.clone",
+        "command": "tau.clone",
         "title": "Clone Session",
-        "category": "PiUI"
+        "category": "Tau"
       },
       {
-        "command": "piui.addContext",
+        "command": "tau.addContext",
         "title": "Add Context",
-        "category": "PiUI"
+        "category": "Tau"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "piui",
-          "title": "Pi",
+          "id": "tau",
+          "title": "Tau",
           "icon": "resources/pi.svg"
         }
       ]
     },
     "views": {
-      "piui": [
+      "tau": [
         {
-          "id": "piui.chatView",
-          "name": "Pi",
+          "id": "tau.chatView",
+          "name": "Tau",
           "type": "webview",
           "icon": "resources/pi.svg"
         }
@@ -70,21 +70,21 @@
     "menus": {
       "editor/context": [
         {
-          "command": "piui.addContext",
+          "command": "tau.addContext",
           "when": "editorTextFocus",
           "group": "navigation@90"
         }
       ]
     },
     "configuration": {
-      "title": "Pi UI",
+      "title": "Tau",
       "properties": {
-        "piui.fullRpcAgentCommunication": {
+        "tau.fullRpcAgentCommunication": {
           "type": "boolean",
           "default": false,
           "description": "Show full RPC agent communication in the Pi sidebar transcript. When disabled, only assistant text, thinking, tool progress, and errors are shown."
         },
-        "piui.piPath": {
+        "tau.piPath": {
           "type": "string",
           "default": "pi",
           "description": "Command used to launch Pi. Use an executable name or path, optionally with arguments, for example: pi, /opt/homebrew/bin/pi, npx pi, or \"/path with spaces/pi\"."
@@ -96,7 +96,7 @@
     "clean": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
     "compile": "npm run clean && npm run compile:webview && tsc -p ./",
     "compile:webview": "esbuild src/webview/main.ts --bundle --format=iife --target=es2022 --outfile=resources/webview/chat.js --sourcemap",
-    "install:local": "npm run compile && npx --yes @vscode/vsce package --out piui-local.vsix && code --install-extension piui-local.vsix --force && node scripts/restart-vscode-extension-host.js",
+    "install:local": "npm run compile && npx --yes @vscode/vsce package --out tau-local.vsix && code --install-extension tau-local.vsix --force && node scripts/restart-vscode-extension-host.js",
     "test": "npm run compile -- --pretty false && vscode-test",
     "watch": "npm run compile:webview && tsc -watch -p ./"
   },

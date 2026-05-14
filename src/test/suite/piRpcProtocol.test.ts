@@ -32,7 +32,7 @@ suite('Pi RPC protocol helpers', () => {
     assert.deepStrictEqual(
       parseRpcResponse({
         type: 'response',
-        id: 'piui-1',
+        id: 'tau-1',
         command: 'get_state',
         success: true,
         error: 404,
@@ -41,7 +41,7 @@ suite('Pi RPC protocol helpers', () => {
       }),
       {
         type: 'response',
-        id: 'piui-1',
+        id: 'tau-1',
         command: 'get_state',
         success: true,
         data: { thinkingLevel: 'high' },

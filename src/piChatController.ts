@@ -1821,8 +1821,8 @@ function getSessionFile(state: { sessionFile?: string }): string | undefined {
     : undefined;
 }
 
-const ideContextStartMarker = '<!-- piui:ide-context:start -->';
-const ideContextEndMarker = '<!-- piui:ide-context:end -->';
+const ideContextStartMarker = '<!-- tau:ide-context:start -->';
+const ideContextEndMarker = '<!-- tau:ide-context:end -->';
 
 function normalizeLineNumber(value: number | undefined): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
@@ -1882,7 +1882,7 @@ function formatPromptWithIdeContext(
 
   return [
     ideContextStartMarker,
-    '<ide_context source="vscode-piui">',
+    '<ide_context source="vscode-tau">',
     'The user explicitly attached this IDE context. Use it as relevant. File-only entries identify relevant files; inspect or read them if content is needed.',
     '',
     contextBody,
