@@ -94,6 +94,7 @@ export type WebviewState = {
   sessionsRefreshing: boolean;
   sessionsError: string;
   currentSessionFile: string;
+  currentSessionName: string;
   treeItems: TreeItem[];
   treeRefreshing: boolean;
   treeError: string;

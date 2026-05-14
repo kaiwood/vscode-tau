@@ -595,6 +595,7 @@ suite('PiChatController', () => {
     assert.deepStrictEqual(lastState(harness).messages, [
       { role: 'system', text: 'Session name set to "Feature work".' }
     ]);
+    assert.strictEqual(lastState(harness).currentSessionName, 'Feature work');
     harness.controller.dispose();
   });
 
@@ -640,6 +641,7 @@ suite('PiChatController', () => {
 
     assert.deepStrictEqual(client.sessionNames, ['Feature work']);
     assert.deepStrictEqual(lastState(harness).messages, []);
+    assert.strictEqual(lastState(harness).currentSessionName, 'Feature work');
     assert.strictEqual(lastState(harness).sessions?.[0]?.name, 'Feature work');
     harness.controller.dispose();
   });

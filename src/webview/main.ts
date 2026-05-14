@@ -47,7 +47,7 @@ const {
   submitButton
 } = getWebviewDom();
 const isMac = navigator.platform.toUpperCase().includes('MAC');
-let state: WebviewState = { messages: [], busy: false, modelLabel: '', modelProvider: '', modelId: '', modelReasoning: false, thinkingLevel: '', modelOptions: [], contextUsageLabel: '', contextUsageTitle: '', contextUsageLevel: '', metadataRefreshing: false, slashCommands: [], slashCommandsRefreshing: false, promptContext: [], composerText: '', composerTextRevision: 0, viewMode: 'chat', sessions: [], sessionsRefreshing: false, sessionsError: '', currentSessionFile: '', treeItems: [], treeRefreshing: false, treeError: '' };
+let state: WebviewState = { messages: [], busy: false, modelLabel: '', modelProvider: '', modelId: '', modelReasoning: false, thinkingLevel: '', modelOptions: [], contextUsageLabel: '', contextUsageTitle: '', contextUsageLevel: '', metadataRefreshing: false, slashCommands: [], slashCommandsRefreshing: false, promptContext: [], composerText: '', composerTextRevision: 0, viewMode: 'chat', sessions: [], sessionsRefreshing: false, sessionsError: '', currentSessionFile: '', currentSessionName: '', treeItems: [], treeRefreshing: false, treeError: '' };
 let appliedComposerTextRevision = 0;
 let slashMenuOpen = false;
 let slashMenuActiveIndex = 0;
@@ -104,6 +104,7 @@ window.addEventListener('message', (event) => {
     sessionsRefreshing: Boolean(event.data.sessionsRefreshing),
     sessionsError: typeof event.data.sessionsError === 'string' ? event.data.sessionsError : '',
     currentSessionFile: typeof event.data.currentSessionFile === 'string' ? event.data.currentSessionFile : '',
+    currentSessionName: typeof event.data.currentSessionName === 'string' ? event.data.currentSessionName : '',
     treeItems: Array.isArray(event.data.treeItems) ? event.data.treeItems : [],
     treeRefreshing: Boolean(event.data.treeRefreshing),
     treeError: typeof event.data.treeError === 'string' ? event.data.treeError : ''
@@ -538,6 +539,10 @@ function getCurrentSessionTitle() {
     return getSessionDisplayName(session);
   }
 
+  if (state.currentSessionName) {
+    return state.currentSessionName;
+  }
+
   if (state.currentSessionFile) {
     return 'Current session';
   }
@@ -741,7 +746,7 @@ function syncSessionNameEditor(): void {
 }
 
 function getCurrentSessionName(): string {
-  return (getCurrentSession()?.name ?? '').trim();
+  return (getCurrentSession()?.name ?? state.currentSessionName ?? '').trim();
 }
 
 function toggleSessionView() {

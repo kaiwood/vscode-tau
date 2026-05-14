@@ -160,6 +160,7 @@ export type WebviewStateMessage = ChatState & {
   sessionsRefreshing?: boolean;
   sessionsError?: string;
   currentSessionFile?: string;
+  currentSessionName?: string;
   treeItems?: WebviewTreeItem[];
   treeRefreshing?: boolean;
   treeError?: string;
@@ -194,6 +195,7 @@ type CreateWebviewStateMessageOptions = {
     refreshing?: boolean;
     error?: string;
     currentSessionFile?: string;
+    currentSessionName?: string;
     treeItems?: WebviewTreeItem[];
     treeRefreshing?: boolean;
     treeError?: string;
@@ -247,6 +249,7 @@ export function createWebviewStateMessage({
     message.sessionsRefreshing = sessionView.refreshing ?? false;
     message.sessionsError = sessionView.error ?? '';
     message.currentSessionFile = sessionView.currentSessionFile ?? '';
+    message.currentSessionName = sessionView.currentSessionName ?? '';
     message.treeItems = sessionView.treeItems ?? [];
     message.treeRefreshing = sessionView.treeRefreshing ?? false;
     message.treeError = sessionView.treeError ?? '';

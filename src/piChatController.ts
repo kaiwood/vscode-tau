@@ -160,6 +160,7 @@ export class PiChatController {
   private metadataRefreshSequence = 0;
   private slashCommandsRefreshSequence = 0;
   private currentSessionFile: string | undefined;
+  private currentSessionName = '';
   private nextClientSessionFile: string | undefined;
   private shouldRestoreInitialSessionHistory: boolean;
   private restartClientWhenIdle = false;
@@ -352,6 +353,7 @@ export class PiChatController {
     this.treeItems = [];
     this.treeError = '';
     this.currentSessionFile = undefined;
+    this.currentSessionName = '';
     this.sessions = this.sessions.map((session) => ({ ...session, current: false }));
     this.nextClientSessionFile = undefined;
     this.shouldRestoreInitialSessionHistory = false;
@@ -453,6 +455,7 @@ export class PiChatController {
           refreshing: this.sessionsRefreshing,
           error: this.sessionsError,
           currentSessionFile: this.currentSessionFile,
+          currentSessionName: this.currentSessionName,
           treeItems: this.treeItems,
           treeRefreshing: this.treeRefreshing,
           treeError: this.treeError
@@ -468,6 +471,7 @@ export class PiChatController {
       || this.sessionsRefreshing
       || Boolean(this.sessionsError)
       || Boolean(this.currentSessionFile)
+      || Boolean(this.currentSessionName)
       || this.treeItems.length > 0
       || this.treeRefreshing
       || Boolean(this.treeError);
@@ -650,6 +654,10 @@ export class PiChatController {
       }
 
       this.sessions = sessions.map((session) => ({ ...session }));
+      const currentSession = this.sessions.find((session) => this.currentSessionFile
+        ? session.path === this.currentSessionFile
+        : session.current);
+      this.applyCurrentSessionName(currentSession?.name);
     } catch (error) {
       if (refreshId === this.sessionsRefreshSequence) {
         this.sessionsError = getErrorMessage(error);
@@ -769,6 +777,7 @@ export class PiChatController {
       ? getSessionFile(stateResult) ?? options.fallbackSessionFile
       : options.fallbackSessionFile;
     this.applyCurrentSessionFile(sessionFile);
+    this.applyCurrentSessionName(stateResult?.sessionName);
     this.session.replaceMessages(formatAgentMessages(messagesResult.messages));
     this.sessionViewMode = 'chat';
     this.sessionsError = '';
@@ -871,12 +880,13 @@ export class PiChatController {
     }
 
     const sessionFileChanged = this.applyCurrentSessionFile(getSessionFile(state));
+    const sessionNameChanged = this.applyCurrentSessionName(state.sessionName);
 
     if (sessionFileChanged) {
       void this.refreshSessions();
     }
 
-    if (this.applyModelMeta(getModelMeta(state))) {
+    if (sessionNameChanged || this.applyModelMeta(getModelMeta(state))) {
       this.postState();
     }
   }
@@ -932,12 +942,13 @@ export class PiChatController {
 
   private applySessionStats(stats: PiSessionStats): void {
     const statsSessionFile = getSessionFile(stats);
+    const sessionNameChanged = this.applyCurrentSessionName(stats.sessionName);
 
     if (statsSessionFile && this.applyCurrentSessionFile(statsSessionFile)) {
       void this.refreshSessions();
     }
 
-    if (this.applyContextUsage(formatContextUsage(stats))) {
+    if (sessionNameChanged || this.applyContextUsage(formatContextUsage(stats))) {
       this.postState();
     }
   }
@@ -1082,6 +1093,23 @@ export class PiChatController {
       current: Boolean(sessionFile) && session.path === sessionFile
     }));
     this.options.onSessionFileChange?.(sessionFile);
+    return true;
+  }
+
+  private applyCurrentSessionName(name: string | undefined): boolean {
+    if (typeof name !== 'string') {
+      return false;
+    }
+
+    const nextName = name.trim();
+
+    const sessionsChanged = this.applySessionNameToCurrentSession(nextName);
+
+    if (nextName === this.currentSessionName) {
+      return sessionsChanged;
+    }
+
+    this.currentSessionName = nextName;
     return true;
   }
 
@@ -1335,7 +1363,7 @@ export class PiChatController {
   private async setCurrentSessionName(name: string, options: { announce: boolean }): Promise<void> {
     const trimmedName = name.trim();
     await this.getClient().setSessionName(trimmedName);
-    this.applySessionNameToCurrentSession(trimmedName);
+    this.applyCurrentSessionName(trimmedName);
 
     if (options.announce) {
       this.session.addSystemMessage(trimmedName ? `Session name set to "${trimmedName}".` : 'Session name cleared.');
