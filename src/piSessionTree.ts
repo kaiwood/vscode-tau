@@ -4,9 +4,6 @@ export type PiSessionTreeItem = {
   entryId: string;
   role: string;
   text: string;
-  depth: number;
-  isLast: boolean;
-  ancestorContinues: boolean[];
   current: boolean;
 };
 
@@ -112,24 +109,19 @@ function flattenTree(entries: RawEntry[]): PiSessionTreeItem[] {
   const result: PiSessionTreeItem[] = [];
   const currentEntryId = entries.length > 0 ? entries[entries.length - 1].id : undefined;
 
-  const walk = (node: TreeNode, depth: number, ancestorContinues: boolean[], isLast: boolean): void => {
+  const walk = (node: TreeNode): void => {
     const formatted = formatEntry(node.entry);
     result.push({
       entryId: node.entry.id ?? '',
       role: formatted.role,
       text: formatted.text,
-      depth,
-      isLast,
-      ancestorContinues,
       current: Boolean(currentEntryId && node.entry.id === currentEntryId)
     });
 
-    node.children.forEach((child, index) => {
-      walk(child, depth + 1, [...ancestorContinues, depth > 0 ? !isLast : false], index === node.children.length - 1);
-    });
+    node.children.forEach(walk);
   };
 
-  roots.forEach((root, index) => walk(root, 0, [], index === roots.length - 1));
+  roots.forEach(walk);
   return result;
 }
 

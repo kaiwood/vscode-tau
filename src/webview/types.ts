@@ -47,9 +47,6 @@ export type TreeItem = {
   entryId: string;
   role: string;
   text: string;
-  depth: number;
-  isLast: boolean;
-  ancestorContinues: boolean[];
   current: boolean;
 };
 

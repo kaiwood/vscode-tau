@@ -1,4 +1,4 @@
-import type { SessionItem, TreeItem } from './types';
+import type { SessionItem } from './types';
 
 export function getSessionDisplayName(session: SessionItem): string {
   const name = sanitizeSessionTitle(session.name);
@@ -6,7 +6,7 @@ export function getSessionDisplayName(session: SessionItem): string {
   return name || firstMessage || shortenPath(session.cwd) || 'Untitled session';
 }
 
-export function buildSessionTreePrefix(session: Pick<SessionItem | TreeItem, 'depth' | 'ancestorContinues' | 'isLast'>): string {
+export function buildSessionTreePrefix(session: Pick<SessionItem, 'depth' | 'ancestorContinues' | 'isLast'>): string {
   const depth = Number(session.depth) || 0;
 
   if (depth <= 0) {

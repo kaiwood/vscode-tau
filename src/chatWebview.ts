@@ -152,9 +152,6 @@ export type WebviewTreeItem = {
   entryId: string;
   role: string;
   text: string;
-  depth: number;
-  isLast: boolean;
-  ancestorContinues: boolean[];
   current: boolean;
 };
 

@@ -680,9 +680,6 @@ suite('PiChatController', () => {
       entryId: 'old-entry',
       role: 'user',
       text: 'Old prompt',
-      depth: 0,
-      isLast: true,
-      ancestorContinues: [],
       current: true
     }]);
     await flushPromises();
