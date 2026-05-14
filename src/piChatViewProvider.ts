@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import * as vscode from 'vscode';
 import {
   createWebviewHtml,
@@ -42,6 +43,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       createClient,
       getCwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       getPiPath: () => getPiPathSetting(),
+      getSystemPrompt: () => getSystemPromptSetting(),
       postState: (message) => {
         void this.webviewView?.webview.postMessage(message);
       },
@@ -207,6 +209,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private async handleWebviewMessage(message: WebviewMessage): Promise<void> {
+    if (message.type === 'openFile') {
+      await this.openFileReference(message.path, message.line, message.column);
+      return;
+    }
+
     if (message.type === 'ready') {
       this.webviewReady = true;
       await this.controller.handleWebviewMessage(message);
@@ -215,6 +222,32 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
 
     await this.controller.handleWebviewMessage(message);
+  }
+
+  private async openFileReference(filePath: string, line?: number, column?: number): Promise<void> {
+    const uri = resolveWorkspaceFileUri(filePath);
+
+    if (!uri) {
+      this.showNotification(`No workspace is open for ${filePath}.`, 'warning');
+      return;
+    }
+
+    try {
+      await vscode.workspace.fs.stat(uri);
+    } catch {
+      this.showNotification(`File not found: ${filePath}`, 'warning');
+      return;
+    }
+
+    const document = await vscode.workspace.openTextDocument(uri);
+    const targetLine = Math.min(Math.max((line ?? 1) - 1, 0), Math.max(document.lineCount - 1, 0));
+    const targetColumn = Math.min(Math.max((column ?? 1) - 1, 0), document.lineAt(targetLine).text.length);
+    const position = new vscode.Position(targetLine, targetColumn);
+    const selection = new vscode.Selection(position, position);
+    await vscode.window.showTextDocument(document, {
+      selection,
+      preview: true
+    });
   }
 
   private disposeWebviewDisposables(): void {
@@ -408,6 +441,25 @@ function getFullRpcAgentCommunicationSetting(): boolean {
 function getPiPathSetting(): string | undefined {
   const value = vscode.workspace.getConfiguration('tau').get<string>('piPath', 'pi').trim();
   return value && value !== 'pi' ? value : undefined;
+}
+
+function getSystemPromptSetting(): string | undefined {
+  const value = vscode.workspace.getConfiguration('tau').get<string>('systemPrompt', '').trim();
+  return value || undefined;
+}
+
+function resolveWorkspaceFileUri(filePath: string): vscode.Uri | undefined {
+  if (path.isAbsolute(filePath)) {
+    return vscode.Uri.file(path.normalize(filePath));
+  }
+
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+  if (!workspaceFolder) {
+    return undefined;
+  }
+
+  return vscode.Uri.file(path.resolve(workspaceFolder.uri.fsPath, filePath));
 }
 
 function readCachedSessionMeta(workspaceState: vscode.Memento | undefined): PiChatSessionMetaSnapshot | undefined {

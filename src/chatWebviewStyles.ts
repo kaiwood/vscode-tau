@@ -474,6 +474,12 @@ export const chatWebviewStyles = /* css */ `    :root {
       color: var(--vscode-textLink-foreground);
     }
 
+    .message__body--markdown .tau-file-link {
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
     .message__body--after-activities {
       margin-top: 8px;
     }

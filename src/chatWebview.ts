@@ -24,6 +24,7 @@ export type WebviewMessage =
   | { type: 'refreshSlashCommands' }
   | { type: 'removePromptContext'; id: string }
   | { type: 'abort' }
+  | { type: 'openFile'; path: string; line?: number; column?: number }
   | { type: 'submit'; text: string; streamingBehavior?: WebviewStreamingBehavior }
   | { type: 'setModel'; provider: string; modelId: string }
   | { type: 'setThinkingLevel'; level: string }
@@ -67,6 +68,25 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
         : { type: 'unknown' };
     case 'abort':
       return { type: 'abort' };
+    case 'openFile': {
+      if (typeof value.path !== 'string' || !value.path) {
+        return { type: 'unknown' };
+      }
+
+      const line = parsePositiveInteger(value.line);
+      const column = parsePositiveInteger(value.column);
+
+      if (('line' in value && line === undefined) || ('column' in value && column === undefined)) {
+        return { type: 'unknown' };
+      }
+
+      return {
+        type: 'openFile',
+        path: value.path,
+        ...(line ? { line } : {}),
+        ...(column ? { column } : {})
+      };
+    }
     case 'submit': {
       if (typeof value.text !== 'string') {
         return { type: 'unknown' };
@@ -377,6 +397,10 @@ ${chatWebviewStyles}
 
 function parseStreamingBehavior(value: unknown): WebviewStreamingBehavior | undefined {
   return value === 'steer' || value === 'followUp' ? value : undefined;
+}
+
+function parsePositiveInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

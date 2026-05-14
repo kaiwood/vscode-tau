@@ -116,6 +116,7 @@ export type PiChatControllerOptions = {
   extensionUi?: ExtensionUiRequestUi;
   getCwd?: () => string | undefined;
   getPiPath?: () => string | undefined;
+  getSystemPrompt?: () => string | undefined;
   fullRpcAgentCommunication?: boolean;
   stateScheduler?: StatePublisherScheduler;
   initialSessionMeta?: PiChatSessionMetaSnapshot;
@@ -316,7 +317,7 @@ export class PiChatController {
     }
 
     const promptContext = this.consumePromptContext();
-    const promptText = formatPromptWithIdeContext(submittedPrompt.text, promptContext);
+    const promptText = this.formatPromptForPi(submittedPrompt.text, promptContext);
 
     this.resetAbortState();
     this.postState();
@@ -1193,6 +1194,13 @@ export class PiChatController {
     this.postState();
   }
 
+  private formatPromptForPi(userText: string, context: PiPromptContextAttachment[]): string {
+    return formatPromptWithVisibleSystemPrompt(
+      formatPromptWithIdeContext(userText, context),
+      this.options.getSystemPrompt?.()
+    );
+  }
+
   private async queuePromptWhileBusy(
     text: string,
     streamingBehavior: PiPromptStreamingBehavior
@@ -1205,7 +1213,7 @@ export class PiChatController {
 
     const sessionGeneration = this.session.generation;
     const promptContext = this.consumePromptContext();
-    const promptText = formatPromptWithIdeContext(trimmedText, promptContext);
+    const promptText = this.formatPromptForPi(trimmedText, promptContext);
 
     if (promptContext.length > 0) {
       this.postState();
@@ -1971,6 +1979,24 @@ function formatPromptWithIdeContext(
     contextBody,
     '</ide_context>',
     ideContextEndMarker,
+    '',
+    userText
+  ].join('\n');
+}
+
+function formatPromptWithVisibleSystemPrompt(userText: string, systemPrompt: string | undefined): string {
+  const trimmedPrompt = systemPrompt?.trim();
+
+  if (!trimmedPrompt) {
+    return userText;
+  }
+
+  return [
+    '<!-- tau:visible-system-prompt:start -->',
+    '<system_prompt source="vscode-tau-settings" visibility="user-editable">',
+    trimmedPrompt,
+    '</system_prompt>',
+    '<!-- tau:visible-system-prompt:end -->',
     '',
     userText
   ].join('\n');

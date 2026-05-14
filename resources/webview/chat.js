@@ -59,6 +59,97 @@
     element.innerHTML = window.DOMPurify.sanitize(rendered, {
       USE_PROFILES: { html: true }
     });
+    linkifyFileReferences(element);
+  }
+  function linkifyFileReferences(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => shouldLinkifyTextNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    });
+    const nodes = [];
+    let current = walker.nextNode();
+    while (current) {
+      nodes.push(current);
+      current = walker.nextNode();
+    }
+    for (const node of nodes) {
+      replaceFileReferences(node);
+    }
+  }
+  function shouldLinkifyTextNode(node) {
+    const parent = node.parentElement;
+    if (!parent || !node.textContent?.trim()) {
+      return false;
+    }
+    return !parent.closest("a, code, pre, kbd, samp");
+  }
+  function replaceFileReferences(node) {
+    const text = node.textContent ?? "";
+    const pattern = /((?:\.{1,2}\/|\/|[A-Za-z0-9_-]+\/)[^\s`"'<>()[\]{}]+?\.[A-Za-z0-9][A-Za-z0-9_-]*)(?::(\d+)(?::(\d+))?)?/g;
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let changed = false;
+    let match;
+    while (match = pattern.exec(text)) {
+      const before = text.slice(lastIndex, match.index);
+      if (!isSafeFileReferenceBoundary(before, text, pattern.lastIndex)) {
+        continue;
+      }
+      const parsed = parseFileReferenceMatch(match[0], match[1], match[2], match[3]);
+      if (!parsed) {
+        continue;
+      }
+      if (match.index > lastIndex) {
+        fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      fragment.append(createFileReferenceLink(parsed));
+      changed = true;
+      lastIndex = match.index + parsed.linkText.length;
+      pattern.lastIndex = lastIndex;
+    }
+    if (!changed) {
+      return;
+    }
+    if (lastIndex < text.length) {
+      fragment.append(document.createTextNode(text.slice(lastIndex)));
+    }
+    node.replaceWith(fragment);
+  }
+  function isSafeFileReferenceBoundary(before, text, endIndex) {
+    const previous = before.charAt(before.length - 1);
+    const next = text.charAt(endIndex);
+    return !/[A-Za-z0-9_@:\/.-]/.test(previous) && !/[A-Za-z0-9_\/-]/.test(next);
+  }
+  function parseFileReferenceMatch(fullMatch, pathMatch, lineMatch, columnMatch) {
+    const trailing = pathMatch.match(/[.,;:!?]+$/)?.[0] ?? "";
+    const filePath = trailing ? pathMatch.slice(0, -trailing.length) : pathMatch;
+    if (!filePath || filePath.endsWith("/")) {
+      return void 0;
+    }
+    const line = lineMatch ? Number(lineMatch) : void 0;
+    const column = columnMatch ? Number(columnMatch) : void 0;
+    if (line !== void 0 && (!Number.isInteger(line) || line < 1) || column !== void 0 && (!Number.isInteger(column) || column < 1)) {
+      return void 0;
+    }
+    return {
+      path: filePath,
+      ...line ? { line } : {},
+      ...column ? { column } : {},
+      linkText: fullMatch.slice(0, fullMatch.length - trailing.length)
+    };
+  }
+  function createFileReferenceLink(reference) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.className = "tau-file-link";
+    link.textContent = reference.linkText;
+    link.dataset.filePath = reference.path;
+    if (reference.line) {
+      link.dataset.line = String(reference.line);
+    }
+    if (reference.column) {
+      link.dataset.column = String(reference.column);
+    }
+    return link;
   }
   function highlightCode(code, language) {
     if (!window.hljs || typeof language !== "string" || language.length === 0) {
@@ -435,6 +526,7 @@
   newSessionButton?.addEventListener("click", startNewSession);
   forkSessionButton?.addEventListener("click", () => runSessionSlashCommand("fork"));
   cloneSessionButton?.addEventListener("click", () => runSessionSlashCommand("clone"));
+  messagesElement?.addEventListener("click", handleMessageClick);
   sessionToggleButton?.addEventListener("click", toggleSessionView);
   sessionEditButton?.addEventListener("click", startSessionNameEdit);
   sessionNameInputElement?.addEventListener("blur", () => cancelSessionNameEdit());
@@ -1429,6 +1521,30 @@
     requestAnimationFrame(() => {
       textarea.focus({ preventScroll: true });
     });
+  }
+  function handleMessageClick(event) {
+    const link = eventTargetElement(event)?.closest(".tau-file-link");
+    if (!(link instanceof HTMLElement)) {
+      return;
+    }
+    const filePath = link.dataset.filePath;
+    if (!filePath) {
+      return;
+    }
+    event.preventDefault();
+    vscode.postMessage({
+      type: "openFile",
+      path: filePath,
+      ...parseDatasetPositiveInteger(link.dataset.line, "line"),
+      ...parseDatasetPositiveInteger(link.dataset.column, "column")
+    });
+  }
+  function parseDatasetPositiveInteger(value, key) {
+    if (!value) {
+      return {};
+    }
+    const numberValue = Number(value);
+    return Number.isInteger(numberValue) && numberValue > 0 ? { [key]: numberValue } : {};
   }
   function eventTargetElement(event) {
     return event.target instanceof Element ? event.target : null;

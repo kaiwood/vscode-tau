@@ -169,6 +169,7 @@ for (const button of streamingBehaviorButtonElements) {
 newSessionButton?.addEventListener('click', startNewSession);
 forkSessionButton?.addEventListener('click', () => runSessionSlashCommand('fork'));
 cloneSessionButton?.addEventListener('click', () => runSessionSlashCommand('clone'));
+messagesElement?.addEventListener('click', handleMessageClick);
 sessionToggleButton?.addEventListener('click', toggleSessionView);
 sessionEditButton?.addEventListener('click', startSessionNameEdit);
 sessionNameInputElement?.addEventListener('blur', () => cancelSessionNameEdit());
@@ -1453,6 +1454,37 @@ function focusPromptInput() {
   requestAnimationFrame(() => {
     textarea.focus({ preventScroll: true });
   });
+}
+
+function handleMessageClick(event: MouseEvent): void {
+  const link = eventTargetElement(event)?.closest('.tau-file-link');
+
+  if (!(link instanceof HTMLElement)) {
+    return;
+  }
+
+  const filePath = link.dataset.filePath;
+
+  if (!filePath) {
+    return;
+  }
+
+  event.preventDefault();
+  vscode.postMessage({
+    type: 'openFile',
+    path: filePath,
+    ...parseDatasetPositiveInteger(link.dataset.line, 'line'),
+    ...parseDatasetPositiveInteger(link.dataset.column, 'column')
+  });
+}
+
+function parseDatasetPositiveInteger(value: string | undefined, key: 'line' | 'column'): { line?: number; column?: number } {
+  if (!value) {
+    return {};
+  }
+
+  const numberValue = Number(value);
+  return Number.isInteger(numberValue) && numberValue > 0 ? { [key]: numberValue } : {};
 }
 
 function eventTargetElement(event: Event): Element | null {
