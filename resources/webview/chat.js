@@ -649,6 +649,9 @@
     }
     render();
     applyComposerTextFromState();
+    if ((previousViewMode === "sessions" || previousViewMode === "tree") && state.viewMode === "chat") {
+      focusPromptInput();
+    }
   });
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -750,11 +753,7 @@
     if ((state.viewMode === "sessions" || state.viewMode === "tree") && handleSessionListKeydown(event)) {
       return;
     }
-    if (event.key === "Escape") {
-      dismissSlashMenu();
-      closeModelMenu();
-      closeSessionCommandMenu();
-      cancelSessionNameEdit();
+    if (event.key === "Escape" && handleChatEscape(event)) {
       return;
     }
     if (!isNewSessionShortcut(event)) {
@@ -1100,6 +1099,36 @@
       return void 0;
     }
     return state.sessions.find((session) => session.path === state.currentSessionFile) ?? state.sessions.find((session) => session.current);
+  }
+  function handleChatEscape(event) {
+    const hadSlashMenu = slashMenuOpen;
+    const hadModelMenu = modelMenuElement?.hasAttribute("open") ?? false;
+    const hadSessionCommandMenu = !sessionMenuElement.hidden;
+    const wasSessionNameEditing = sessionNameEditing;
+    if (hadSlashMenu) {
+      dismissSlashMenu();
+    }
+    if (hadModelMenu) {
+      closeModelMenu();
+    }
+    if (hadSessionCommandMenu) {
+      closeSessionCommandMenu();
+    }
+    if (wasSessionNameEditing) {
+      cancelSessionNameEdit();
+    }
+    if (hadSlashMenu || hadModelMenu || hadSessionCommandMenu || wasSessionNameEditing) {
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    }
+    if (document.activeElement === textarea && state.viewMode === "chat") {
+      event.preventDefault();
+      event.stopPropagation();
+      vscode.postMessage({ type: "showSessions" });
+      return true;
+    }
+    return false;
   }
   function handleSessionListKeydown(event) {
     if (state.viewMode !== "sessions" && state.viewMode !== "tree") {
