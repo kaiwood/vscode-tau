@@ -1142,7 +1142,7 @@
     contextElement.hidden = state.contextUsageLabel.length === 0;
     const label = state.modelLabel || "Select model";
     modelElement.textContent = label;
-    modelElement.className = "composer__model" + (state.metadataRefreshing ? " composer__model--refreshing" : "");
+    modelElement.className = "composer__model";
     modelElement.title = state.metadataRefreshing ? label + " (refreshing...)" : state.modelOptions.length === 0 && !state.busy ? "Load model settings" : label;
     modelElement.disabled = state.busy;
     modelElement.setAttribute("aria-busy", state.metadataRefreshing ? "true" : "false");

@@ -930,7 +930,7 @@ function syncModelLabel() {
 
   const label = state.modelLabel || 'Select model';
   modelElement.textContent = label;
-  modelElement.className = 'composer__model' + (state.metadataRefreshing ? ' composer__model--refreshing' : '');
+  modelElement.className = 'composer__model';
   modelElement.title = state.metadataRefreshing
     ? label + ' (refreshing...)'
     : state.modelOptions.length === 0 && !state.busy

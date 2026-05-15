@@ -211,7 +211,7 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('data-streaming-behavior="followUp"'));
     assert.ok(html.includes('aria-autocomplete="list"'));
     assert.ok(html.includes('placeholder="Write your prompt…"'));
-    assert.ok(html.includes('composer__model--refreshing'));
+    assert.ok(!html.includes('composer__model--refreshing'));
     assert.ok(html.includes('class="composer__select composer__thinking-select"'));
     assert.ok(html.includes('class="composer__select composer__model-select"'));
     assert.ok(html.includes('class="composer__button composer__submit"'));
