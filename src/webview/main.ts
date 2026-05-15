@@ -291,6 +291,10 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
+  if (handleChatPageScroll(event)) {
+    return;
+  }
+
   if (!isNewSessionShortcut(event)) {
     return;
   }
@@ -920,6 +924,29 @@ function selectTreeIndex(index: number): void {
   }
 
   vscode.postMessage({ type: 'selectTreeEntry', entryId: treeItem.entryId });
+}
+
+function handleChatPageScroll(event: KeyboardEvent): boolean {
+  if (state.viewMode !== 'chat' || (event.key !== 'PageUp' && event.key !== 'PageDown')) {
+    return false;
+  }
+
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+    return false;
+  }
+
+  const target = eventTargetElement(event);
+
+  if (target instanceof HTMLSelectElement || target instanceof HTMLInputElement) {
+    return false;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  const direction = event.key === 'PageUp' ? -1 : 1;
+  const page = Math.max(80, Math.floor(messagesElement.clientHeight * 0.85));
+  messagesElement.scrollBy({ top: direction * page, behavior: 'auto' });
+  return true;
 }
 
 function clampTreeIndex(index: number): number {
