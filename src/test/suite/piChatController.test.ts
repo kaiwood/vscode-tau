@@ -237,7 +237,45 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
-  test('session switcher blocks deleting the current session', async () => {
+  test('session switcher deletes the current session and starts a fresh empty session', async () => {
+    const deleted: Array<{ path: string; name: string }> = [];
+    const sessionFiles: Array<string | undefined> = [];
+    const harness = createControllerHarness([new FakePiClient()], {
+      initialSessionFile: '/sessions/current.jsonl',
+      onSessionFileChange: (sessionFile) => sessionFiles.push(sessionFile),
+      listSessions: async () => [{
+        path: '/sessions/current.jsonl',
+        id: 'current',
+        cwd: '/workspace',
+        created: '2026-01-01T00:00:00.000Z',
+        modified: '2026-01-01T00:01:00.000Z',
+        messageCount: 1,
+        firstMessage: 'Current question',
+        depth: 0,
+        isLast: true,
+        ancestorContinues: [],
+        current: true
+      }],
+      deleteSession: async (path, name) => {
+        deleted.push({ path, name });
+        return true;
+      }
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'showSessions' });
+    await harness.controller.handleWebviewMessage({ type: 'deleteSession', sessionPath: '/sessions/current.jsonl' });
+    await flushPromises();
+
+    assert.deepStrictEqual(deleted, [{ path: '/sessions/current.jsonl', name: 'Current question' }]);
+    assert.deepStrictEqual(harness.toasts, ['Session moved to Trash.']);
+    assert.strictEqual(lastState(harness).currentSessionFile, undefined);
+    assert.deepStrictEqual(lastState(harness).messages, []);
+    assert.deepStrictEqual(sessionFiles, [undefined]);
+    assert.deepStrictEqual(harness.clientOptions, [{ cwd: undefined }]);
+    harness.controller.dispose();
+  });
+
+  test('session switcher blocks deleting a running session', async () => {
     const deleted: string[] = [];
     const harness = createControllerHarness([new FakePiClient()], {
       initialSessionFile: '/sessions/current.jsonl',
@@ -252,7 +290,8 @@ suite('PiChatController', () => {
         depth: 0,
         isLast: true,
         ancestorContinues: [],
-        current: true
+        current: true,
+        liveStatus: 'running'
       }],
       deleteSession: async (path) => {
         deleted.push(path);
@@ -264,7 +303,7 @@ suite('PiChatController', () => {
     await harness.controller.handleWebviewMessage({ type: 'deleteSession', sessionPath: '/sessions/current.jsonl' });
 
     assert.deepStrictEqual(deleted, []);
-    assert.deepStrictEqual(harness.notifications, [{ message: 'Switch away from the current session before deleting it.', type: 'warning' }]);
+    assert.deepStrictEqual(harness.notifications, [{ message: 'Wait for the session to finish before deleting it.', type: 'warning' }]);
     harness.controller.dispose();
   });
 

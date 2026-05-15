@@ -893,7 +893,7 @@ function deleteSessionIndex(index: number): void {
 }
 
 function canDeleteSession(session: SessionItem): boolean {
-  return !session.current && session.liveStatus !== 'running';
+  return session.liveStatus !== 'running' && !(session.current && state.busy);
 }
 
 function clampSessionIndex(index: number): number {

@@ -820,14 +820,11 @@ export class PiChatController {
       return;
     }
 
-    const session = this.sessions.find((entry) => normalizeSessionPath(entry.path) === normalizeSessionPath(trimmedPath));
+    const normalizedPath = normalizeSessionPath(trimmedPath);
+    const session = this.sessions.find((entry) => normalizeSessionPath(entry.path) === normalizedPath);
+    const isCurrentSession = Boolean(session?.current) || normalizeSessionPath(this.currentSessionFile) === normalizedPath;
 
-    if (session?.current || normalizeSessionPath(this.currentSessionFile) === normalizeSessionPath(trimmedPath)) {
-      this.options.showNotification('Switch away from the current session before deleting it.', 'warning');
-      return;
-    }
-
-    if (session?.liveStatus === 'running') {
+    if (session?.liveStatus === 'running' || (isCurrentSession && this.session.isBusy)) {
       this.options.showNotification('Wait for the session to finish before deleting it.', 'warning');
       return;
     }
@@ -848,8 +845,15 @@ export class PiChatController {
         return;
       }
 
-      this.sessions = this.sessions.filter((entry) => normalizeSessionPath(entry.path) !== normalizeSessionPath(trimmedPath));
+      this.sessions = this.sessions.filter((entry) => normalizeSessionPath(entry.path) !== normalizedPath);
       this.options.showToast?.('Session moved to Trash.');
+
+      if (isCurrentSession) {
+        this.sessionsRefreshing = false;
+        this.startNewSession();
+        return;
+      }
+
       await this.refreshSessions();
     } catch (error) {
       this.sessionsError = getErrorMessage(error);

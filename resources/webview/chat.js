@@ -1217,7 +1217,7 @@
     vscode.postMessage({ type: "deleteSession", sessionPath: session.path });
   }
   function canDeleteSession(session) {
-    return !session.current && session.liveStatus !== "running";
+    return session.liveStatus !== "running" && !(session.current && state.busy);
   }
   function clampSessionIndex(index) {
     const count = Array.isArray(state.sessions) ? state.sessions.length : 0;

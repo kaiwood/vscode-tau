@@ -174,10 +174,13 @@ export class TauSessionManager {
     }
 
     const wasBusy = session.state?.busy ?? false;
+    const previousSessionFile = getSessionFile(session.sessionFile);
+    const nextSessionFile = getSessionFile(message.currentSessionFile);
+    const resetToEmptySession = Boolean(previousSessionFile) && !nextSessionFile && message.messages.length === 0;
     session.state = message;
-    session.sessionFile = getSessionFile(message.currentSessionFile) ?? session.sessionFile;
+    session.sessionFile = nextSessionFile;
     session.status = getStatus(message, session.status);
-    session.title = getOpenSessionTitle(message, session.title);
+    session.title = getOpenSessionTitle(message, resetToEmptySession ? 'New session' : session.title);
 
     if (id !== this.activeSessionId && (message.busy || wasBusy !== message.busy || message.messages.length > 0)) {
       session.unread = true;
