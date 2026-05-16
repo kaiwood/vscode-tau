@@ -13,13 +13,13 @@ import {
   type PiRpcClientFactory
 } from './piChatController';
 import { PiRpcClient } from './piRpcClient';
+import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessionDiffSnapshot } from './diff/sessionDiffStorage';
 import { getSessionDiffDocumentContext, SessionDiffViewer } from './diff/sessionDiffViewer';
 import { ShikiCodeRenderer } from './shikiCodeRenderer';
 import { TauSessionManager } from './tauSessionManager';
 import { listPiSessions } from './piSessionList';
 import { runReadyScript } from './readyScript';
 import type { WebviewModelOption } from './chatWebview';
-import type { SessionDiffSnapshot } from './diff/sessionDiffTracker';
 
 export const chatViewType = 'tau.chatView';
 export type { PiRpcClientLike } from './piChatController';
@@ -27,7 +27,6 @@ export type { PiRpcClientLike } from './piChatController';
 const cachedSessionMetaStorageKey = 'tau.cachedSessionMeta';
 const cachedModelMetaStorageKey = 'tau.cachedModelMeta';
 const currentSessionFileStorageKey = 'tau.currentSessionFile';
-const sessionDiffSnapshotsStorageKey = 'tau.sessionDiffSnapshots';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
 
@@ -84,8 +83,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       initialSessionFile: readCurrentSessionFile(this.workspaceState),
       onSessionMetaChange: (metadata) => this.writeCachedSessionMeta(metadata),
       onSessionFileChange: (sessionFile) => this.writeCurrentSessionFile(sessionFile),
-      loadSessionDiffSnapshot: (sessionFile) => this.readSessionDiffSnapshot(sessionFile),
-      saveSessionDiffSnapshot: (sessionFile, snapshot) => this.writeSessionDiffSnapshot(sessionFile, snapshot),
+      loadSessionDiffSnapshot: (sessionFile) => readSessionDiffSnapshot(this.workspaceState, sessionFile),
+      saveSessionDiffSnapshot: (sessionFile, snapshot) => writeSessionDiffSnapshot(this.workspaceState, sessionFile, snapshot),
       listSessions: (cwd, currentSessionFile) => listPiSessions({ cwd, currentSessionFile }),
       deleteSession: (sessionPath, displayName) => this.deleteSession(sessionPath, displayName),
       showSessionChanges: (sessionPath, displayName) => this.sessionDiffViewer.showSessionChanges(sessionPath, displayName)
@@ -432,19 +431,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     void this.workspaceState.update(currentSessionFileStorageKey, sessionFile || undefined).then(undefined, () => undefined);
   }
 
-  private readSessionDiffSnapshot(sessionFile: string): SessionDiffSnapshot | undefined {
-    return readSessionDiffSnapshots(this.workspaceState)[sessionFile];
-  }
-
-  private writeSessionDiffSnapshot(sessionFile: string, snapshot: SessionDiffSnapshot): void {
-    if (!this.workspaceState) {
-      return;
-    }
-
-    const snapshots = readSessionDiffSnapshots(this.workspaceState);
-    snapshots[sessionFile] = snapshot;
-    void this.workspaceState.update(sessionDiffSnapshotsStorageKey, snapshots).then(undefined, () => undefined);
-  }
 }
 
 function createPromptContextFromEditor(editor: vscode.TextEditor): PiPromptContextInput[] {
@@ -547,23 +533,6 @@ function getOutputColorsSetting(): boolean {
   return vscode.workspace.getConfiguration('tau').get<boolean>('outputColors', true);
 }
 
-function createSessionDiffStatsFileWatcher(onChange: () => void): vscode.Disposable {
-  const watcher = vscode.workspace.createFileSystemWatcher('**/*');
-  const disposables = [
-    watcher,
-    watcher.onDidChange(onChange),
-    watcher.onDidCreate(onChange),
-    watcher.onDidDelete(onChange),
-    vscode.workspace.onDidSaveTextDocument(onChange)
-  ];
-
-  return new vscode.Disposable(() => {
-    for (const disposable of disposables) {
-      disposable.dispose();
-    }
-  });
-}
-
 function getReadyScriptSetting(): string | undefined {
   const value = vscode.workspace.getConfiguration('tau').get<string>('readyScript', '').trim();
   return value || undefined;
@@ -603,41 +572,6 @@ function readCachedSessionMeta(workspaceState: vscode.Memento | undefined): PiCh
 function readCurrentSessionFile(workspaceState: vscode.Memento | undefined): string | undefined {
   const value = workspaceState?.get<unknown>(currentSessionFileStorageKey);
   return typeof value === 'string' && value ? value : undefined;
-}
-
-function readSessionDiffSnapshots(workspaceState: vscode.Memento | undefined): Record<string, SessionDiffSnapshot> {
-  const value = workspaceState?.get<unknown>(sessionDiffSnapshotsStorageKey);
-
-  if (!isRecord(value)) {
-    return {};
-  }
-
-  const snapshots: Record<string, SessionDiffSnapshot> = {};
-
-  for (const [sessionFile, snapshot] of Object.entries(value)) {
-    const parsed = parseSessionDiffSnapshot(snapshot);
-
-    if (parsed) {
-      snapshots[sessionFile] = parsed;
-    }
-  }
-
-  return snapshots;
-}
-
-function parseSessionDiffSnapshot(value: unknown): SessionDiffSnapshot | undefined {
-  if (!isRecord(value) || !isRecord(value.stats)) {
-    return undefined;
-  }
-
-  const addedLines = normalizeLineCount(value.stats.addedLines);
-  const removedLines = normalizeLineCount(value.stats.removedLines);
-
-  return { stats: { addedLines, removedLines } };
-}
-
-function normalizeLineCount(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 }
 
 function parseCachedSessionMeta(value: unknown): PiChatSessionMetaSnapshot | undefined {
