@@ -34,6 +34,7 @@ export const chatWebviewStyles = /* css */ `    :root {
     .pi-view {
       position: relative;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 100%;
       max-width: 100%;
@@ -46,6 +47,8 @@ export const chatWebviewStyles = /* css */ `    :root {
 
     .pi-toolbar {
       position: relative;
+      grid-row: 1;
+      grid-column: 1;
       display: flex;
       align-items: center;
       gap: 2px;
@@ -283,13 +286,61 @@ export const chatWebviewStyles = /* css */ `    :root {
     }
 
 
-    .messages {
+    .messages,
+    .sessions {
+      grid-row: 2;
+      grid-column: 1;
+      align-self: stretch;
+      justify-self: stretch;
+      width: 100%;
+      height: 100%;
       max-width: 100vw;
       min-width: 0;
       min-height: 0;
-      padding: 8px 20px calc(14px + 4lh) 20px;
       overflow-x: hidden;
       overflow-y: auto;
+      transition: transform 190ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+
+    .messages {
+      padding: 8px 20px calc(14px + 4lh) 20px;
+      transform: translate3d(0, 0, 0);
+      pointer-events: auto;
+    }
+
+    .sessions {
+      padding: 6px 12px 12px 8px;
+      outline: none;
+      transform: translate3d(100%, 0, 0);
+      pointer-events: none;
+    }
+
+    .pi-view--chat .messages {
+      transform: translate3d(0, 0, 0);
+      pointer-events: auto;
+    }
+
+    .pi-view--chat .sessions {
+      transform: translate3d(100%, 0, 0);
+      pointer-events: none;
+    }
+
+    .pi-view--list .messages {
+      transform: translate3d(-100%, 0, 0);
+      pointer-events: none;
+    }
+
+    .pi-view--list .sessions {
+      transform: translate3d(0, 0, 0);
+      pointer-events: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .messages,
+      .sessions {
+        transition: none;
+      }
     }
 
     .empty-state {
@@ -301,16 +352,6 @@ export const chatWebviewStyles = /* css */ `    :root {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-    }
-
-    .sessions {
-      max-width: 100vw;
-      min-width: 0;
-      min-height: 0;
-      padding: 6px 12px 12px 8px;
-      overflow-x: hidden;
-      overflow-y: auto;
-      outline: none;
     }
 
     .sessions__header,
@@ -862,6 +903,8 @@ export const chatWebviewStyles = /* css */ `    :root {
 
     .composer {
       position: relative;
+      grid-row: 3;
+      grid-column: 1;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) 36px;
       grid-template-rows: minmax(22px, auto) 36px;

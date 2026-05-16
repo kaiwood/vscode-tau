@@ -327,7 +327,7 @@ ${chatWebviewStyles}
   </style>
 </head>
 <body>
-  <main class="pi-view">
+  <main class="pi-view pi-view--chat">
     <header class="pi-toolbar">
       <button class="pi-toolbar__sessions" type="button" aria-label="Show sessions" title="Show sessions">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">

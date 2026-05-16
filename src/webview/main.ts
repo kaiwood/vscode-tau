@@ -21,6 +21,7 @@ import type {
 
 const vscode = acquireVsCodeApi();
 const {
+  viewElement,
   toolbarTitleElement,
   toolbarTitleTextElement,
   sessionNameInputElement,
@@ -456,8 +457,15 @@ function render() {
     openSessionListMenuCommandIndex = 0;
     stopSessionListNameEdit();
   }
-  messagesElement.hidden = isListView;
-  sessionsElement.hidden = !isListView;
+  viewElement.classList.toggle('pi-view--list', isListView);
+  viewElement.classList.toggle('pi-view--chat', !isListView);
+  messagesElement.hidden = false;
+  sessionsElement.hidden = false;
+  messagesElement.setAttribute('aria-hidden', isListView ? 'true' : 'false');
+  sessionsElement.setAttribute('aria-hidden', isListView ? 'false' : 'true');
+  messagesElement.inert = isListView;
+  sessionsElement.inert = !isListView;
+  sessionsElement.tabIndex = isListView ? 0 : -1;
   form.classList.toggle('composer--list-hidden', isListView);
   form.setAttribute('aria-hidden', isListView ? 'true' : 'false');
   form.inert = isListView;
