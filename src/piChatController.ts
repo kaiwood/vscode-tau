@@ -52,6 +52,7 @@ import {
   isBuiltinSlashCommand,
   isSupportedBuiltinSlashCommand
 } from './slashCommands';
+import { ReadyScriptState } from './readyScriptState';
 import { SessionDiffController } from './diff/sessionDiffController';
 import type { SessionDiffSnapshot } from './diff/sessionDiffTracker';
 
@@ -143,11 +144,6 @@ type DisposableLike = {
   dispose(): void;
 };
 
-type ReadyScriptArmSnapshot = {
-  currentRunArmed: boolean;
-  queuedRuns: number;
-};
-
 export class PiChatController {
   private client: PiRpcClientLike | undefined;
   private assistantStreamId = 0;
@@ -190,8 +186,7 @@ export class PiChatController {
   private slashCommandsRefreshInFlight: { generation: number; promise: Promise<void> } | undefined;
   private compacting = false;
   private readonly sessionDiffController: SessionDiffController;
-  private readyScriptCurrentRunArmed = false;
-  private readyScriptQueuedRuns = 0;
+  private readonly readyScriptState = new ReadyScriptState();
   private readonly liveToolCallsById = new Map<string, RestoredToolCall>();
   private readonly session = new ChatSession();
   private readonly clientDisposables: DisposableLike[] = [];
@@ -1999,38 +1994,23 @@ export class PiChatController {
     this.resetReadyScriptArming();
   }
 
-  private armReadyScriptForUserPrompt(streamingBehavior?: PiPromptStreamingBehavior): ReadyScriptArmSnapshot {
-    const snapshot = {
-      currentRunArmed: this.readyScriptCurrentRunArmed,
-      queuedRuns: this.readyScriptQueuedRuns
-    };
-
-    if (streamingBehavior === 'followUp' && this.session.isBusy) {
-      this.readyScriptQueuedRuns += 1;
-    } else {
-      this.readyScriptCurrentRunArmed = true;
-    }
-
-    return snapshot;
+  private armReadyScriptForUserPrompt(streamingBehavior?: PiPromptStreamingBehavior) {
+    return this.readyScriptState.armForUserPrompt({
+      streamingBehavior,
+      busy: this.session.isBusy
+    });
   }
 
-  private restoreReadyScriptArming(snapshot: ReadyScriptArmSnapshot): void {
-    this.readyScriptCurrentRunArmed = snapshot.currentRunArmed;
-    this.readyScriptQueuedRuns = snapshot.queuedRuns;
+  private restoreReadyScriptArming(snapshot: ReturnType<PiChatController['armReadyScriptForUserPrompt']>): void {
+    this.readyScriptState.restore(snapshot);
   }
 
   private resetReadyScriptArming(): void {
-    this.readyScriptCurrentRunArmed = false;
-    this.readyScriptQueuedRuns = 0;
+    this.readyScriptState.reset();
   }
 
   private armQueuedReadyScriptRun(): void {
-    if (this.readyScriptCurrentRunArmed || this.readyScriptQueuedRuns === 0) {
-      return;
-    }
-
-    this.readyScriptCurrentRunArmed = true;
-    this.readyScriptQueuedRuns -= 1;
+    this.readyScriptState.armQueuedRun();
   }
 
   private runReadyScript(): boolean {
@@ -2111,8 +2091,7 @@ export class PiChatController {
         this.appendAbortNoticeIfNeeded();
         this.session.handleAgentEnd();
         this.resetAbortState();
-        if (this.readyScriptCurrentRunArmed) {
-          this.readyScriptCurrentRunArmed = false;
+        if (this.readyScriptState.consumeCurrentRun()) {
           this.runReadyScript();
         }
         void this.refreshSessionDiffStats();
