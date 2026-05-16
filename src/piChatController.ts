@@ -158,6 +158,11 @@ type DisposableLike = {
   dispose(): void;
 };
 
+type ReadyScriptArmSnapshot = {
+  currentRunArmed: boolean;
+  queuedRuns: number;
+};
+
 export class PiChatController {
   private client: PiRpcClientLike | undefined;
   private assistantStreamId = 0;
@@ -203,8 +208,8 @@ export class PiChatController {
   private sessionDiffStats = emptySessionDiffStats();
   private sessionDiffRefreshInFlight: Promise<void> | undefined;
   private readonly sessionDiffTracker: SessionDiffTracker;
-  private readyScriptClient: PiRpcClientLike | undefined;
-  private resumedClient: PiRpcClientLike | undefined;
+  private readyScriptCurrentRunArmed = false;
+  private readyScriptQueuedRuns = 0;
   private readonly liveToolCallsById = new Map<string, RestoredToolCall>();
   private readonly session = new ChatSession();
   private readonly clientDisposables: DisposableLike[] = [];
@@ -387,9 +392,12 @@ export class PiChatController {
     void this.refreshSessionDiffStats();
     this.postState();
 
+    const previousReadyScriptArmed = this.armReadyScriptForUserPrompt();
+
     try {
       await this.getClient().prompt(promptText);
     } catch (error) {
+      this.restoreReadyScriptArming(previousReadyScriptArmed);
       if (submittedPrompt.sessionGeneration !== this.session.generation) {
         return;
       }
@@ -434,6 +442,7 @@ export class PiChatController {
     this.shouldRestoreInitialSessionHistory = false;
     this.sessionHistoryLoading = false;
     this.restartClientWhenIdle = false;
+    this.resetReadyScriptArming();
     this.options.onSessionFileChange?.(undefined);
     this.resetSessionMeta();
     this.disposeClient();
@@ -1230,8 +1239,6 @@ export class PiChatController {
       return;
     }
 
-    this.maybeRunReadyScript(client);
-
     const sessionFileChanged = this.applyCurrentSessionFile(getSessionFile(state));
     const sessionNameChanged = this.applyCurrentSessionName(state.sessionName);
 
@@ -1585,6 +1592,8 @@ export class PiChatController {
       this.postState();
     }
 
+    const previousReadyScriptArmed = this.armReadyScriptForUserPrompt(streamingBehavior);
+
     try {
       await this.getClient().prompt(promptText, streamingBehavior);
 
@@ -1600,6 +1609,8 @@ export class PiChatController {
       });
       this.postState();
     } catch (error) {
+      this.restoreReadyScriptArming(previousReadyScriptArmed);
+
       if (sessionGeneration !== this.session.generation) {
         return;
       }
@@ -2098,22 +2109,41 @@ export class PiChatController {
 
     this.client?.dispose();
     this.client = undefined;
-    this.readyScriptClient = undefined;
-    this.resumedClient = undefined;
+    this.resetReadyScriptArming();
   }
 
-  private maybeRunReadyScript(client: PiRpcClientLike): void {
-    if (this.readyScriptClient === client) {
+  private armReadyScriptForUserPrompt(streamingBehavior?: PiPromptStreamingBehavior): ReadyScriptArmSnapshot {
+    const snapshot = {
+      currentRunArmed: this.readyScriptCurrentRunArmed,
+      queuedRuns: this.readyScriptQueuedRuns
+    };
+
+    if (streamingBehavior === 'followUp' && this.session.isBusy) {
+      this.readyScriptQueuedRuns += 1;
+    } else {
+      this.readyScriptCurrentRunArmed = true;
+    }
+
+    return snapshot;
+  }
+
+  private restoreReadyScriptArming(snapshot: ReadyScriptArmSnapshot): void {
+    this.readyScriptCurrentRunArmed = snapshot.currentRunArmed;
+    this.readyScriptQueuedRuns = snapshot.queuedRuns;
+  }
+
+  private resetReadyScriptArming(): void {
+    this.readyScriptCurrentRunArmed = false;
+    this.readyScriptQueuedRuns = 0;
+  }
+
+  private armQueuedReadyScriptRun(): void {
+    if (this.readyScriptCurrentRunArmed || this.readyScriptQueuedRuns === 0) {
       return;
     }
 
-    this.readyScriptClient = client;
-
-    if (this.resumedClient === client) {
-      return;
-    }
-
-    this.runReadyScript();
+    this.readyScriptCurrentRunArmed = true;
+    this.readyScriptQueuedRuns -= 1;
   }
 
   private runReadyScript(): boolean {
@@ -2161,9 +2191,6 @@ export class PiChatController {
     const sessionGeneration = this.session.generation;
     this.client = client;
 
-    if (sessionFile) {
-      this.resumedClient = client;
-    }
     this.clientDisposables.push(
       { dispose: client.onEvent((event) => {
         if (sessionGeneration === this.session.generation) {
@@ -2183,6 +2210,7 @@ export class PiChatController {
   private handleRpcEvent(event: RpcEvent): void {
     switch (event.type) {
       case 'agent_start':
+        this.armQueuedReadyScriptRun();
         this.session.handleAgentStart();
         void this.refreshSessionDiffStats();
         this.applyRpcActivity(event);
@@ -2196,8 +2224,9 @@ export class PiChatController {
         this.appendAbortNoticeIfNeeded();
         this.session.handleAgentEnd();
         this.resetAbortState();
-        if (this.runReadyScript() && this.client) {
-          this.readyScriptClient = this.client;
+        if (this.readyScriptCurrentRunArmed) {
+          this.readyScriptCurrentRunArmed = false;
+          this.runReadyScript();
         }
         void this.refreshSessionDiffStats();
         this.postState();

@@ -60,7 +60,7 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
-  test('ready script runs once after live state refresh succeeds', async () => {
+  test('ready script does not run after live state refresh succeeds', async () => {
     const readyScripts: Array<{ scriptPath: string; cwd: string | undefined }> = [];
     const client = new FakePiClient();
     const harness = createControllerHarness([client], {
@@ -72,11 +72,27 @@ suite('PiChatController', () => {
     await harness.controller.refreshSessionMeta({ startClient: true });
     await harness.controller.refreshSessionMeta({ startClient: true, force: true });
 
-    assert.deepStrictEqual(readyScripts, [{ scriptPath: 'scripts/ready.sh', cwd: '/workspace' }]);
+    assert.deepStrictEqual(readyScripts, []);
     harness.controller.dispose();
   });
 
-  test('ready script runs after each agent run completes', async () => {
+  test('ready script does not run when a new session is created', async () => {
+    const readyScripts: Array<{ scriptPath: string; cwd: string | undefined }> = [];
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client], {
+      cwd: '/workspace',
+      getReadyScript: () => 'scripts/ready.sh',
+      runReadyScript: (scriptPath, cwd) => readyScripts.push({ scriptPath, cwd })
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+
+    assert.deepStrictEqual(readyScripts, []);
+    harness.controller.dispose();
+  });
+
+  test('ready script runs after each user-prompted agent run completes', async () => {
     const readyScripts: Array<{ scriptPath: string; cwd: string | undefined }> = [];
     const client = new FakePiClient();
     const harness = createControllerHarness([client], {
@@ -88,14 +104,46 @@ suite('PiChatController', () => {
     await harness.controller.refreshSessionMeta({ startClient: true });
     client.emit({ type: 'agent_end', messages: [] });
     await flushPromises();
+    assert.deepStrictEqual(readyScripts, []);
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'first prompt' });
+    client.emit({ type: 'agent_end', messages: [] });
+    await flushPromises();
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'second prompt' });
     client.emit({ type: 'agent_end', messages: [] });
     await flushPromises();
 
     assert.deepStrictEqual(readyScripts, [
       { scriptPath: 'scripts/ready.sh', cwd: '/workspace' },
-      { scriptPath: 'scripts/ready.sh', cwd: '/workspace' },
       { scriptPath: 'scripts/ready.sh', cwd: '/workspace' }
     ]);
+    harness.controller.dispose();
+  });
+
+  test('queued follow-up arms the ready script only after the follow-up run starts', async () => {
+    const readyScripts: Array<{ scriptPath: string; cwd: string | undefined }> = [];
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client], {
+      cwd: '/workspace',
+      getReadyScript: () => 'scripts/ready.sh',
+      runReadyScript: (scriptPath, cwd) => readyScripts.push({ scriptPath, cwd })
+    });
+
+    await harness.controller.refreshSessionMeta({ startClient: true });
+    client.emit({ type: 'agent_start' });
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'run next', streamingBehavior: 'followUp' });
+
+    client.emit({ type: 'agent_end', messages: [] });
+    await flushPromises();
+
+    assert.deepStrictEqual(readyScripts, []);
+
+    client.emit({ type: 'agent_start' });
+    client.emit({ type: 'agent_end', messages: [] });
+    await flushPromises();
+
+    assert.deepStrictEqual(readyScripts, [{ scriptPath: 'scripts/ready.sh', cwd: '/workspace' }]);
     harness.controller.dispose();
   });
 
@@ -104,12 +152,14 @@ suite('PiChatController', () => {
     const failingClient = new FakePiClient({
       stateResult: new Promise((_resolve, reject) => setImmediate(() => reject(new Error('state failed'))))
     });
-    const disabledHarness = createControllerHarness([new FakePiClient()], {
+    const disabledClient = new FakePiClient();
+    const unsetClient = new FakePiClient();
+    const disabledHarness = createControllerHarness([disabledClient], {
       getReadyScript: () => 'scripts/ready.sh',
       getReadyScriptEnabled: () => false,
       runReadyScript: (scriptPath, cwd) => readyScripts.push({ scriptPath, cwd })
     });
-    const unsetHarness = createControllerHarness([new FakePiClient()], {
+    const unsetHarness = createControllerHarness([unsetClient], {
       getReadyScript: () => '',
       runReadyScript: (scriptPath, cwd) => readyScripts.push({ scriptPath, cwd })
     });
@@ -118,8 +168,10 @@ suite('PiChatController', () => {
       runReadyScript: (scriptPath, cwd) => readyScripts.push({ scriptPath, cwd })
     });
 
-    await disabledHarness.controller.refreshSessionMeta({ startClient: true });
-    await unsetHarness.controller.refreshSessionMeta({ startClient: true });
+    await disabledHarness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+    await unsetHarness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+    disabledClient.emit({ type: 'agent_end', messages: [] });
+    unsetClient.emit({ type: 'agent_end', messages: [] });
     await failingHarness.controller.refreshSessionMeta({ startClient: true });
 
     assert.deepStrictEqual(readyScripts, []);
@@ -227,7 +279,7 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
-  test('ready script skips resume readiness but still runs after resumed agent completes', async () => {
+  test('ready script skips resume readiness and unprompted resumed agent completion', async () => {
     const readyScripts: Array<{ scriptPath: string; cwd: string | undefined }> = [];
     const client = new FakePiClient({
       state: {
@@ -248,6 +300,12 @@ suite('PiChatController', () => {
 
     assert.deepStrictEqual(readyScripts, []);
 
+    client.emit({ type: 'agent_end', messages: [] });
+    await flushPromises();
+
+    assert.deepStrictEqual(readyScripts, []);
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'continue' });
     client.emit({ type: 'agent_end', messages: [] });
     await flushPromises();
 
