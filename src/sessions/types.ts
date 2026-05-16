@@ -1,4 +1,4 @@
-import type { WebviewStateMessage } from '../sidebar/chatWebview';
+import type { WebviewStateMessage } from '../sidebar/types';
 import type { PiChatController, PiChatControllerOptions } from '../piChatController';
 
 export type TauSessionManagerOptions = PiChatControllerOptions;

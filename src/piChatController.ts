@@ -1,14 +1,14 @@
 import { ChatSession, type ChatActivityInput, type ChatMessage } from './chatSession';
 import { listPiSessionTree } from './sessions/piSessionTree';
-import {
-  createWebviewStateMessage,
-  type WebviewMessage,
-  type WebviewModelOption,
-  type WebviewSessionItemCommand,
-  type WebviewSessionItem,
-  type WebviewStateMessage,
-  type WebviewTreeItem
-} from './sidebar/chatWebview';
+import { createWebviewStateMessage } from './sidebar/chatWebview';
+import type {
+  WebviewMessage,
+  WebviewModelOption,
+  WebviewSessionItem,
+  WebviewSessionItemCommand,
+  WebviewStateMessage,
+  WebviewTreeItem
+} from './sidebar/types';
 import {
   StatePublisher,
   type StatePublisherScheduler

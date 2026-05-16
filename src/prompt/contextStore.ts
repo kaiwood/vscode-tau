@@ -1,4 +1,4 @@
-import type { WebviewPromptContextAttachment } from '../sidebar/chatWebview';
+import type { WebviewPromptContextAttachment } from '../sidebar/types';
 import type { PiPromptContextAttachment, PiPromptContextInput } from './types';
 
 export class PromptContextStore {
