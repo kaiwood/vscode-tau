@@ -1,4 +1,4 @@
-import type { WebviewModelOption, WebviewSlashCommand } from './chatWebview';
+import type { WebviewModelOption, WebviewSlashCommand } from './sidebar/chatWebview';
 import type { PiCommand, PiMessagesResult, PiModel, PiSessionState, PiSessionStats } from './rpc/types';
 
 export type PiChatModelMeta = {

@@ -8,7 +8,7 @@ import {
   type WebviewSessionItem,
   type WebviewStateMessage,
   type WebviewTreeItem
-} from './chatWebview';
+} from './sidebar/chatWebview';
 import {
   StatePublisher,
   type StatePublisherScheduler

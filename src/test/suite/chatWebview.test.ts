@@ -5,7 +5,7 @@ import {
   createWebviewHtml,
   createWebviewStateMessage,
   parseWebviewMessage
-} from '../../chatWebview';
+} from '../../sidebar/chatWebview';
 import type { ChatState } from '../../chatSession';
 
 suite('Chat webview helpers', () => {

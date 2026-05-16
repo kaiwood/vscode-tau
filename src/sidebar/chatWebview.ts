@@ -1,4 +1,4 @@
-import type { ChatState } from './chatSession';
+import type { ChatState } from '../chatSession';
 import { chatWebviewStyles } from './chatWebviewStyles';
 import { createNonce } from './nonce';
 

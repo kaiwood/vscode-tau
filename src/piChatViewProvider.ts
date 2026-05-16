@@ -4,7 +4,7 @@ import {
   createWebviewHtml,
   parseWebviewMessage,
   type WebviewMessage
-} from './chatWebview';
+} from './sidebar/chatWebview';
 import {
   type PiChatContextUsage,
   type PiChatModelMeta,
@@ -19,7 +19,7 @@ import { TauSessionManager } from './sessions/tauSessionManager';
 import { listPiSessions } from './sessions/piSessionList';
 import { runReadyScript } from './readyScript';
 import { createPromptContextFromEditor } from './prompt/editorContext';
-import type { WebviewModelOption } from './chatWebview';
+import type { WebviewModelOption } from './sidebar/chatWebview';
 
 export const chatViewType = 'tau.chatView';
 export type { PiRpcClientLike } from './piChatController';
