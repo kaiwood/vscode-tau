@@ -1,5 +1,4 @@
 import { ChatSession } from './chatSession';
-import { listPiSessionTree } from './sessions/piSessionTree';
 import { createWebviewStateMessage } from './sidebar/chatWebview';
 import type {
   WebviewMessage,
@@ -56,23 +55,12 @@ import {
 import { filterModelOptions, formatModelOptionLabel } from './controller/modelFormatting';
 import { parseLocalSlashCommand } from './controller/slashCommandParsing';
 import {
-  cloneSessionWithClient,
-  compactSessionWithClient,
-  exportSessionWithClient,
-  forkSessionWithClient,
-  withSessionClient,
-  type BackgroundSessionClientOptions,
-  type SessionClientActionUi
-} from './controller/sessionClientActions';
-import {
-  createFallbackSessionItem,
   formatForkMessageLabel,
   formatForkMessages,
   formatSessionInfo,
-  getSessionDisplayName,
-  getSessionFile,
-  normalizeSessionPath
+  getSessionFile
 } from './controller/sessionFormatting';
+import { SessionViewController } from './controller/sessionViewController';
 import { formatAgentMessages, type RestoredToolCall } from './controller/transcriptFormatting';
 import { getRecordString, isRecord } from './controller/typeGuards';
 
@@ -146,19 +134,9 @@ export class PiChatController {
   private readonly promptContext = new PromptContextStore();
   private readonly sessionMetadata: SessionMetadataState;
   private readonly sessionMetadataRefresh: SessionMetadataRefreshController;
-  private sessionViewMode: 'chat' | 'sessions' | 'tree' = 'chat';
-  private sessions: WebviewSessionItem[] = [];
-  private sessionsRefreshing = false;
-  private sessionsError = '';
-  private treeItems: WebviewTreeItem[] = [];
-  private treeRefreshing = false;
-  private treeError = '';
+  private readonly sessionView: SessionViewController;
   private pendingComposerText: { text: string; revision: number } | undefined;
   private composerTextRevision = 0;
-  private sessionsRefreshSequence = 0;
-  private treeRefreshSequence = 0;
-  private currentSessionFile: string | undefined;
-  private currentSessionName = '';
   private nextClientSessionFile: string | undefined;
   private shouldRestoreInitialSessionHistory: boolean;
   private sessionHistoryLoading: boolean;
@@ -175,16 +153,42 @@ export class PiChatController {
   private readonly extensionUiRequestHandler: ExtensionUiRequestHandler;
 
   public constructor(private readonly options: PiChatControllerOptions) {
-    this.currentSessionFile = options.initialSessionFile;
     this.shouldRestoreInitialSessionHistory = Boolean(options.initialSessionFile);
     this.sessionHistoryLoading = Boolean(options.initialSessionFile);
 
     this.sessionDiffController = new SessionDiffController({
-      initialSessionFile: this.currentSessionFile,
+      initialSessionFile: options.initialSessionFile,
       getSessionGeneration: () => this.session.generation,
       postState: () => this.postState(),
       loadSnapshot: (sessionFile) => this.options.loadSessionDiffSnapshot?.(sessionFile),
       saveSnapshot: (sessionFile, snapshot) => this.options.saveSessionDiffSnapshot?.(sessionFile, snapshot)
+    });
+
+    this.sessionView = new SessionViewController({
+      createClient: options.createClient,
+      deleteSession: options.deleteSession,
+      extensionUi: options.extensionUi,
+      getCwd: options.getCwd,
+      getPiPath: options.getPiPath,
+      initialSessionFile: options.initialSessionFile,
+      listSessions: options.listSessions,
+      listSessionTree: options.listSessionTree,
+      onSessionFileChange: options.onSessionFileChange,
+      showNotification: options.showNotification,
+      showSessionChanges: options.showSessionChanges,
+      showToast: options.showToast,
+      applySessionFile: (sessionFile) => this.sessionDiffController.applySessionFile(sessionFile),
+      adoptReplacedSession: (adoptOptions) => this.adoptReplacedSession(adoptOptions),
+      getClient: () => this.getClient(),
+      handleCompactCurrentSession: () => this.handleCompactSlashCommand(''),
+      isBusy: () => this.session.isBusy,
+      postState: () => this.postState(),
+      setComposerText: (text) => this.setComposerText(text),
+      setCurrentSessionName: (name, nameOptions) => this.setCurrentSessionName(name, nameOptions),
+      setSessionHistoryLoading: (value) => {
+        this.sessionHistoryLoading = value;
+      },
+      startNewSession: (sessionOptions) => this.startNewSession(sessionOptions)
     });
 
     this.sessionMetadata = new SessionMetadataState({
@@ -414,22 +418,13 @@ export class PiChatController {
     this.liveToolCallsById.clear();
     this.resetAbortState();
     this.session.startNewSession();
-    this.sessionViewMode = options.viewMode ?? 'chat';
-    this.sessionsError = '';
-    this.treeRefreshSequence += 1;
-    this.treeItems = [];
-    this.treeRefreshing = false;
-    this.treeError = '';
-    this.currentSessionFile = undefined;
+    this.sessionView.startNewSession(options.viewMode ?? 'chat');
     this.sessionDiffController.reset(undefined);
-    this.currentSessionName = '';
-    this.sessions = this.sessions.map((session) => ({ ...session, current: false }));
     this.nextClientSessionFile = undefined;
     this.shouldRestoreInitialSessionHistory = false;
     this.sessionHistoryLoading = false;
     this.restartClientWhenIdle = false;
     this.resetReadyScriptArming();
-    this.options.onSessionFileChange?.(undefined);
     this.resetSessionMeta();
     this.disposeClient();
     this.postState();
@@ -462,8 +457,7 @@ export class PiChatController {
       return;
     }
 
-    this.sessionViewMode = 'chat';
-    this.sessionsError = '';
+    this.sessionView.showChat({ clearSessionsError: true });
     this.postState();
   }
 
@@ -498,35 +492,8 @@ export class PiChatController {
       contextUsage: metadataState.contextUsage,
       metadataRefreshing: metadataState.metadataRefreshing,
       workspaceDiffStats: this.sessionDiffController.getStats(),
-      sessionView: this.shouldPublishSessionView()
-        ? {
-          viewMode: this.sessionViewMode === 'sessions' || this.sessionViewMode === 'tree' ? this.sessionViewMode : undefined,
-          sessions: this.sessions,
-          refreshing: this.sessionsRefreshing,
-          error: this.sessionsError,
-          currentSessionFile: this.currentSessionFile,
-          currentSessionName: this.currentSessionName,
-          treeItems: this.treeItems,
-          treeRefreshing: this.treeRefreshing,
-          treeError: this.treeError,
-          sessionLoading: this.sessionHistoryLoading
-        }
-        : undefined
+      sessionView: this.sessionView.getWebviewState(this.sessionHistoryLoading)
     });
-  }
-
-  private shouldPublishSessionView(): boolean {
-    return this.sessionViewMode === 'sessions'
-      || this.sessionViewMode === 'tree'
-      || this.sessions.length > 0
-      || this.sessionsRefreshing
-      || Boolean(this.sessionsError)
-      || Boolean(this.currentSessionFile)
-      || Boolean(this.currentSessionName)
-      || this.sessionHistoryLoading
-      || this.treeItems.length > 0
-      || this.treeRefreshing
-      || Boolean(this.treeError);
   }
 
   private consumePromptContext(): PiPromptContextAttachment[] {
@@ -550,349 +517,43 @@ export class PiChatController {
   }
 
   private showSessions(): void {
-    this.sessionViewMode = 'sessions';
-    this.sessionsError = '';
-    this.postState();
-    void this.refreshSessions();
+    this.sessionView.showSessions();
   }
 
   private showTree(): void {
-    this.sessionViewMode = 'tree';
-    this.treeError = '';
-    this.postState();
-    void this.refreshTree();
+    this.sessionView.showTree();
   }
 
   private hideSessions(): void {
-    if (this.sessionViewMode === 'chat') {
-      return;
-    }
-
-    this.sessionViewMode = 'chat';
-    this.sessionsError = '';
-    this.treeError = '';
-    this.postState();
+    this.sessionView.hideSessions();
   }
 
-  private async refreshSessions(): Promise<void> {
-    const refreshId = ++this.sessionsRefreshSequence;
-    this.sessionsRefreshing = true;
-    this.sessionsError = '';
-    this.postState();
-
-    try {
-      const listSessions = this.options.listSessions ?? defaultListSessions;
-      const sessions = await listSessions(this.options.getCwd?.(), this.currentSessionFile);
-
-      if (refreshId !== this.sessionsRefreshSequence) {
-        return;
-      }
-
-      this.sessions = sessions.map((session) => ({ ...session }));
-      const currentSession = this.sessions.find((session) => this.currentSessionFile
-        ? session.path === this.currentSessionFile
-        : session.current);
-      this.applyCurrentSessionName(currentSession?.name);
-    } catch (error) {
-      if (refreshId === this.sessionsRefreshSequence) {
-        this.sessionsError = getErrorMessage(error);
-      }
-    } finally {
-      if (refreshId === this.sessionsRefreshSequence) {
-        this.sessionsRefreshing = false;
-        this.postState();
-      }
-    }
+  private refreshSessions(): Promise<void> {
+    return this.sessionView.refreshSessions();
   }
 
-  private async refreshTree(): Promise<void> {
-    const refreshId = ++this.treeRefreshSequence;
-    const sessionFile = this.currentSessionFile;
-    this.treeRefreshing = true;
-    this.treeError = '';
-    this.postState();
-
-    try {
-      const listSessionTree = this.options.listSessionTree ?? listPiSessionTree;
-      const treeItems = await listSessionTree(sessionFile);
-
-      if (!this.isCurrentTreeRefresh(refreshId, sessionFile)) {
-        return;
-      }
-
-      this.treeItems = treeItems;
-    } catch (error) {
-      if (this.isCurrentTreeRefresh(refreshId, sessionFile)) {
-        this.treeError = getErrorMessage(error);
-      }
-    } finally {
-      if (this.isCurrentTreeRefresh(refreshId, sessionFile)) {
-        this.treeRefreshing = false;
-        this.postState();
-      }
-    }
+  private navigateTree(entryId: string): Promise<void> {
+    return this.sessionView.navigateTree(entryId);
   }
 
-  private async navigateTree(entryId: string): Promise<void> {
-    if (this.session.isBusy) {
-      this.options.showNotification('Wait for Pi to finish before navigating the session tree.', 'warning');
-      return;
-    }
-
-    this.treeError = '';
-    this.treeRefreshing = true;
-    this.postState();
-
-    try {
-      const result = await this.getClient().navigateTree(entryId, { summarize: false });
-
-      if (result.cancelled) {
-        return;
-      }
-
-      if (result.editorText) {
-        this.setComposerText(result.editorText);
-      }
-
-      await this.adoptReplacedSession();
-      void this.refreshTree();
-    } catch (error) {
-      const message = getErrorMessage(error);
-      this.treeError = message.includes('Unknown command') || message.includes('Unsupported command')
-        ? 'This Pi version does not expose session tree navigation over RPC yet.'
-        : message;
-      this.postState();
-    } finally {
-      this.treeRefreshing = false;
-      if (this.sessionViewMode === 'tree') {
-        this.postState();
-      }
-    }
+  private switchSession(sessionPath: string): Promise<void> {
+    return this.sessionView.switchSession(sessionPath);
   }
 
-  private async switchSession(sessionPath: string): Promise<void> {
-    if (this.session.isBusy) {
-      this.options.showNotification('Wait for Pi to finish before switching sessions.', 'warning');
-      return;
-    }
-
-    const trimmedPath = sessionPath.trim();
-
-    if (!trimmedPath) {
-      return;
-    }
-
-    this.sessionsError = '';
-    this.sessionsRefreshing = true;
-    this.sessionHistoryLoading = true;
-    this.postState();
-
-    try {
-      const result = await this.getClient().switchSession(trimmedPath);
-
-      if (result.cancelled) {
-        this.sessionHistoryLoading = false;
-        this.postState();
-        return;
-      }
-
-      await this.adoptReplacedSession({ fallbackSessionFile: trimmedPath });
-    } catch (error) {
-      this.sessionHistoryLoading = false;
-      this.sessionsError = getErrorMessage(error);
-      this.postState();
-    } finally {
-      this.sessionsRefreshing = false;
-      if (this.sessionViewMode === 'sessions') {
-        this.postState();
-      }
-    }
+  private deleteSession(sessionPath: string): Promise<void> {
+    return this.sessionView.deleteSession(sessionPath);
   }
 
-  private async deleteSession(sessionPath: string): Promise<void> {
-    const trimmedPath = sessionPath.trim();
-
-    if (!trimmedPath) {
-      return;
-    }
-
-    const normalizedPath = normalizeSessionPath(trimmedPath);
-    const session = this.sessions.find((entry) => normalizeSessionPath(entry.path) === normalizedPath);
-    const isCurrentSession = Boolean(session?.current) || normalizeSessionPath(this.currentSessionFile) === normalizedPath;
-
-    if (session?.liveStatus === 'running' || (isCurrentSession && this.session.isBusy)) {
-      this.options.showNotification('Wait for the session to finish before deleting it.', 'warning');
-      return;
-    }
-
-    if (!this.options.deleteSession) {
-      this.options.showNotification('Session deletion is not available in this environment.', 'warning');
-      return;
-    }
-
-    this.sessionsError = '';
-    this.sessionsRefreshing = true;
-    this.postState();
-
-    try {
-      const deleted = await this.options.deleteSession(trimmedPath, getSessionDisplayName(session, trimmedPath));
-
-      if (!deleted) {
-        return;
-      }
-
-      this.sessions = this.sessions.filter((entry) => normalizeSessionPath(entry.path) !== normalizedPath);
-      this.options.showToast?.('Session moved to Trash.');
-
-      if (isCurrentSession) {
-        this.sessionsRefreshing = false;
-        this.startNewSession({ viewMode: 'sessions' });
-        return;
-      }
-
-      await this.refreshSessions();
-    } catch (error) {
-      this.sessionsError = getErrorMessage(error);
-      this.postState();
-    } finally {
-      this.sessionsRefreshing = false;
-      if (this.sessionViewMode === 'sessions') {
-        this.postState();
-      }
-    }
+  private setSessionItemName(sessionPath: string, name: string): Promise<void> {
+    return this.sessionView.setSessionItemName(sessionPath, name);
   }
 
-  private async setSessionItemName(sessionPath: string, name: string): Promise<void> {
-    await this.runSessionAction(sessionPath, async (session, isCurrentSession) => {
-      const trimmedName = name.trim();
-
-      if (isCurrentSession) {
-        await this.setCurrentSessionName(trimmedName, { announce: false });
-        return;
-      }
-
-      await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
-        await client.setSessionName(trimmedName);
-      });
-      this.options.showToast?.(trimmedName ? 'Session renamed.' : 'Session name cleared.');
-    });
+  private runSessionItemCommand(sessionPath: string, command: WebviewSessionItemCommand): Promise<void> {
+    return this.sessionView.runSessionItemCommand(sessionPath, command);
   }
 
-  private async runSessionItemCommand(sessionPath: string, command: WebviewSessionItemCommand): Promise<void> {
-    if (command === 'rename' || command === 'delete') {
-      return;
-    }
-
-    await this.runSessionAction(sessionPath, async (session, isCurrentSession) => {
-      if (command === 'showChanges') {
-        await this.showSessionChanges(session);
-        return;
-      }
-
-      if (command === 'compact' && isCurrentSession) {
-        await this.handleCompactSlashCommand('');
-        return;
-      }
-
-      const actionOptions = this.getSessionClientActionUi();
-      await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
-        switch (command) {
-          case 'fork':
-            await forkSessionWithClient(client, actionOptions);
-            return;
-          case 'clone':
-            await cloneSessionWithClient(client, actionOptions);
-            return;
-          case 'compact':
-            await compactSessionWithClient(client, actionOptions);
-            return;
-          case 'export':
-            await exportSessionWithClient(client, actionOptions);
-            return;
-          default:
-            return;
-        }
-      });
-    });
-  }
-
-  private async runSessionAction(
-    sessionPath: string,
-    action: (session: WebviewSessionItem, isCurrentSession: boolean) => Promise<void>
-  ): Promise<void> {
-    const trimmedPath = sessionPath.trim();
-
-    if (!trimmedPath) {
-      return;
-    }
-
-    const normalizedPath = normalizeSessionPath(trimmedPath);
-    const session = this.sessions.find((entry) => normalizeSessionPath(entry.path) === normalizedPath)
-      ?? createFallbackSessionItem(trimmedPath);
-    const isCurrentSession = Boolean(session.current) || normalizeSessionPath(this.currentSessionFile) === normalizedPath;
-
-    if (session.liveStatus === 'running' || (isCurrentSession && this.session.isBusy)) {
-      this.options.showNotification('Wait for the session to finish before running this command.', 'warning');
-      return;
-    }
-
-    this.sessionsError = '';
-    this.sessionsRefreshing = true;
-    this.postState();
-
-    try {
-      await action(session, isCurrentSession);
-      await this.refreshSessions();
-    } catch (error) {
-      this.sessionsError = getErrorMessage(error);
-      this.postState();
-    } finally {
-      this.sessionsRefreshing = false;
-
-      if (this.sessionViewMode === 'sessions') {
-        this.postState();
-      }
-    }
-  }
-
-  private async showCurrentSessionChanges(): Promise<void> {
-    if (!this.currentSessionFile) {
-      this.options.showNotification('No persisted session changes are available yet.', 'info');
-      return;
-    }
-
-    const session = this.sessions.find((entry) => normalizeSessionPath(entry.path) === normalizeSessionPath(this.currentSessionFile));
-    await this.showSessionChanges(session ?? createFallbackSessionItem(this.currentSessionFile));
-  }
-
-  private async showSessionChanges(session: WebviewSessionItem): Promise<void> {
-    if (!this.options.showSessionChanges) {
-      this.options.showNotification('Session changes view is not available in this environment.', 'warning');
-      return;
-    }
-
-    await this.options.showSessionChanges(session.path, getSessionDisplayName(session, session.path));
-  }
-
-  private getSessionClientActionUi(): SessionClientActionUi {
-    return {
-      extensionUi: this.options.extensionUi,
-      showNotification: (message, notifyType) => this.options.showNotification(message, notifyType),
-      showToast: (message) => this.options.showToast?.(message)
-    };
-  }
-
-  private getBackgroundSessionClientOptions(): BackgroundSessionClientOptions {
-    return {
-      ...this.getSessionClientActionUi(),
-      createClient: this.options.createClient,
-      getCwd: () => this.options.getCwd?.(),
-      getPiPath: () => this.options.getPiPath?.(),
-      onError: (message) => {
-        this.sessionsError = message;
-        this.postState();
-      }
-    };
+  private showCurrentSessionChanges(): Promise<void> {
+    return this.sessionView.showCurrentSessionChanges();
   }
 
   private async adoptReplacedSession(options: { fallbackSessionFile?: string; refreshSessions?: boolean } = {}): Promise<void> {
@@ -929,8 +590,7 @@ export class PiChatController {
     this.liveToolCallsById.clear();
     this.session.replaceMessages(formatAgentMessages(messagesResult.messages));
     this.sessionHistoryLoading = false;
-    this.sessionViewMode = 'chat';
-    this.sessionsError = '';
+    this.sessionView.showChat({ clearSessionsError: true });
     void this.refreshSessionDiffStats();
     this.postState();
 
@@ -998,68 +658,13 @@ export class PiChatController {
     };
   }
 
-  private isCurrentTreeRefresh(refreshId: number, sessionFile: string | undefined): boolean {
-    return refreshId === this.treeRefreshSequence
-      && sessionFile === this.currentSessionFile;
-  }
-
-
   private applyCurrentSessionFile(sessionFile: string | undefined): boolean {
-    if (sessionFile === this.currentSessionFile) {
-      return false;
-    }
-
-    this.currentSessionFile = sessionFile;
-    this.sessionDiffController.applySessionFile(sessionFile);
-
-    this.treeRefreshSequence += 1;
-    this.treeRefreshing = false;
-    this.treeItems = [];
-    this.sessions = this.sessions.map((session) => ({
-      ...session,
-      current: Boolean(sessionFile) && session.path === sessionFile
-    }));
-    this.options.onSessionFileChange?.(sessionFile);
-    return true;
+    return this.sessionView.applyCurrentSessionFile(sessionFile);
   }
 
   private applyCurrentSessionName(name: string | undefined): boolean {
-    if (typeof name !== 'string') {
-      return false;
-    }
-
-    const nextName = name.trim();
-
-    const sessionsChanged = this.applySessionNameToCurrentSession(nextName);
-
-    if (nextName === this.currentSessionName) {
-      return sessionsChanged;
-    }
-
-    this.currentSessionName = nextName;
-    return true;
+    return this.sessionView.applyCurrentSessionName(name);
   }
-
-  private applySessionNameToCurrentSession(name: string): boolean {
-    const nextName = name.trim() || undefined;
-    let changed = false;
-
-    this.sessions = this.sessions.map((session) => {
-      const isCurrent = Boolean(this.currentSessionFile)
-        ? session.path === this.currentSessionFile
-        : session.current;
-
-      if (!isCurrent || session.name === nextName) {
-        return session;
-      }
-
-      changed = true;
-      return { ...session, name: nextName };
-    });
-
-    return changed;
-  }
-
 
   private formatPromptForPi(userText: string, context: PiPromptContextAttachment[]): string {
     return formatPromptForPiMessage(userText, context);
@@ -1258,7 +863,7 @@ export class PiChatController {
     this.postState();
     void this.refreshSessionMeta({ startClient: true, force: true });
 
-    if (this.currentSessionFile || this.sessions.length > 0) {
+    if (this.sessionView.currentSessionFile || this.sessionView.sessionCount > 0) {
       void this.refreshSessions();
     }
   }
@@ -1591,7 +1196,7 @@ export class PiChatController {
       return this.client;
     }
 
-    const sessionFile = this.nextClientSessionFile ?? this.currentSessionFile;
+    const sessionFile = this.nextClientSessionFile ?? this.sessionView.currentSessionFile;
     this.nextClientSessionFile = undefined;
     const clientOptions: PiRpcClientOptions = { cwd: this.options.getCwd?.() };
     const piPath = this.options.getPiPath?.();
@@ -1894,8 +1499,4 @@ export class PiChatController {
       this.refreshSlashCommands({ startClient: true, force: true })
     ]).then(undefined, () => undefined);
   }
-}
-
-async function defaultListSessions(): Promise<WebviewSessionItem[]> {
-  return [];
 }

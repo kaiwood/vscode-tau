@@ -21,7 +21,7 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 - `src/extension.ts` is only the activation entrypoint and command/view registration.
 - `src/piChatViewProvider.ts` owns VS Code webview/provider integration, focus handling, notifications, workspace `cwd` lookup, and Tau session manager lifecycle.
 - `src/sessions/tauSessionManager.ts` owns the open-session switcher model and coordinates multiple live `PiChatController` instances so background sessions can keep running.
-- `src/piChatController.ts` owns Tau chat orchestration; controller helpers for formatting, parsing, type guards, error classification, and background session-client actions live under `src/controller/`.
+- `src/piChatController.ts` owns Tau chat orchestration; controller helpers for formatting, parsing, type guards, error classification, session view state/actions, and background session-client actions live under `src/controller/`.
 - `src/chatSession.ts` owns pure in-memory transcript/session state and has no VS Code or Pi process dependencies.
 - `src/sidebar/chatWebview.ts` owns extension-host public sidebar webview HTML composition and message parsing.
 - `src/sidebar/types.ts` owns extension-host sidebar webview message/state/types shared by the provider, controller, and tests.
