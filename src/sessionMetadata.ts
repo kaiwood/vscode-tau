@@ -1,40 +1,18 @@
 import type { WebviewModelOption, WebviewSlashCommand } from './sidebar/types';
 import type { PiCommand, PiMessagesResult, PiModel, PiSessionState, PiSessionStats } from './rpc/types';
+import type {
+  PiChatContextUsage,
+  PiChatModelMeta,
+  PiChatSessionMetaSnapshot,
+  SessionMetadataWebviewState
+} from './metadata/types';
 
-export type PiChatModelMeta = {
-  label: string;
-  provider: string;
-  id: string;
-  reasoning: boolean;
-  thinkingLevel: string;
-};
-
-export type PiChatContextUsage = {
-  label: string;
-  title: string;
-  level: string;
-};
-
-export type PiChatSessionMetaSnapshot = {
-  model?: PiChatModelMeta;
-  modelOptions?: WebviewModelOption[];
-  contextUsage?: PiChatContextUsage;
-};
-
-export type SessionMetadataWebviewState = {
-  model: {
-    label: string;
-    provider: string;
-    id: string;
-    reasoning: boolean;
-    thinkingLevel: string;
-    options: WebviewModelOption[];
-  };
-  contextUsage: PiChatContextUsage;
-  metadataRefreshing: boolean;
-  slashCommands: WebviewSlashCommand[];
-  slashCommandsRefreshing: boolean;
-};
+export type {
+  PiChatContextUsage,
+  PiChatModelMeta,
+  PiChatSessionMetaSnapshot,
+  SessionMetadataWebviewState
+} from './metadata/types';
 
 export type SessionMetadataStateOptions = {
   initialSessionMeta?: PiChatSessionMetaSnapshot;

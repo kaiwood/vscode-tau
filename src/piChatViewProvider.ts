@@ -4,13 +4,8 @@ import {
   createWebviewHtml,
   parseWebviewMessage
 } from './sidebar/chatWebview';
-import type { WebviewMessage, WebviewModelOption } from './sidebar/types';
-import {
-  type PiChatContextUsage,
-  type PiChatModelMeta,
-  type PiChatSessionMetaSnapshot,
-  type PiRpcClientFactory
-} from './piChatController';
+import type { WebviewMessage } from './sidebar/types';
+import { type PiRpcClientFactory } from './piChatController';
 import { PiRpcClient } from './rpc/client';
 import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessionDiffSnapshot } from './diff/sessionDiffStorage';
 import { SessionDiffViewer } from './diff/sessionDiffViewer';
@@ -19,12 +14,11 @@ import { TauSessionManager } from './sessions/tauSessionManager';
 import { listPiSessions } from './sessions/piSessionList';
 import { runReadyScript } from './readyScript';
 import { createPromptContextFromEditor } from './prompt/editorContext';
+import { readCachedSessionMeta, writeCachedSessionMeta } from './metadata/cache';
 
 export const chatViewType = 'tau.chatView';
 export type { PiRpcClientLike } from './piChatController';
 
-const cachedSessionMetaStorageKey = 'tau.cachedSessionMeta';
-const cachedModelMetaStorageKey = 'tau.cachedModelMeta';
 const currentSessionFileStorageKey = 'tau.currentSessionFile';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
@@ -80,7 +74,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       },
       initialSessionMeta: readCachedSessionMeta(this.workspaceState),
       initialSessionFile: readCurrentSessionFile(this.workspaceState),
-      onSessionMetaChange: (metadata) => this.writeCachedSessionMeta(metadata),
+      onSessionMetaChange: (metadata) => writeCachedSessionMeta(this.workspaceState, metadata),
       onSessionFileChange: (sessionFile) => this.writeCurrentSessionFile(sessionFile),
       loadSessionDiffSnapshot: (sessionFile) => readSessionDiffSnapshot(this.workspaceState, sessionFile),
       saveSessionDiffSnapshot: (sessionFile, snapshot) => writeSessionDiffSnapshot(this.workspaceState, sessionFile, snapshot),
@@ -412,16 +406,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.contextUsagePollTimer = undefined;
   }
 
-  private writeCachedSessionMeta(metadata: PiChatSessionMetaSnapshot): void {
-    if (!this.workspaceState) {
-      return;
-    }
-
-    const value = hasCachedSessionMeta(metadata) ? metadata : undefined;
-    void this.workspaceState.update(cachedSessionMetaStorageKey, value).then(undefined, () => undefined);
-    void this.workspaceState.update(cachedModelMetaStorageKey, undefined).then(undefined, () => undefined);
-  }
-
   private writeCurrentSessionFile(sessionFile: string | undefined): void {
     if (!this.workspaceState) {
       return;
@@ -464,128 +448,7 @@ function resolveWorkspaceFileUri(filePath: string): vscode.Uri | undefined {
   return vscode.Uri.file(path.resolve(workspaceFolder.uri.fsPath, filePath));
 }
 
-function readCachedSessionMeta(workspaceState: vscode.Memento | undefined): PiChatSessionMetaSnapshot | undefined {
-  const value = workspaceState?.get<unknown>(cachedSessionMetaStorageKey);
-  const snapshot = parseCachedSessionMeta(value);
-
-  if (snapshot) {
-    return snapshot;
-  }
-
-  const legacyModelMeta = parseCachedModelMeta(workspaceState?.get<unknown>(cachedModelMetaStorageKey));
-
-  return legacyModelMeta ? { model: legacyModelMeta } : undefined;
-}
-
 function readCurrentSessionFile(workspaceState: vscode.Memento | undefined): string | undefined {
   const value = workspaceState?.get<unknown>(currentSessionFileStorageKey);
   return typeof value === 'string' && value ? value : undefined;
-}
-
-function parseCachedSessionMeta(value: unknown): PiChatSessionMetaSnapshot | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  const model = parseCachedModelMeta(value.model);
-  const modelOptions = parseCachedModelOptions(value.modelOptions);
-  const contextUsage = parseCachedContextUsage(value.contextUsage);
-  const snapshot: PiChatSessionMetaSnapshot = {};
-
-  if (model) {
-    snapshot.model = model;
-  }
-
-  if (modelOptions) {
-    snapshot.modelOptions = modelOptions;
-  }
-
-  if (contextUsage) {
-    snapshot.contextUsage = contextUsage;
-  }
-
-  return hasCachedSessionMeta(snapshot) ? snapshot : undefined;
-}
-
-function parseCachedModelMeta(value: unknown): PiChatModelMeta | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  const id = getRecordString(value, 'id');
-
-  if (!id) {
-    return undefined;
-  }
-
-  return {
-    label: getRecordString(value, 'label') || id,
-    provider: getRecordString(value, 'provider') ?? '',
-    id,
-    reasoning: value.reasoning === true,
-    thinkingLevel: getRecordString(value, 'thinkingLevel') ?? ''
-  };
-}
-
-function parseCachedModelOptions(value: unknown): WebviewModelOption[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  const modelOptions = value.flatMap((item) => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    const provider = getRecordString(item, 'provider');
-    const id = getRecordString(item, 'id');
-
-    if (!provider || !id) {
-      return [];
-    }
-
-    return [{
-      provider,
-      id,
-      name: getRecordString(item, 'name') || id,
-      reasoning: item.reasoning === true
-    }];
-  });
-
-  return modelOptions.length > 0 ? modelOptions : undefined;
-}
-
-function parseCachedContextUsage(value: unknown): PiChatContextUsage | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  const label = getRecordString(value, 'label');
-
-  if (!label) {
-    return undefined;
-  }
-
-  return {
-    label,
-    title: getRecordString(value, 'title') ?? '',
-    level: getRecordString(value, 'level') ?? ''
-  };
-}
-
-function hasCachedSessionMeta(snapshot: PiChatSessionMetaSnapshot): boolean {
-  return Boolean(
-    snapshot.model
-    || (snapshot.modelOptions && snapshot.modelOptions.length > 0)
-    || snapshot.contextUsage
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function getRecordString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key];
-  return typeof value === 'string' ? value : undefined;
 }

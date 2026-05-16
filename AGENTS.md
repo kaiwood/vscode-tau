@@ -19,7 +19,7 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 - `package.json` defines a VS Code extension with an Activity Bar view container named `Tau`.
 - The extension is TypeScript, CommonJS, and compiles `src` to `out`.
 - `src/extension.ts` is only the activation entrypoint and command/view registration.
-- `src/piChatViewProvider.ts` owns VS Code webview/provider integration, focus handling, notifications, workspace `cwd` lookup, cached selected-model metadata, and Tau session manager lifecycle.
+- `src/piChatViewProvider.ts` owns VS Code webview/provider integration, focus handling, notifications, workspace `cwd` lookup, and Tau session manager lifecycle.
 - `src/sessions/tauSessionManager.ts` owns the open-session switcher model and coordinates multiple live `PiChatController` instances so background sessions can keep running.
 - `src/chatSession.ts` owns pure in-memory transcript/session state and has no VS Code or Pi process dependencies.
 - `src/sidebar/chatWebview.ts` owns extension-host public sidebar webview HTML composition and message parsing.
@@ -33,7 +33,8 @@ Do not add transient notes, guesses, one-off debugging observations, or broad ge
 - `src/piEventMapper.ts` owns pure Pi RPC event-to-UI action mapping helpers.
 - `src/prompt/` owns one-shot IDE prompt context attachment types, state, normalization, labels, editor extraction, prompt formatting, and webview projection.
 - `src/readyScript/` owns ready-script running, arming/queued-run state transitions, and shared ready-script types.
-- `src/sessionMetadata.ts` owns session model/context/slash-command metadata state, refresh orchestration, formatting, equality checks, and cached metadata snapshots.
+- `src/sessionMetadata.ts` owns session model/context/slash-command metadata state, refresh orchestration, formatting, and equality checks.
+- `src/metadata/types.ts` owns shared metadata/cache type shapes; `src/metadata/cache.ts` owns persisted session metadata cache parsing/writing, including legacy cached model metadata migration.
 - `src/extensionUiRequestHandler.ts` owns extension UI request routing through an injected VS Code UI adapter, safe cancellation, and stale request cleanup.
 - `src/sessions/piSessionList.ts` owns extension-side discovery/parsing of persisted Pi session JSONL files for the sidebar session switcher.
 - `src/sessions/piSessionTree.ts` owns extension-side parsing of persisted Pi session JSONL files for the in-session tree view.
