@@ -2426,4 +2426,3 @@
   });
   render();
 })();
-//# sourceMappingURL=chat.js.map
