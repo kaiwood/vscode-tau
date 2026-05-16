@@ -1,4 +1,4 @@
-export const chatWebviewStyles = /* css */ `    :root {
+const baseStyles = /* css */ `    :root {
       color-scheme: light dark;
     }
 
@@ -45,7 +45,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       overflow: hidden;
     }
 
-    .pi-toolbar {
+`;
+
+const toolbarStyles = /* css */ `    .pi-toolbar {
       position: relative;
       grid-row: 1;
       grid-column: 1;
@@ -252,7 +254,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       cursor: default;
     }
 
-    .pi-toast {
+`;
+
+const toastStyles = /* css */ `    .pi-toast {
       position: absolute;
       left: 12px;
       right: 12px;
@@ -286,7 +290,9 @@ export const chatWebviewStyles = /* css */ `    :root {
     }
 
 
-    .messages,
+`;
+
+const viewLayoutStyles = /* css */ `    .messages,
     .sessions {
       grid-row: 2;
       grid-column: 1;
@@ -357,7 +363,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       gap: 7px;
     }
 
-    .sessions__header,
+`;
+
+const sessionListStyles = /* css */ `    .sessions__header,
     .sessions__empty,
     .sessions__error {
       padding: 6px 4px;
@@ -532,7 +540,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       opacity: 0.78;
     }
 
-    .message {
+`;
+
+const messageStyles = /* css */ `    .message {
       margin: 0 0 14px;
     }
 
@@ -777,7 +787,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       color: var(--vscode-errorForeground);
     }
 
-    .activity-list {
+`;
+
+const activityStyles = /* css */ `    .activity-list {
       display: grid;
       gap: 6px;
       margin-top: 8px;
@@ -904,7 +916,9 @@ export const chatWebviewStyles = /* css */ `    :root {
       }
     }
 
-    .composer {
+`;
+
+const composerStyles = /* css */ `    .composer {
       position: relative;
       grid-row: 3;
       grid-column: 1;
@@ -1454,3 +1468,14 @@ export const chatWebviewStyles = /* css */ `    :root {
       background: color-mix(in srgb, var(--vscode-foreground) 48%, transparent);
       cursor: default;
     }`;
+
+export const chatWebviewStyles = [
+  baseStyles,
+  toolbarStyles,
+  toastStyles,
+  viewLayoutStyles,
+  sessionListStyles,
+  messageStyles,
+  activityStyles,
+  composerStyles,
+].join('');
