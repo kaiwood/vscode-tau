@@ -2405,9 +2405,18 @@
   function syncDiffSummary() {
     const addedLines = formatDiffLineCount(state.workspaceDiffStats.addedLines);
     const removedLines = formatDiffLineCount(state.workspaceDiffStats.removedLines);
-    diffAddedElement.textContent = `+${addedLines}`;
-    diffRemovedElement.textContent = `-${removedLines}`;
+    setDiffCounterText(diffAddedElement, `+${addedLines}`);
+    setDiffCounterText(diffRemovedElement, `-${removedLines}`);
     diffSummaryElement.title = `Changes: +${addedLines} | -${removedLines}`;
+  }
+  function setDiffCounterText(element, text) {
+    if (element.textContent === text) {
+      return;
+    }
+    element.textContent = text;
+    element.classList.remove("composer__diff-counter--rolling");
+    void element.offsetWidth;
+    element.classList.add("composer__diff-counter--rolling");
   }
   function hasWorkspaceDiffChanges() {
     return state.workspaceDiffStats.addedLines > 0 || state.workspaceDiffStats.removedLines > 0;

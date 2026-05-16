@@ -1163,14 +1163,42 @@ const composerStyles = /* css */ `    .composer {
       font-variant-numeric: tabular-nums;
     }
 
+    .composer__diff-added,
+    .composer__diff-removed {
+      display: inline-block;
+      transform-origin: 50% 70%;
+      backface-visibility: hidden;
+      font-weight: 600;
+    }
+
     .composer__diff-added {
       color: var(--vscode-gitDecoration-addedResourceForeground, #3fb950);
-      font-weight: 600;
     }
 
     .composer__diff-removed {
       color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149);
-      font-weight: 600;
+    }
+
+    .composer__diff-counter--rolling {
+      animation: composer-diff-counter-roll 180ms ease-out;
+    }
+
+    @keyframes composer-diff-counter-roll {
+      0% {
+        opacity: 0.45;
+        transform: translateY(-0.35em) rotateX(72deg);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .composer__diff-counter--rolling {
+        animation: none;
+      }
     }
 
     .composer__busy-submit-modes {
