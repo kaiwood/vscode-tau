@@ -56,6 +56,15 @@ import {
 import { filterModelOptions, formatModelOptionLabel } from './controller/modelFormatting';
 import { parseLocalSlashCommand } from './controller/slashCommandParsing';
 import {
+  cloneSessionWithClient,
+  compactSessionWithClient,
+  exportSessionWithClient,
+  forkSessionWithClient,
+  withSessionClient,
+  type BackgroundSessionClientOptions,
+  type SessionClientActionUi
+} from './controller/sessionClientActions';
+import {
   createFallbackSessionItem,
   formatForkMessageLabel,
   formatForkMessages,
@@ -762,7 +771,7 @@ export class PiChatController {
         return;
       }
 
-      await this.withSessionClient(session.path, async (client) => {
+      await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
         await client.setSessionName(trimmedName);
       });
       this.options.showToast?.(trimmedName ? 'Session renamed.' : 'Session name cleared.');
@@ -785,19 +794,20 @@ export class PiChatController {
         return;
       }
 
-      await this.withSessionClient(session.path, async (client) => {
+      const actionOptions = this.getSessionClientActionUi();
+      await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
         switch (command) {
           case 'fork':
-            await this.forkSessionWithClient(client);
+            await forkSessionWithClient(client, actionOptions);
             return;
           case 'clone':
-            await this.cloneSessionWithClient(client);
+            await cloneSessionWithClient(client, actionOptions);
             return;
           case 'compact':
-            await this.compactSessionWithClient(client);
+            await compactSessionWithClient(client, actionOptions);
             return;
           case 'export':
-            await this.exportSessionWithClient(client);
+            await exportSessionWithClient(client, actionOptions);
             return;
           default:
             return;
@@ -864,98 +874,25 @@ export class PiChatController {
     await this.options.showSessionChanges(session.path, getSessionDisplayName(session, session.path));
   }
 
-  private async forkSessionWithClient(client: PiRpcClientLike): Promise<void> {
-    const select = this.options.extensionUi?.select;
-
-    if (!select) {
-      this.options.showNotification('Fork selection is not available in this environment.', 'warning');
-      return;
-    }
-
-    const forkMessages = formatForkMessages((await client.getForkMessages()).messages);
-
-    if (forkMessages.length === 0) {
-      this.options.showNotification('No messages to fork from.', 'warning');
-      return;
-    }
-
-    const labels = forkMessages.map((message, index) => formatForkMessageLabel(message, index));
-    const picked = await select('Fork from message', labels);
-
-    if (!picked) {
-      return;
-    }
-
-    const selected = forkMessages[labels.indexOf(picked)];
-
-    if (!selected) {
-      return;
-    }
-
-    const result = await client.fork(selected.entryId);
-
-    if (!result.cancelled) {
-      this.options.showToast?.('Forked session.');
-    }
+  private getSessionClientActionUi(): SessionClientActionUi {
+    return {
+      extensionUi: this.options.extensionUi,
+      showNotification: (message, notifyType) => this.options.showNotification(message, notifyType),
+      showToast: (message) => this.options.showToast?.(message)
+    };
   }
 
-  private async cloneSessionWithClient(client: PiRpcClientLike): Promise<void> {
-    const result = await client.clone();
-
-    if (!result.cancelled) {
-      this.options.showToast?.('Cloned session.');
-    }
-  }
-
-  private async compactSessionWithClient(client: PiRpcClientLike): Promise<void> {
-    await client.compact(undefined);
-    this.options.showToast?.('Compacted session.');
-  }
-
-  private async exportSessionWithClient(client: PiRpcClientLike): Promise<void> {
-    const result = await client.exportHtml(undefined);
-    const path = typeof result.path === 'string' && result.path ? result.path : 'HTML file';
-    this.options.showToast?.(`Exported session to ${path}.`);
-  }
-
-  private async withSessionClient<T>(sessionPath: string, action: (client: PiRpcClientLike) => Promise<T>): Promise<T> {
-    const clientOptions: PiRpcClientOptions = { cwd: this.options.getCwd?.(), sessionFile: sessionPath };
-    const piPath = this.options.getPiPath?.();
-
-    if (piPath) {
-      clientOptions.piPath = piPath;
-    }
-
-    const client = this.options.createClient(clientOptions);
-    const extensionUiRequestHandler = new ExtensionUiRequestHandler({
-      ui: this.options.extensionUi ?? createCancellingExtensionUi(this.options.showNotification),
-      respond: (response) => client.respondExtensionUiRequest(response),
+  private getBackgroundSessionClientOptions(): BackgroundSessionClientOptions {
+    return {
+      ...this.getSessionClientActionUi(),
+      createClient: this.options.createClient,
+      getCwd: () => this.options.getCwd?.(),
+      getPiPath: () => this.options.getPiPath?.(),
       onError: (message) => {
         this.sessionsError = message;
         this.postState();
       }
-    });
-    const disposables = [
-      { dispose: client.onEvent((event) => {
-        if (event.type === 'extension_ui_request') {
-          void extensionUiRequestHandler.handle(event);
-        }
-      }) },
-      { dispose: client.onError((message) => {
-        this.sessionsError = message;
-        this.postState();
-      }) }
-    ];
-
-    try {
-      return await action(client);
-    } finally {
-      extensionUiRequestHandler.dispose();
-      for (const disposable of disposables) {
-        disposable.dispose();
-      }
-      client.dispose();
-    }
+    };
   }
 
   private async adoptReplacedSession(options: { fallbackSessionFile?: string; refreshSessions?: boolean } = {}): Promise<void> {
