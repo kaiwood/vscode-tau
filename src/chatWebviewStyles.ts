@@ -826,12 +826,12 @@ const activityStyles = /* css */ `    .activity-list {
 
     .activity__title {
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
       color: var(--vscode-foreground);
       font-size: 12px;
       font-weight: 600;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
+      white-space: normal;
     }
 
     .activity__status {
