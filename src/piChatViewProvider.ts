@@ -226,15 +226,15 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
 
     if (message.type === 'highlightCode') {
-      await this.handleCodeHighlightRequest(message.id, message.code, message.language);
+      await this.handleCodeHighlightRequest(message.id, message.code, message.language, message.themeId);
       return;
     }
 
     await this.controller.handleWebviewMessage(message);
   }
 
-  private async handleCodeHighlightRequest(id: string, code: string, language: string): Promise<void> {
-    const result = await this.codeRenderer.highlightCode(code, language);
+  private async handleCodeHighlightRequest(id: string, code: string, language: string, themeId?: string): Promise<void> {
+    const result = await this.codeRenderer.highlightCode(code, language, themeId);
     void this.webviewView?.webview.postMessage({
       type: 'highlightCodeResult',
       id,

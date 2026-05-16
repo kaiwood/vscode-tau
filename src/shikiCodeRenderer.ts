@@ -98,14 +98,16 @@ const languageAliases: Record<string, string> = {
 export class ShikiCodeRenderer implements vscode.Disposable {
   private statePromise: Promise<RendererState> | undefined;
   private state: RendererState | undefined;
+  private themeIdHint: string | undefined;
   private readonly cache = new Map<string, ShikiHighlightResult>();
 
-  public async highlightCode(code: string, languageHint: string): Promise<ShikiHighlightResult | undefined> {
+  public async highlightCode(code: string, languageHint: string, themeIdHint?: string): Promise<ShikiHighlightResult | undefined> {
     if (!code || code.length > maxHighlightedCodeLength) {
       return undefined;
     }
 
     try {
+      this.setThemeIdHint(themeIdHint);
       const state = await this.getState();
       const language = this.resolveLanguage(languageHint, state.languages);
 
@@ -148,6 +150,17 @@ export class ShikiCodeRenderer implements vscode.Disposable {
     this.reset();
   }
 
+  private setThemeIdHint(themeIdHint: string | undefined): void {
+    const normalized = normalizeThemeIdHint(themeIdHint);
+
+    if (normalized === this.themeIdHint) {
+      return;
+    }
+
+    this.themeIdHint = normalized;
+    this.reset();
+  }
+
   private async getState(): Promise<RendererState> {
     if (!this.statePromise) {
       this.statePromise = this.createState();
@@ -162,7 +175,7 @@ export class ShikiCodeRenderer implements vscode.Disposable {
     try {
       const bridgeInternals = await importEsm<BridgeInternalsModule>('vscode-shiki-bridge/internals');
       const [{ themeId, themes }, languages] = await Promise.all([
-        getCurrentTheme(bridgeInternals),
+        getCurrentTheme(bridgeInternals, this.themeIdHint),
         getLanguages(bridgeInternals)
       ]);
       const highlighter = await shiki.createHighlighter({
@@ -293,19 +306,23 @@ function isLightTheme(): boolean {
     || vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrastLight;
 }
 
-async function getCurrentTheme(bridge: BridgeInternalsModule): Promise<{ themeId: string; themes: unknown[] }> {
+async function getCurrentTheme(bridge: BridgeInternalsModule, themeIdHint: string | undefined): Promise<{ themeId: string; themes: unknown[] }> {
   const registry = new bridge.ThemeRegistry(vscode.extensions.all);
   const fileReader = new bridge.ExtensionFileReader(vscode);
-  const themeName = vscode.workspace.getConfiguration('workbench').get<string>('colorTheme', '');
-  const themeId = registry.resolveLabelToId(themeName);
-  const contribution = registry.themes.get(themeId);
+  const configuredThemeName = vscode.workspace.getConfiguration('workbench').get<string>('colorTheme', '');
+  const themeNames = [themeIdHint, configuredThemeName].filter((value): value is string => Boolean(value));
 
-  if (!contribution) {
-    throw new Error(`No VS Code theme contribution found for ${themeName || 'the active theme'}.`);
+  for (const themeName of themeNames) {
+    const themeId = registry.themes.has(themeName) ? themeName : registry.resolveLabelToId(themeName);
+    const contribution = registry.themes.get(themeId);
+
+    if (contribution) {
+      const theme = await bridge.buildThemeRegistration(contribution, registry, fileReader, vscode.Uri);
+      return { themeId, themes: [theme] };
+    }
   }
 
-  const theme = await bridge.buildThemeRegistration(contribution, registry, fileReader, vscode.Uri);
-  return { themeId, themes: [theme] };
+  throw new Error(`No VS Code theme contribution found for ${themeIdHint || configuredThemeName || 'the active theme'}.`);
 }
 
 async function getLanguages(bridge: BridgeInternalsModule): Promise<BridgeLanguagesResult> {
@@ -355,6 +372,11 @@ function isLanguageRecord(value: unknown): value is LanguageRecord {
   return typeof value === 'object'
     && value !== null
     && typeof (value as { name?: unknown }).name === 'string';
+}
+
+function normalizeThemeIdHint(themeIdHint: string | undefined): string | undefined {
+  const normalized = themeIdHint?.trim();
+  return normalized || undefined;
 }
 
 function normalizeLanguageHint(languageHint: string): string {

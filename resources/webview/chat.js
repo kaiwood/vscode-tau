@@ -8,19 +8,21 @@
   function configureCodeHighlighting(post) {
     postMessage = post;
   }
-  function requestCodeHighlight(element, code, language) {
+  function requestCodeHighlight(element, code, language, options = {}) {
     const normalizedLanguage = normalizeLanguage(language);
+    const themeId = getActiveThemeId();
     if (!postMessage || !code || code.length > maxHighlightCodeLength || !normalizedLanguage) {
       return false;
     }
     const existing = highlightedElements.get(element);
-    if (existing?.code === code && existing.language === normalizedLanguage) {
+    if (!options.force && existing?.code === code && existing.language === normalizedLanguage && existing.themeId === themeId) {
       return true;
     }
     const id = `highlight-${nextHighlightRequestId++}`;
     highlightedElements.set(element, {
       code,
       language: normalizedLanguage,
+      themeId,
       requestId: id
     });
     element.dataset.shikiHighlightId = id;
@@ -29,7 +31,8 @@
       type: "highlightCode",
       id,
       code,
-      language: normalizedLanguage
+      language: normalizedLanguage,
+      themeId
     });
     return true;
   }
@@ -41,6 +44,21 @@
       }
       requestCodeHighlight(codeElement, codeElement.textContent ?? "", getCodeElementLanguage(codeElement));
     }
+  }
+  function watchCodeHighlightThemeChanges() {
+    let activeThemeId = getActiveThemeId();
+    const refreshIfThemeChanged = () => {
+      const nextThemeId = getActiveThemeId();
+      if (nextThemeId === activeThemeId) {
+        return;
+      }
+      activeThemeId = nextThemeId;
+      refreshConnectedHighlights();
+    };
+    new MutationObserver(refreshIfThemeChanged).observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-vscode-theme-id"]
+    });
   }
   function handleCodeHighlightMessage(message) {
     if (!isRecord(message) || typeof message.type !== "string") {
@@ -85,7 +103,7 @@
         continue;
       }
       element.textContent = info.code;
-      requestCodeHighlight(element, info.code, info.language);
+      requestCodeHighlight(element, info.code, info.language, { force: true });
     }
   }
   function findHighlightByRequestId(requestId) {
@@ -107,6 +125,9 @@
       }
     }
     return void 0;
+  }
+  function getActiveThemeId() {
+    return document.body.getAttribute("data-vscode-theme-id") || "";
   }
   function normalizeLanguage(language) {
     const normalized = language?.trim().toLowerCase();
@@ -1066,6 +1087,7 @@
   // src/webview/main.ts
   var vscode = acquireVsCodeApi();
   configureCodeHighlighting((message) => vscode.postMessage(message));
+  watchCodeHighlightThemeChanges();
   var {
     viewElement,
     toolbarTitleElement,

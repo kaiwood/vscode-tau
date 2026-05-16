@@ -31,7 +31,7 @@ export type WebviewMessage =
   | { type: 'abort' }
   | { type: 'copyText'; text: string }
   | { type: 'openFile'; path: string; line?: number; column?: number }
-  | { type: 'highlightCode'; id: string; code: string; language: string }
+  | { type: 'highlightCode'; id: string; code: string; language: string; themeId?: string }
   | { type: 'submit'; text: string; streamingBehavior?: WebviewStreamingBehavior }
   | { type: 'setModel'; provider: string; modelId: string }
   | { type: 'setThinkingLevel'; level: string }
@@ -110,12 +110,24 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
         ...(column ? { column } : {})
       };
     }
-    case 'highlightCode':
-      return typeof value.id === 'string' && value.id
-        && typeof value.code === 'string' && value.code
-        && typeof value.language === 'string' && value.language
-        ? { type: 'highlightCode', id: value.id, code: value.code, language: value.language }
-        : { type: 'unknown' };
+    case 'highlightCode': {
+      if (typeof value.id !== 'string' || !value.id
+        || typeof value.code !== 'string' || !value.code
+        || typeof value.language !== 'string' || !value.language
+        || ('themeId' in value && typeof value.themeId !== 'string')) {
+        return { type: 'unknown' };
+      }
+
+      const themeId = typeof value.themeId === 'string' && value.themeId ? value.themeId : undefined;
+
+      return {
+        type: 'highlightCode',
+        id: value.id,
+        code: value.code,
+        language: value.language,
+        ...(themeId ? { themeId } : {})
+      };
+    }
     case 'submit': {
       if (typeof value.text !== 'string') {
         return { type: 'unknown' };

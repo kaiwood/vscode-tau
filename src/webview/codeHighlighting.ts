@@ -3,6 +3,7 @@ type PostMessage = (message: unknown) => void;
 type HighlightInfo = {
   code: string;
   language: string;
+  themeId: string;
   requestId: string;
 };
 
@@ -15,8 +16,9 @@ export function configureCodeHighlighting(post: PostMessage): void {
   postMessage = post;
 }
 
-export function requestCodeHighlight(element: HTMLElement, code: string, language: string | undefined): boolean {
+export function requestCodeHighlight(element: HTMLElement, code: string, language: string | undefined, options: { force?: boolean } = {}): boolean {
   const normalizedLanguage = normalizeLanguage(language);
+  const themeId = getActiveThemeId();
 
   if (!postMessage || !code || code.length > maxHighlightCodeLength || !normalizedLanguage) {
     return false;
@@ -24,7 +26,7 @@ export function requestCodeHighlight(element: HTMLElement, code: string, languag
 
   const existing = highlightedElements.get(element);
 
-  if (existing?.code === code && existing.language === normalizedLanguage) {
+  if (!options.force && existing?.code === code && existing.language === normalizedLanguage && existing.themeId === themeId) {
     return true;
   }
 
@@ -32,6 +34,7 @@ export function requestCodeHighlight(element: HTMLElement, code: string, languag
   highlightedElements.set(element, {
     code,
     language: normalizedLanguage,
+    themeId,
     requestId: id
   });
   element.dataset.shikiHighlightId = id;
@@ -40,7 +43,8 @@ export function requestCodeHighlight(element: HTMLElement, code: string, languag
     type: 'highlightCode',
     id,
     code,
-    language: normalizedLanguage
+    language: normalizedLanguage,
+    themeId
   });
   return true;
 }
@@ -55,6 +59,25 @@ export function requestCodeHighlightsIn(root: HTMLElement): void {
 
     requestCodeHighlight(codeElement, codeElement.textContent ?? '', getCodeElementLanguage(codeElement));
   }
+}
+
+export function watchCodeHighlightThemeChanges(): void {
+  let activeThemeId = getActiveThemeId();
+  const refreshIfThemeChanged = () => {
+    const nextThemeId = getActiveThemeId();
+
+    if (nextThemeId === activeThemeId) {
+      return;
+    }
+
+    activeThemeId = nextThemeId;
+    refreshConnectedHighlights();
+  };
+
+  new MutationObserver(refreshIfThemeChanged).observe(document.body, {
+    attributes: true,
+    attributeFilter: ['data-vscode-theme-id']
+  });
 }
 
 export function handleCodeHighlightMessage(message: unknown): boolean {
@@ -113,7 +136,7 @@ function refreshConnectedHighlights(): void {
     }
 
     element.textContent = info.code;
-    requestCodeHighlight(element, info.code, info.language);
+    requestCodeHighlight(element, info.code, info.language, { force: true });
   }
 }
 
@@ -141,6 +164,10 @@ function getCodeElementLanguage(codeElement: HTMLElement): string | undefined {
   }
 
   return undefined;
+}
+
+function getActiveThemeId(): string {
+  return document.body.getAttribute('data-vscode-theme-id') || '';
 }
 
 function normalizeLanguage(language: string | undefined): string | undefined {
