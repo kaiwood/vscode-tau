@@ -1011,6 +1011,9 @@
       sessionMenuButton: queryRequired(".pi-toolbar__menu-button"),
       sessionMenuElement: queryRequired(".pi-toolbar__menu"),
       sessionMenuItemElements: queryAll(".pi-toolbar__menu-item"),
+      sessionHelpWrapElement: queryRequired(".pi-toolbar__help-wrap"),
+      sessionHelpButton: queryRequired(".pi-toolbar__help-button"),
+      sessionHelpPopoverElement: queryRequired(".pi-toolbar__help-popover"),
       toastElement: queryRequired(".pi-toast"),
       messagesElement: queryRequired(".messages"),
       sessionsElement: queryRequired(".sessions"),
@@ -2330,6 +2333,7 @@
       this.options.sessionToggleButton.addEventListener("click", () => this.toggleSessionView());
       this.options.toolbarTitleElement.addEventListener("dblclick", (event) => this.startSessionNameEdit(event));
       this.options.sessionMenuButton.addEventListener("click", (event) => this.toggleSessionCommandMenu(event));
+      this.options.sessionHelpButton.addEventListener("click", (event) => this.toggleSessionHelpPopover(event));
       for (const item of this.options.sessionMenuItemElements) {
         item.addEventListener("click", () => this.runSessionMenuCommand(item.getAttribute("data-session-command")));
         item.addEventListener("pointerenter", () => this.setSessionMenuItemHover(item, true));
@@ -2340,6 +2344,18 @@
       this.options.sessionNameInputElement.addEventListener("blur", () => this.cancelSessionNameEdit());
     }
     handleGlobalKeydown(event) {
+      if ((event.target === this.options.sessionToggleButton || event.target === this.options.sessionHelpButton) && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.target === this.options.sessionToggleButton ? this.toggleSessionView() : this.toggleSessionHelpPopover();
+        return true;
+      }
+      if (this.hasSessionHelpPopoverOpen() && event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeSessionHelpPopover({ focusButton: true });
+        return true;
+      }
       if (!this.sessionNameEditing || event.target !== this.options.sessionNameInputElement) {
         return false;
       }
@@ -2369,10 +2385,14 @@
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       this.options.sessionMenuWrapElement.hidden = isListView;
+      this.options.sessionHelpWrapElement.hidden = state2.viewMode !== "sessions";
       this.options.sessionMenuButton.disabled = state2.busy || this.sessionNameEditing;
       this.syncSessionCommandMenuItems();
       if (isListView || state2.busy || this.sessionNameEditing) {
         this.closeSessionCommandMenu();
+      }
+      if (state2.viewMode !== "sessions") {
+        this.closeSessionHelpPopover();
       }
       this.options.sessionToggleButton.title = isListView ? "Back to chat" : "Show sessions";
       this.options.sessionToggleButton.setAttribute("aria-label", this.options.sessionToggleButton.title);
@@ -2394,8 +2414,29 @@
         this.setSessionMenuItemHover(item, false);
       }
     }
+    closeSessionHelpPopover(options = {}) {
+      if (this.options.sessionHelpPopoverElement.hidden) {
+        return;
+      }
+      this.options.sessionHelpPopoverElement.hidden = true;
+      this.options.sessionHelpButton.setAttribute("aria-expanded", "false");
+      if (options.focusButton && !this.options.sessionHelpWrapElement.hidden) {
+        this.options.sessionHelpButton.focus({ preventScroll: true });
+      }
+    }
+    handleWindowClick(target) {
+      if (!target || !this.options.sessionMenuWrapElement.contains(target)) {
+        this.closeSessionCommandMenu();
+      }
+      if (!target || !this.options.sessionHelpWrapElement.contains(target)) {
+        this.closeSessionHelpPopover();
+      }
+    }
     hasSessionCommandMenuOpen() {
       return !this.options.sessionMenuElement.hidden;
+    }
+    hasSessionHelpPopoverOpen() {
+      return !this.options.sessionHelpPopoverElement.hidden;
     }
     startSessionNameEdit(event) {
       const state2 = this.options.getState();
@@ -2453,9 +2494,22 @@
       }
       this.options.closeSlashMenu();
       this.options.closeModelMenu();
+      this.closeSessionHelpPopover();
       const isOpen = !this.options.sessionMenuElement.hidden;
       this.options.sessionMenuElement.hidden = isOpen;
       this.options.sessionMenuButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    }
+    toggleSessionHelpPopover(event) {
+      const state2 = this.options.getState();
+      event?.preventDefault();
+      event?.stopPropagation();
+      if (state2.viewMode !== "sessions") {
+        return;
+      }
+      this.closeSessionCommandMenu();
+      const isOpen = !this.options.sessionHelpPopoverElement.hidden;
+      this.options.sessionHelpPopoverElement.hidden = isOpen;
+      this.options.sessionHelpButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
     }
     syncSessionCommandMenuItems() {
       const state2 = this.options.getState();
@@ -2502,6 +2556,7 @@
       const state2 = this.options.getState();
       this.cancelSessionNameEdit();
       if (state2.viewMode === "sessions" || state2.viewMode === "tree") {
+        this.closeSessionHelpPopover();
         this.options.postMessage({ type: "hideSessions" });
         this.options.focusPromptInput();
         return;
@@ -2530,6 +2585,9 @@
         sessionMenuButton: options.sessionMenuButton,
         sessionMenuElement: options.sessionMenuElement,
         sessionMenuItemElements: options.sessionMenuItemElements,
+        sessionHelpWrapElement: options.sessionHelpWrapElement,
+        sessionHelpButton: options.sessionHelpButton,
+        sessionHelpPopoverElement: options.sessionHelpPopoverElement,
         focusPromptInput: options.focusPromptInput,
         closeSlashMenu: options.closeSlashMenu,
         closeModelMenu: options.closeModelMenu,
@@ -2559,9 +2617,7 @@
       this.options.sessionsElement.addEventListener("click", (event) => this.handleSessionsClick(event));
     }
     handleWindowClick(target, eventTarget) {
-      if (!this.options.sessionMenuWrapElement.contains(target)) {
-        this.closeSessionCommandMenu();
-      }
+      this.topControls.handleWindowClick(target);
       if (!target || !this.options.sessionsElement.contains(target) || !eventTarget?.closest(".sessions__menu-wrap")) {
         this.closeSessionItemMenus();
       }
@@ -3364,6 +3420,9 @@
     sessionMenuButton,
     sessionMenuElement,
     sessionMenuItemElements,
+    sessionHelpWrapElement,
+    sessionHelpButton,
+    sessionHelpPopoverElement,
     toastElement,
     messagesElement,
     sessionsElement,
@@ -3450,6 +3509,9 @@
     sessionMenuButton,
     sessionMenuElement,
     sessionMenuItemElements,
+    sessionHelpWrapElement,
+    sessionHelpButton,
+    sessionHelpPopoverElement,
     focusPromptInput,
     closeSlashMenu: () => composerController.closeSlashMenu(),
     closeModelMenu: () => composerController.closeModelMenu(),

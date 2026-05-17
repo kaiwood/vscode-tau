@@ -284,6 +284,28 @@ ${chatWebviewStyles}
           </button>
         </div>
       </div>
+      <div class="pi-toolbar__help-wrap" hidden>
+        <button class="pi-toolbar__help-button" type="button" aria-label="Session list shortcuts" title="Session list shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="session-shortcuts">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.25"/>
+            <path d="M6.55 6.35C6.64 5.48 7.28 4.9 8.12 4.9C9.02 4.9 9.65 5.48 9.65 6.27C9.65 6.84 9.38 7.24 8.82 7.62C8.25 8.01 8.03 8.35 8.03 8.95V9.18" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+            <circle cx="8" cy="11.1" r="0.65" fill="currentColor"/>
+          </svg>
+        </button>
+        <div id="session-shortcuts" class="pi-toolbar__help-popover" role="dialog" aria-label="Session list shortcuts" hidden>
+          <div class="pi-toolbar__help-title">Session shortcuts</div>
+          <dl class="pi-toolbar__help-list">
+            <div><dt>Enter</dt><dd>Open selected session</dd></div>
+            <div><dt>R</dt><dd>Rename</dd></div>
+            <div><dt>F</dt><dd>Fork</dd></div>
+            <div><dt>C</dt><dd>Clone</dd></div>
+            <div><dt>Z</dt><dd>Compact</dd></div>
+            <div><dt>E</dt><dd>Export as HTML</dd></div>
+            <div><dt>Del / Backspace</dt><dd>Move to trash</dd></div>
+            <div><dt>Esc</dt><dd>Back to chat</dd></div>
+          </dl>
+        </div>
+      </div>
     </header>
     <div class="pi-toast" role="status" aria-live="polite" hidden></div>
     <section class="messages" aria-live="polite" aria-label="Pi conversation">

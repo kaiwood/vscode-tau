@@ -28,6 +28,9 @@ export type SessionViewControllerOptions = {
   sessionMenuButton: HTMLButtonElement;
   sessionMenuElement: HTMLElement;
   sessionMenuItemElements: HTMLButtonElement[];
+  sessionHelpWrapElement: HTMLElement;
+  sessionHelpButton: HTMLButtonElement;
+  sessionHelpPopoverElement: HTMLElement;
   focusPromptInput: () => void;
   closeSlashMenu: () => void;
   closeModelMenu: () => void;
@@ -65,6 +68,9 @@ export class SessionViewController {
       sessionMenuButton: options.sessionMenuButton,
       sessionMenuElement: options.sessionMenuElement,
       sessionMenuItemElements: options.sessionMenuItemElements,
+      sessionHelpWrapElement: options.sessionHelpWrapElement,
+      sessionHelpButton: options.sessionHelpButton,
+      sessionHelpPopoverElement: options.sessionHelpPopoverElement,
       focusPromptInput: options.focusPromptInput,
       closeSlashMenu: options.closeSlashMenu,
       closeModelMenu: options.closeModelMenu,
@@ -83,9 +89,7 @@ export class SessionViewController {
   }
 
   public handleWindowClick(target: Node | null, eventTarget: Element | null): void {
-    if (!this.options.sessionMenuWrapElement.contains(target)) {
-      this.closeSessionCommandMenu();
-    }
+    this.topControls.handleWindowClick(target);
 
     if (!target || !this.options.sessionsElement.contains(target) || !eventTarget?.closest('.sessions__menu-wrap')) {
       this.closeSessionItemMenus();

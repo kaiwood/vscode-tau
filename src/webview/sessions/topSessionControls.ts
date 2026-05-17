@@ -13,6 +13,9 @@ type TopSessionControlsOptions = {
   sessionMenuButton: HTMLButtonElement;
   sessionMenuElement: HTMLElement;
   sessionMenuItemElements: HTMLButtonElement[];
+  sessionHelpWrapElement: HTMLElement;
+  sessionHelpButton: HTMLButtonElement;
+  sessionHelpPopoverElement: HTMLElement;
   focusPromptInput: () => void;
   closeSlashMenu: () => void;
   closeModelMenu: () => void;
@@ -36,6 +39,7 @@ export class TopSessionControls {
     this.options.sessionToggleButton.addEventListener('click', () => this.toggleSessionView());
     this.options.toolbarTitleElement.addEventListener('dblclick', (event) => this.startSessionNameEdit(event));
     this.options.sessionMenuButton.addEventListener('click', (event) => this.toggleSessionCommandMenu(event));
+    this.options.sessionHelpButton.addEventListener('click', (event) => this.toggleSessionHelpPopover(event));
 
     for (const item of this.options.sessionMenuItemElements) {
       item.addEventListener('click', () => this.runSessionMenuCommand(item.getAttribute('data-session-command')));
@@ -49,6 +53,21 @@ export class TopSessionControls {
   }
 
   public handleGlobalKeydown(event: KeyboardEvent): boolean {
+    if ((event.target === this.options.sessionToggleButton || event.target === this.options.sessionHelpButton)
+      && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.target === this.options.sessionToggleButton ? this.toggleSessionView() : this.toggleSessionHelpPopover();
+      return true;
+    }
+
+    if (this.hasSessionHelpPopoverOpen() && event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeSessionHelpPopover({ focusButton: true });
+      return true;
+    }
+
     if (!this.sessionNameEditing || event.target !== this.options.sessionNameInputElement) {
       return false;
     }
@@ -84,11 +103,16 @@ export class TopSessionControls {
     this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
     this.options.sessionMenuWrapElement.hidden = isListView;
+    this.options.sessionHelpWrapElement.hidden = state.viewMode !== 'sessions';
     this.options.sessionMenuButton.disabled = state.busy || this.sessionNameEditing;
     this.syncSessionCommandMenuItems();
 
     if (isListView || state.busy || this.sessionNameEditing) {
       this.closeSessionCommandMenu();
+    }
+
+    if (state.viewMode !== 'sessions') {
+      this.closeSessionHelpPopover();
     }
 
     this.options.sessionToggleButton.title = isListView ? 'Back to chat' : 'Show sessions';
@@ -116,8 +140,35 @@ export class TopSessionControls {
     }
   }
 
+  public closeSessionHelpPopover(options: { focusButton?: boolean } = {}): void {
+    if (this.options.sessionHelpPopoverElement.hidden) {
+      return;
+    }
+
+    this.options.sessionHelpPopoverElement.hidden = true;
+    this.options.sessionHelpButton.setAttribute('aria-expanded', 'false');
+
+    if (options.focusButton && !this.options.sessionHelpWrapElement.hidden) {
+      this.options.sessionHelpButton.focus({ preventScroll: true });
+    }
+  }
+
+  public handleWindowClick(target: Node | null): void {
+    if (!target || !this.options.sessionMenuWrapElement.contains(target)) {
+      this.closeSessionCommandMenu();
+    }
+
+    if (!target || !this.options.sessionHelpWrapElement.contains(target)) {
+      this.closeSessionHelpPopover();
+    }
+  }
+
   public hasSessionCommandMenuOpen(): boolean {
     return !this.options.sessionMenuElement.hidden;
+  }
+
+  private hasSessionHelpPopoverOpen(): boolean {
+    return !this.options.sessionHelpPopoverElement.hidden;
   }
 
   private startSessionNameEdit(event?: MouseEvent): void {
@@ -189,10 +240,26 @@ export class TopSessionControls {
 
     this.options.closeSlashMenu();
     this.options.closeModelMenu();
+    this.closeSessionHelpPopover();
 
     const isOpen = !this.options.sessionMenuElement.hidden;
     this.options.sessionMenuElement.hidden = isOpen;
     this.options.sessionMenuButton.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+  }
+
+  private toggleSessionHelpPopover(event?: MouseEvent): void {
+    const state = this.options.getState();
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (state.viewMode !== 'sessions') {
+      return;
+    }
+
+    this.closeSessionCommandMenu();
+    const isOpen = !this.options.sessionHelpPopoverElement.hidden;
+    this.options.sessionHelpPopoverElement.hidden = isOpen;
+    this.options.sessionHelpButton.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   }
 
   private syncSessionCommandMenuItems(): void {
@@ -252,6 +319,7 @@ export class TopSessionControls {
     this.cancelSessionNameEdit();
 
     if (state.viewMode === 'sessions' || state.viewMode === 'tree') {
+      this.closeSessionHelpPopover();
       this.options.postMessage({ type: 'hideSessions' });
       this.options.focusPromptInput();
       return;

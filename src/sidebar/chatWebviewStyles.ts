@@ -181,7 +181,8 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       display: none;
     }
 
-    .pi-toolbar__menu-button {
+    .pi-toolbar__menu-button,
+    .pi-toolbar__help-button {
       display: grid;
       place-items: center;
       flex: 0 0 26px;
@@ -198,22 +199,28 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
 
     .pi-toolbar__menu-button:hover:not(:disabled),
     .pi-toolbar__menu-button:focus-visible,
-    .pi-toolbar__menu-button[aria-expanded="true"] {
+    .pi-toolbar__menu-button[aria-expanded="true"],
+    .pi-toolbar__help-button:hover:not(:disabled),
+    .pi-toolbar__help-button:focus-visible,
+    .pi-toolbar__help-button[aria-expanded="true"] {
       color: var(--vscode-foreground);
       background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
       outline: none;
     }
 
-    .pi-toolbar__menu-button:disabled {
+    .pi-toolbar__menu-button:disabled,
+    .pi-toolbar__help-button:disabled {
       opacity: 0.45;
       cursor: default;
     }
 
-    .pi-toolbar__menu-wrap[hidden] {
+    .pi-toolbar__menu-wrap[hidden],
+    .pi-toolbar__help-wrap[hidden] {
       display: none;
     }
 
-    .pi-toolbar__menu-wrap {
+    .pi-toolbar__menu-wrap,
+    .pi-toolbar__help-wrap {
       position: relative;
       flex: 0 0 26px;
       width: 26px;
@@ -236,6 +243,75 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
 
     .pi-toolbar__menu[hidden] {
       display: none;
+    }
+
+    .pi-toolbar__help-popover {
+      position: fixed;
+      top: 36px;
+      right: 10px;
+      z-index: 10;
+      width: min(270px, calc(100vw - 20px));
+      max-width: calc(100vw - 20px);
+      padding: 10px;
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
+      background: var(--vscode-dropdown-background, var(--vscode-editorWidget-background));
+      border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border, transparent));
+      border-radius: 6px;
+      box-shadow: 0 6px 18px color-mix(in srgb, #000 28%, transparent);
+    }
+
+    .pi-toolbar__help-popover[hidden] {
+      display: none;
+    }
+
+    .pi-toolbar__help-title {
+      margin: 0 0 2px;
+      color: var(--vscode-foreground);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .pi-toolbar__help-note {
+      margin-bottom: 8px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .pi-toolbar__help-list {
+      display: grid;
+      gap: 5px;
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .pi-toolbar__help-list > div {
+      display: grid;
+      grid-template-columns: minmax(58px, auto) minmax(0, 1fr);
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .pi-toolbar__help-list dt {
+      min-width: 0;
+      padding: 1px 5px;
+      color: var(--vscode-foreground);
+      background: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--vscode-foreground) 18%, transparent);
+      border-radius: 4px;
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .pi-toolbar__help-list dd {
+      min-width: 0;
+      margin: 0;
+      color: var(--vscode-descriptionForeground);
     }
 
     .pi-toolbar__menu-item {

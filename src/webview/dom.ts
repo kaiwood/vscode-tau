@@ -8,6 +8,9 @@ export type WebviewDom = {
   sessionMenuButton: HTMLButtonElement;
   sessionMenuElement: HTMLElement;
   sessionMenuItemElements: HTMLButtonElement[];
+  sessionHelpWrapElement: HTMLElement;
+  sessionHelpButton: HTMLButtonElement;
+  sessionHelpPopoverElement: HTMLElement;
   toastElement: HTMLElement;
   messagesElement: HTMLElement;
   sessionsElement: HTMLElement;
@@ -42,6 +45,9 @@ export function getWebviewDom(): WebviewDom {
     sessionMenuButton: queryRequired<HTMLButtonElement>('.pi-toolbar__menu-button'),
     sessionMenuElement: queryRequired<HTMLElement>('.pi-toolbar__menu'),
     sessionMenuItemElements: queryAll<HTMLButtonElement>('.pi-toolbar__menu-item'),
+    sessionHelpWrapElement: queryRequired<HTMLElement>('.pi-toolbar__help-wrap'),
+    sessionHelpButton: queryRequired<HTMLButtonElement>('.pi-toolbar__help-button'),
+    sessionHelpPopoverElement: queryRequired<HTMLElement>('.pi-toolbar__help-popover'),
     toastElement: queryRequired<HTMLElement>('.pi-toast'),
     messagesElement: queryRequired<HTMLElement>('.messages'),
     sessionsElement: queryRequired<HTMLElement>('.sessions'),
