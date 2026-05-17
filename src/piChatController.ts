@@ -30,10 +30,10 @@ import {
 } from './controller/errors';
 import { parseLocalSlashCommand } from './controller/slashCommandParsing';
 import { LocalSlashCommandController } from './controller/localSlashCommandController';
-import { SessionHistoryController } from './controller/sessionHistoryController';
+import { SessionHistoryController } from './sessions/sessionHistoryController';
 import { PiClientManager } from './controller/piClientManager';
 import { PiRpcEventHandler } from './controller/piRpcEventHandler';
-import { SessionViewController } from './controller/sessionViewController';
+import { SessionViewController } from './sessions/sessionViewController';
 
 export type { PiChatControllerOptions } from './controller/types';
 export type { PiChatContextUsage, PiChatModelMeta, PiChatSessionMetaSnapshot } from './metadata/sessionMetadata';

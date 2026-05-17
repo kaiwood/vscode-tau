@@ -6,13 +6,13 @@ import { SessionMetadataState } from '../metadata/sessionMetadata';
 import { isSupportedBuiltinSlashCommand } from '../slashCommands';
 import { getErrorMessage, isUnsupportedReloadCommandError } from './errors';
 import { filterModelOptions, formatModelOptionLabel } from './modelFormatting';
-import type { SessionViewController } from './sessionViewController';
+import type { SessionViewController } from '../sessions/sessionViewController';
 import {
   formatForkMessageLabel,
   formatForkMessages,
   formatSessionInfo,
   getSessionFile
-} from './sessionFormatting';
+} from '../sessions/sessionFormatting';
 
 export type LocalSlashCommand = { name: string; args: string };
 

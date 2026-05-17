@@ -1,8 +1,8 @@
 import type { ChatSession } from '../chatSession';
 import type { PiRpcClientLike } from '../rpc/clientTypes';
 import type { PiSessionState, PiSessionStats } from '../rpc/types';
-import { formatAgentMessages } from './transcriptFormatting';
-import type { PiRpcEventHandler } from './piRpcEventHandler';
+import { formatAgentMessages } from '../controller/transcriptFormatting';
+import type { PiRpcEventHandler } from '../controller/piRpcEventHandler';
 import { getSessionFile } from './sessionFormatting';
 import type { SessionViewController } from './sessionViewController';
 

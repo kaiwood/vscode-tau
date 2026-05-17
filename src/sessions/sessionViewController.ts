@@ -1,12 +1,12 @@
-import { listPiSessionTree } from '../sessions/piSessionTree';
+import { listPiSessionTree } from './piSessionTree';
 import type {
   WebviewSessionItem,
   WebviewSessionItemCommand,
   WebviewTreeItem
 } from '../webviewProtocol/types';
-import type { PiChatControllerOptions } from './types';
+import type { PiChatControllerOptions } from '../controller/types';
 import type { PiRpcClientLike } from '../rpc/clientTypes';
-import { getErrorMessage } from './errors';
+import { getErrorMessage } from '../controller/errors';
 import {
   cloneSessionWithClient,
   compactSessionWithClient,
