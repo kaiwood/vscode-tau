@@ -92,6 +92,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
     }
 
     .pi-toolbar__sessions {
+      position: relative;
       display: grid;
       place-items: center;
       flex: 0 0 26px;
@@ -104,6 +105,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       border: 0;
       border-radius: 999px;
       cursor: pointer;
+      overflow: visible;
     }
 
     .pi-toolbar__sessions:hover,
@@ -197,6 +199,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
 
     .pi-toolbar__menu-button,
     .pi-toolbar__help-button {
+      position: relative;
       display: grid;
       place-items: center;
       flex: 0 0 26px;
@@ -209,6 +212,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       border: 0;
       border-radius: 999px;
       cursor: pointer;
+      overflow: visible;
     }
 
     .pi-toolbar__menu-button:hover:not(:disabled),
@@ -564,6 +568,7 @@ const sessionListStyles = /* css */ `    .sessions__search {
     }
 
     .sessions__named-filter {
+      position: relative;
       display: grid;
       place-items: center;
       width: 26px;
@@ -574,6 +579,7 @@ const sessionListStyles = /* css */ `    .sessions__search {
       border: 1px solid var(--vscode-button-border, var(--vscode-input-border, transparent));
       border-radius: 4px;
       cursor: pointer;
+      overflow: visible;
     }
 
     .sessions__named-filter:hover,
@@ -714,6 +720,7 @@ const sessionListStyles = /* css */ `    .sessions__search {
     }
 
     .sessions__menu-button {
+      position: relative;
       display: grid;
       place-items: center;
       width: 22px;
@@ -725,6 +732,7 @@ const sessionListStyles = /* css */ `    .sessions__search {
       border-radius: 999px;
       cursor: pointer;
       opacity: 0;
+      overflow: visible;
     }
 
     .sessions--pointer-hover .sessions__item:hover .sessions__menu-button,
@@ -1011,12 +1019,45 @@ const messageStyles = /* css */ `    .message {
       pointer-events: none;
     }
 
+    .pi-toolbar__sessions .tau-icon-action-tooltip,
+    .pi-toolbar__menu-button .tau-icon-action-tooltip,
+    .pi-toolbar__help-button .tau-icon-action-tooltip,
+    .sessions__menu-button .tau-icon-action-tooltip,
+    .sessions__named-filter .tau-icon-action-tooltip {
+      top: calc(100% + 5px);
+      right: 0;
+      bottom: auto;
+    }
+
+    .pi-toolbar__sessions .tau-icon-action-tooltip {
+      right: auto;
+      left: 0;
+    }
+
     .message__copy:hover .tau-icon-action-tooltip,
     .message__copy:focus-visible .tau-icon-action-tooltip,
     .tau-code-block__action:hover .tau-icon-action-tooltip,
     .tau-code-block__action:focus-visible .tau-icon-action-tooltip,
     .activity__body-action:hover .tau-icon-action-tooltip,
-    .activity__body-action:focus-visible .tau-icon-action-tooltip {
+    .activity__body-action:focus-visible .tau-icon-action-tooltip,
+    .pi-toolbar__sessions:hover .tau-icon-action-tooltip,
+    .pi-toolbar__sessions:focus-visible .tau-icon-action-tooltip,
+    .pi-toolbar__menu-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
+    .pi-toolbar__menu-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
+    .pi-toolbar__help-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
+    .pi-toolbar__help-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
+    .composer__submit:hover:not(:disabled) .tau-icon-action-tooltip,
+    .composer__submit:focus-visible:not(:disabled) .tau-icon-action-tooltip,
+    .composer__diff-summary:hover .tau-icon-action-tooltip,
+    .composer__diff-summary:focus-visible .tau-icon-action-tooltip,
+    .composer__mode-button:hover .tau-icon-action-tooltip,
+    .composer__mode-button:focus-visible .tau-icon-action-tooltip,
+    .composer__model[aria-expanded="false"]:hover .tau-icon-action-tooltip,
+    .composer__model[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
+    .sessions__menu-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
+    .sessions__menu-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
+    .sessions__named-filter:hover .tau-icon-action-tooltip,
+    .sessions__named-filter:focus-visible .tau-icon-action-tooltip {
       display: block;
     }
 
@@ -1535,11 +1576,12 @@ const composerStyles = /* css */ `    .composer {
     }
 
     .composer__diff-summary {
+      position: relative;
       display: inline-flex;
       min-width: 0;
       align-items: center;
       gap: 4px;
-      overflow: hidden;
+      overflow: visible;
       padding: 0;
       border: 0;
       background: transparent;
@@ -1622,6 +1664,7 @@ const composerStyles = /* css */ `    .composer {
     }
 
     .composer__mode-button {
+      position: relative;
       padding: 2px 7px;
       color: var(--vscode-descriptionForeground);
       background: transparent;
@@ -1802,11 +1845,13 @@ const composerStyles = /* css */ `    .composer {
 
     .composer__model {
       position: relative;
+      display: flex;
+      align-items: baseline;
       flex: 0 1 auto;
       min-width: 0;
       max-width: 100%;
       padding: 0 16px 0 0;
-      overflow: hidden;
+      overflow: visible;
       color: inherit;
       background: transparent;
       border: 0;
@@ -1817,6 +1862,13 @@ const composerStyles = /* css */ `    .composer {
       text-align: left;
       text-overflow: ellipsis;
       cursor: pointer;
+    }
+
+    .composer__model-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .composer__model::after {

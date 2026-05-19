@@ -252,13 +252,18 @@ export class ComposerController {
     this.options.contextElement.hidden = state.contextUsageLabel.length === 0;
 
     const label = state.modelLabel || 'Select model';
-    this.options.modelElement.textContent = label;
-    this.options.modelElement.className = 'composer__model';
-    this.options.modelElement.title = state.metadataRefreshing
+    const modelTooltip = state.metadataRefreshing
       ? label + ' (refreshing...)'
       : state.modelOptions.length === 0 && !state.busy
       ? 'Load model settings'
       : label;
+    const modelLabel = document.createElement('span');
+    modelLabel.className = 'composer__model-label';
+    modelLabel.textContent = label;
+    const tooltip = createTooltipElement(modelTooltip);
+    this.options.modelElement.replaceChildren(modelLabel, tooltip);
+    this.options.modelElement.className = 'composer__model';
+    this.options.modelElement.setAttribute('aria-label', modelTooltip);
     this.options.modelElement.disabled = state.busy;
     this.options.modelElement.setAttribute('aria-busy', state.metadataRefreshing ? 'true' : 'false');
     this.options.modelMenuElement?.setAttribute('aria-busy', state.metadataRefreshing ? 'true' : 'false');
@@ -441,7 +446,7 @@ export class ComposerController {
     this.options.newSessionButton.disabled = false;
     this.options.submitButton.classList.toggle('composer__submit--stop', isStopMode);
     this.options.submitButton.setAttribute('aria-label', label);
-    this.options.submitButton.title = label;
+    setTooltipText(this.options.submitButton, label);
   }
 
   private getSubmitLabel(isStopMode: boolean): string {
@@ -490,7 +495,9 @@ export class ComposerController {
 
     updateDiffCounter(this.addedDiffCounter, addedLines);
     updateDiffCounter(this.removedDiffCounter, removedLines);
-    this.options.diffSummaryElement.title = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
+    const label = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
+    this.options.diffSummaryElement.setAttribute('aria-label', label);
+    setTooltipText(this.options.diffSummaryElement, label);
   }
 
   private hasWorkspaceDiffChanges(): boolean {
@@ -949,6 +956,21 @@ export class ComposerController {
     const composerHeight = this.options.form.getBoundingClientRect().height + composerMarginHeight;
     const textareaHeight = this.options.textarea.getBoundingClientRect().height;
     return Math.max(0, composerHeight - textareaHeight);
+  }
+}
+
+function createTooltipElement(text: string): HTMLSpanElement {
+  const tooltip = document.createElement('span');
+  tooltip.className = 'tau-icon-action-tooltip';
+  tooltip.textContent = text;
+  return tooltip;
+}
+
+function setTooltipText(element: HTMLElement, text: string): void {
+  const tooltip = element.querySelector<HTMLElement>('.tau-icon-action-tooltip');
+
+  if (tooltip) {
+    tooltip.textContent = text;
   }
 }
 

@@ -131,8 +131,9 @@ export class TopSessionControls {
       this.closeSessionHelpPopover();
     }
 
-    this.options.sessionToggleButton.title = isListView ? 'Back to chat' : 'Show sessions';
-    this.options.sessionToggleButton.setAttribute('aria-label', this.options.sessionToggleButton.title);
+    const sessionToggleLabel = isListView ? 'Back to chat' : 'Show sessions';
+    this.options.sessionToggleButton.setAttribute('aria-label', sessionToggleLabel);
+    setTooltipText(this.options.sessionToggleButton, sessionToggleLabel);
     this.options.sessionToggleButton.classList.toggle('pi-toolbar__sessions--back', isListView);
   }
 
@@ -536,5 +537,13 @@ export class TopSessionControls {
     }
 
     this.options.postMessage({ type: 'showSessions' });
+  }
+}
+
+function setTooltipText(element: HTMLElement, text: string): void {
+  const tooltip = element.querySelector<HTMLElement>('.tau-icon-action-tooltip');
+
+  if (tooltip) {
+    tooltip.textContent = text;
   }
 }

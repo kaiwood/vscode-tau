@@ -230,19 +230,21 @@ ${chatWebviewStyles}
 <body>
   <main class="pi-view pi-view--chat">
     <header class="pi-toolbar">
-      <button class="pi-toolbar__sessions" type="button" aria-label="Show sessions" title="Show sessions">
+      <button class="pi-toolbar__sessions" type="button" aria-label="Show sessions">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
+        <span class="tau-icon-action-tooltip">Show sessions</span>
       </button>
       <div class="pi-toolbar__title"><span class="pi-toolbar__title-text">Pi</span><span class="pi-toolbar__timestamp" hidden></span><input class="pi-toolbar__title-input" type="text" aria-label="Session name" spellcheck="false" hidden></div>
       <div class="pi-toolbar__help-wrap pi-toolbar__chat-help-wrap">
-        <button class="pi-toolbar__help-button pi-toolbar__chat-help-button" type="button" aria-label="Chat shortcuts" title="Chat shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-shortcuts">
+        <button class="pi-toolbar__help-button pi-toolbar__chat-help-button" type="button" aria-label="Chat shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-shortcuts">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.25"/>
             <path d="M6.55 6.35C6.64 5.48 7.28 4.9 8.12 4.9C9.02 4.9 9.65 5.48 9.65 6.27C9.65 6.84 9.38 7.24 8.82 7.62C8.25 8.01 8.03 8.35 8.03 8.95V9.18" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
             <circle cx="8" cy="11.1" r="0.65" fill="currentColor"/>
           </svg>
+          <span class="tau-icon-action-tooltip">Chat shortcuts</span>
         </button>
         <div id="chat-shortcuts" class="pi-toolbar__help-popover pi-toolbar__chat-help-popover" role="dialog" aria-label="Chat shortcuts" hidden>
           <div class="pi-toolbar__help-title">Chat shortcuts</div>
@@ -262,10 +264,11 @@ ${chatWebviewStyles}
         </div>
       </div>
       <div class="pi-toolbar__menu-wrap">
-        <button class="pi-toolbar__menu-button" type="button" aria-label="Session commands" title="Session commands" aria-haspopup="menu" aria-expanded="false" aria-controls="session-command-menu">
+        <button class="pi-toolbar__menu-button" type="button" aria-label="Session commands" aria-haspopup="menu" aria-expanded="false" aria-controls="session-command-menu">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/>
           </svg>
+          <span class="tau-icon-action-tooltip">Session commands</span>
         </button>
         <div id="session-command-menu" class="pi-toolbar__menu" role="menu" hidden>
           <button class="pi-toolbar__menu-item" type="button" role="menuitem" data-session-command="reload">
@@ -326,12 +329,13 @@ ${chatWebviewStyles}
         </div>
       </div>
       <div class="pi-toolbar__help-wrap pi-toolbar__session-help-wrap" hidden>
-        <button class="pi-toolbar__help-button pi-toolbar__session-help-button" type="button" aria-label="Session list shortcuts" title="Session list shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="session-shortcuts">
+        <button class="pi-toolbar__help-button pi-toolbar__session-help-button" type="button" aria-label="Session list shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="session-shortcuts">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.25"/>
             <path d="M6.55 6.35C6.64 5.48 7.28 4.9 8.12 4.9C9.02 4.9 9.65 5.48 9.65 6.27C9.65 6.84 9.38 7.24 8.82 7.62C8.25 8.01 8.03 8.35 8.03 8.95V9.18" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
             <circle cx="8" cy="11.1" r="0.65" fill="currentColor"/>
           </svg>
+          <span class="tau-icon-action-tooltip">Session list shortcuts</span>
         </button>
         <div id="session-shortcuts" class="pi-toolbar__help-popover pi-toolbar__session-help-popover" role="dialog" aria-label="Session list shortcuts" hidden>
           <div class="pi-toolbar__help-title">Session shortcuts</div>
@@ -364,10 +368,11 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
           <span class="composer__diff-added">+0</span>
           <span aria-hidden="true">|</span>
           <span class="composer__diff-removed">-0</span>
+          <span class="tau-icon-action-tooltip">Show session changes</span>
         </button>
         <span class="composer__busy-submit-modes" role="group" aria-label="Busy submit mode">
-          <button class="composer__mode-button" type="button" data-streaming-behavior="steer">Steer</button>
-          <button class="composer__mode-button" type="button" data-streaming-behavior="followUp">Follow-up</button>
+          <button class="composer__mode-button" type="button" data-streaming-behavior="steer">Steer<span class="tau-icon-action-tooltip">Steer current run</span></button>
+          <button class="composer__mode-button" type="button" data-streaming-behavior="followUp">Follow-up<span class="tau-icon-action-tooltip">Queue follow-up</span></button>
         </span>
       </div>
       <div class="composer__session-actions" role="group" aria-label="Session actions">
@@ -400,11 +405,12 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
           <select id="model-select" class="composer__select composer__model-select" aria-label="Model"></select>
         </div>
       </div>
-      <button class="composer__button composer__submit" type="submit" aria-label="Send message" title="Send message" disabled>
+      <button class="composer__button composer__submit" type="submit" aria-label="Send message" disabled>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path class="composer__submit-play" d="M5.1 3.55C5.1 2.75 5.97 2.27 6.65 2.68L15.65 8.05C16.34 8.46 16.34 9.54 15.65 9.95L6.65 15.32C5.97 15.73 5.1 15.25 5.1 14.45Z" fill="currentColor"/>
           <rect class="composer__submit-stop" x="4" y="4" width="10" height="10" rx="1.5" fill="currentColor"/>
         </svg>
+        <span class="tau-icon-action-tooltip">Send message</span>
       </button>
     </form>
   </main>

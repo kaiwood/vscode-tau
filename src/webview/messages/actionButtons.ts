@@ -4,7 +4,6 @@ export function createIconActionButton(className: string, label: string): HTMLBu
   const button = document.createElement('button');
   button.className = className;
   button.type = 'button';
-  button.title = label;
   button.setAttribute('aria-label', label);
   button.innerHTML = copyIconSvg;
 

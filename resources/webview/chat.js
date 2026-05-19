@@ -539,9 +539,14 @@
       this.options.contextElement.className = "composer__context" + (state2.contextUsageLevel ? " composer__context--" + state2.contextUsageLevel : "");
       this.options.contextElement.hidden = state2.contextUsageLabel.length === 0;
       const label = state2.modelLabel || "Select model";
-      this.options.modelElement.textContent = label;
+      const modelTooltip = state2.metadataRefreshing ? label + " (refreshing...)" : state2.modelOptions.length === 0 && !state2.busy ? "Load model settings" : label;
+      const modelLabel = document.createElement("span");
+      modelLabel.className = "composer__model-label";
+      modelLabel.textContent = label;
+      const tooltip = createTooltipElement(modelTooltip);
+      this.options.modelElement.replaceChildren(modelLabel, tooltip);
       this.options.modelElement.className = "composer__model";
-      this.options.modelElement.title = state2.metadataRefreshing ? label + " (refreshing...)" : state2.modelOptions.length === 0 && !state2.busy ? "Load model settings" : label;
+      this.options.modelElement.setAttribute("aria-label", modelTooltip);
       this.options.modelElement.disabled = state2.busy;
       this.options.modelElement.setAttribute("aria-busy", state2.metadataRefreshing ? "true" : "false");
       this.options.modelMenuElement?.setAttribute("aria-busy", state2.metadataRefreshing ? "true" : "false");
@@ -683,7 +688,7 @@
       this.options.newSessionButton.disabled = false;
       this.options.submitButton.classList.toggle("composer__submit--stop", isStopMode);
       this.options.submitButton.setAttribute("aria-label", label);
-      this.options.submitButton.title = label;
+      setTooltipText(this.options.submitButton, label);
     }
     getSubmitLabel(isStopMode) {
       if (isStopMode) {
@@ -721,7 +726,9 @@
       const removedLines = normalizeDiffLineCount(state2.workspaceDiffStats.removedLines);
       updateDiffCounter(this.addedDiffCounter, addedLines);
       updateDiffCounter(this.removedDiffCounter, removedLines);
-      this.options.diffSummaryElement.title = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
+      const label = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
+      this.options.diffSummaryElement.setAttribute("aria-label", label);
+      setTooltipText(this.options.diffSummaryElement, label);
     }
     hasWorkspaceDiffChanges() {
       const state2 = this.options.getState();
@@ -1079,6 +1086,18 @@
       return Math.max(0, composerHeight - textareaHeight);
     }
   };
+  function createTooltipElement(text) {
+    const tooltip = document.createElement("span");
+    tooltip.className = "tau-icon-action-tooltip";
+    tooltip.textContent = text;
+    return tooltip;
+  }
+  function setTooltipText(element, text) {
+    const tooltip = element.querySelector(".tau-icon-action-tooltip");
+    if (tooltip) {
+      tooltip.textContent = text;
+    }
+  }
   function isPromptContextAttachment(value) {
     if (!value || typeof value !== "object") {
       return false;
@@ -1501,7 +1520,6 @@
     const button = document.createElement("button");
     button.className = className;
     button.type = "button";
-    button.title = label;
     button.setAttribute("aria-label", label);
     button.innerHTML = copyIconSvg;
     const tooltip = document.createElement("span");
@@ -1892,9 +1910,12 @@
       openFile.className = "activity__body-action activity__body-action--text";
       openFile.type = "button";
       openFile.textContent = "Open";
-      openFile.title = "Open file";
       openFile.setAttribute("aria-label", "Open file");
       openFile.dataset.openFilePath = filePath;
+      const openFileTooltip = document.createElement("span");
+      openFileTooltip.className = "tau-icon-action-tooltip";
+      openFileTooltip.textContent = "Open file";
+      openFile.append(openFileTooltip);
       actions.append(openFile);
       const copyPath = createIconActionButton("activity__body-action", "Copy path");
       copyPath.dataset.copyPath = filePath;
@@ -2592,12 +2613,11 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "sessions__menu-button";
-    button.title = "Session commands";
     button.setAttribute("aria-label", "Session commands");
     button.setAttribute("aria-haspopup", "menu");
     button.setAttribute("aria-expanded", options.openMenuIndex === options.index ? "true" : "false");
     button.disabled = !options.canRunSessionItemCommand(options.session);
-    button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg>';
+    button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg><span class="tau-icon-action-tooltip">Session commands</span>';
     wrap.append(button);
     const menu = document.createElement("span");
     menu.className = "sessions__menu";
@@ -2847,8 +2867,9 @@
       if (state2.viewMode !== "sessions") {
         this.closeSessionHelpPopover();
       }
-      this.options.sessionToggleButton.title = isListView ? "Back to chat" : "Show sessions";
-      this.options.sessionToggleButton.setAttribute("aria-label", this.options.sessionToggleButton.title);
+      const sessionToggleLabel = isListView ? "Back to chat" : "Show sessions";
+      this.options.sessionToggleButton.setAttribute("aria-label", sessionToggleLabel);
+      setTooltipText2(this.options.sessionToggleButton, sessionToggleLabel);
       this.options.sessionToggleButton.classList.toggle("pi-toolbar__sessions--back", isListView);
     }
     cancelSessionNameEdit(options = {}) {
@@ -3162,6 +3183,12 @@
       this.options.postMessage({ type: "showSessions" });
     }
   };
+  function setTooltipText2(element, text) {
+    const tooltip = element.querySelector(".tau-icon-action-tooltip");
+    if (tooltip) {
+      tooltip.textContent = text;
+    }
+  }
 
   // src/webview/sessions/sessionView.ts
   var SessionViewController = class {
@@ -3864,8 +3891,7 @@
       namedOnlyButton.className = "sessions__named-filter";
       namedOnlyButton.classList.toggle("sessions__named-filter--active", this.sessionNamedOnlyFilter);
       namedOnlyButton.type = "button";
-      namedOnlyButton.innerHTML = '<svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.75 2.5H8.6C8.95 2.5 9.29 2.64 9.54 2.89L13.1 6.45C13.62 6.97 13.62 7.81 13.1 8.33L8.33 13.1C7.81 13.62 6.97 13.62 6.45 13.1L2.89 9.54C2.64 9.29 2.5 8.95 2.5 8.6V3.75C2.5 3.06 3.06 2.5 3.75 2.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="5.65" cy="5.65" r="1" fill="currentColor"/><path d="M7.35 8.3H10.7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>';
-      namedOnlyButton.title = "Filter to named sessions";
+      namedOnlyButton.innerHTML = '<svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.75 2.5H8.6C8.95 2.5 9.29 2.64 9.54 2.89L13.1 6.45C13.62 6.97 13.62 7.81 13.1 8.33L8.33 13.1C7.81 13.62 6.97 13.62 6.45 13.1L2.89 9.54C2.64 9.29 2.5 8.95 2.5 8.6V3.75C2.5 3.06 3.06 2.5 3.75 2.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="5.65" cy="5.65" r="1" fill="currentColor"/><path d="M7.35 8.3H10.7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><span class="tau-icon-action-tooltip">Filter to named sessions</span>';
       namedOnlyButton.setAttribute("aria-label", "Filter to named sessions");
       namedOnlyButton.setAttribute("aria-pressed", this.sessionNamedOnlyFilter ? "true" : "false");
       namedOnlyButton.addEventListener("click", (event) => {

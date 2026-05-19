@@ -213,9 +213,12 @@ function createActivityBodyWrap(body: HTMLElement, bodyText: string, filePath: s
     openFile.className = 'activity__body-action activity__body-action--text';
     openFile.type = 'button';
     openFile.textContent = 'Open';
-    openFile.title = 'Open file';
     openFile.setAttribute('aria-label', 'Open file');
     openFile.dataset.openFilePath = filePath;
+    const openFileTooltip = document.createElement('span');
+    openFileTooltip.className = 'tau-icon-action-tooltip';
+    openFileTooltip.textContent = 'Open file';
+    openFile.append(openFileTooltip);
     actions.append(openFile);
 
     const copyPath = createIconActionButton('activity__body-action', 'Copy path');
