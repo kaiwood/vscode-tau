@@ -2678,6 +2678,7 @@
     options;
     sessionNameEditing = false;
     sessionNameEditInitialValue = "";
+    sessionMenuCommandIndex = 0;
     sessionHelpOpenedFromShortcut = false;
     get isSessionNameEditing() {
       return this.sessionNameEditing;
@@ -2691,12 +2692,18 @@
         item.addEventListener("click", () => this.runSessionMenuCommand(item.getAttribute("data-session-command")));
         item.addEventListener("pointerenter", () => this.setSessionMenuItemHover(item, true));
         item.addEventListener("pointerleave", () => this.setSessionMenuItemHover(item, false));
-        item.addEventListener("focus", () => this.setSessionMenuItemHover(item, true));
+        item.addEventListener("focus", () => {
+          this.updateSessionMenuCommandIndex(item);
+          this.setSessionMenuItemHover(item, true);
+        });
         item.addEventListener("blur", () => this.setSessionMenuItemHover(item, false));
       }
       this.options.sessionNameInputElement.addEventListener("blur", () => this.cancelSessionNameEdit());
     }
     handleGlobalKeydown(event) {
+      if (this.handleSessionCommandMenuKeydown(event)) {
+        return true;
+      }
       if ((event.target === this.options.sessionToggleButton || event.target === this.options.sessionHelpButton) && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
         event.stopPropagation();
@@ -2764,11 +2771,17 @@
         this.options.focusPromptInput();
       }
     }
-    closeSessionCommandMenu() {
+    closeSessionCommandMenu(options = {}) {
+      if (this.options.sessionMenuElement.hidden) {
+        return;
+      }
       this.options.sessionMenuElement.hidden = true;
       this.options.sessionMenuButton.setAttribute("aria-expanded", "false");
       for (const item of this.options.sessionMenuItemElements) {
         this.setSessionMenuItemHover(item, false);
+      }
+      if (options.focusButton && !this.options.sessionMenuWrapElement.hidden) {
+        this.options.sessionMenuButton.focus({ preventScroll: true });
       }
     }
     openSessionHelpPopover(options = {}) {
@@ -2855,18 +2868,13 @@
       this.options.sessionMenuButton.disabled = state2.busy || this.sessionNameEditing;
     }
     toggleSessionCommandMenu(event) {
-      const state2 = this.options.getState();
       event?.preventDefault();
       event?.stopPropagation();
-      if (state2.viewMode === "sessions" || state2.viewMode === "tree" || state2.busy || this.sessionNameEditing) {
+      if (!this.options.sessionMenuElement.hidden) {
+        this.closeSessionCommandMenu();
         return;
       }
-      this.options.closeSlashMenu();
-      this.options.closeModelMenu();
-      this.closeSessionHelpPopover();
-      const isOpen = !this.options.sessionMenuElement.hidden;
-      this.options.sessionMenuElement.hidden = isOpen;
-      this.options.sessionMenuButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
+      this.openSessionCommandMenu();
     }
     toggleSessionHelpPopover(event) {
       const state2 = this.options.getState();
@@ -2888,6 +2896,136 @@
         const command = item.getAttribute("data-session-command");
         item.disabled = state2.busy || this.sessionNameEditing || command === "delete" && !this.options.getCurrentSessionPath();
       }
+    }
+    handleSessionCommandMenuKeydown(event) {
+      const target = event.target instanceof Node ? event.target : void 0;
+      const isMenuButtonTarget = event.target === this.options.sessionMenuButton;
+      const isMenuTarget = Boolean(target && this.options.sessionMenuElement.contains(target));
+      const isMenuOpen = this.hasSessionCommandMenuOpen();
+      if (isMenuButtonTarget && !isMenuOpen) {
+        if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+          event.preventDefault();
+          event.stopPropagation();
+          this.openSessionCommandMenu({ focusMenu: true });
+          return true;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          event.stopPropagation();
+          this.openSessionCommandMenu({ focusMenu: true, focusLast: true });
+          return true;
+        }
+        return false;
+      }
+      if (!isMenuOpen || !isMenuButtonTarget && !isMenuTarget) {
+        return false;
+      }
+      if (event.key === "Tab") {
+        this.closeSessionCommandMenu();
+        return false;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeSessionCommandMenu({ focusButton: true });
+        return true;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        event.stopPropagation();
+        isMenuTarget ? this.moveSessionCommandMenuSelection(1) : this.focusFirstSessionCommandMenuItem();
+        return true;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        event.stopPropagation();
+        isMenuTarget ? this.moveSessionCommandMenuSelection(-1) : this.focusLastSessionCommandMenuItem();
+        return true;
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.focusFirstSessionCommandMenuItem();
+        return true;
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.focusLastSessionCommandMenuItem();
+        return true;
+      }
+      if (isMenuTarget && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.runFocusedSessionMenuCommand(event.target);
+        return true;
+      }
+      return false;
+    }
+    openSessionCommandMenu(options = {}) {
+      const state2 = this.options.getState();
+      if (state2.viewMode === "sessions" || state2.viewMode === "tree" || state2.busy || this.sessionNameEditing) {
+        return;
+      }
+      this.options.closeSlashMenu();
+      this.options.closeModelMenu();
+      this.closeSessionHelpPopover();
+      this.syncSessionCommandMenuItems();
+      this.sessionMenuCommandIndex = options.focusLast ? this.getLastEnabledSessionCommandMenuIndex() : this.getFirstEnabledSessionCommandMenuIndex();
+      this.options.sessionMenuElement.hidden = false;
+      this.options.sessionMenuButton.setAttribute("aria-expanded", "true");
+      if (options.focusMenu) {
+        requestAnimationFrame(() => this.focusSessionCommandMenuItem(this.sessionMenuCommandIndex));
+      }
+    }
+    moveSessionCommandMenuSelection(delta) {
+      const enabledIndexes = this.getEnabledSessionCommandMenuIndexes();
+      if (enabledIndexes.length === 0) {
+        return;
+      }
+      const currentPosition = enabledIndexes.indexOf(this.sessionMenuCommandIndex);
+      const nextPosition = currentPosition >= 0 ? (currentPosition + delta + enabledIndexes.length) % enabledIndexes.length : delta > 0 ? 0 : enabledIndexes.length - 1;
+      this.sessionMenuCommandIndex = enabledIndexes[nextPosition];
+      this.focusSessionCommandMenuItem(this.sessionMenuCommandIndex);
+    }
+    focusFirstSessionCommandMenuItem() {
+      this.sessionMenuCommandIndex = this.getFirstEnabledSessionCommandMenuIndex();
+      this.focusSessionCommandMenuItem(this.sessionMenuCommandIndex);
+    }
+    focusLastSessionCommandMenuItem() {
+      this.sessionMenuCommandIndex = this.getLastEnabledSessionCommandMenuIndex();
+      this.focusSessionCommandMenuItem(this.sessionMenuCommandIndex);
+    }
+    focusSessionCommandMenuItem(index) {
+      const item = this.options.sessionMenuItemElements[index];
+      if (!item || item.disabled) {
+        return;
+      }
+      item.focus({ preventScroll: true });
+    }
+    getFirstEnabledSessionCommandMenuIndex() {
+      return this.getEnabledSessionCommandMenuIndexes()[0] ?? 0;
+    }
+    getLastEnabledSessionCommandMenuIndex() {
+      const enabledIndexes = this.getEnabledSessionCommandMenuIndexes();
+      return enabledIndexes[enabledIndexes.length - 1] ?? 0;
+    }
+    getEnabledSessionCommandMenuIndexes() {
+      return this.options.sessionMenuItemElements.map((item, index) => item.disabled ? void 0 : index).filter((index) => index !== void 0);
+    }
+    updateSessionMenuCommandIndex(item) {
+      const index = this.options.sessionMenuItemElements.indexOf(item);
+      if (index >= 0 && !item.disabled) {
+        this.sessionMenuCommandIndex = index;
+      }
+    }
+    runFocusedSessionMenuCommand(target) {
+      const targetItem = target instanceof Element ? target.closest(".pi-toolbar__menu-item") : void 0;
+      const item = targetItem instanceof HTMLButtonElement && this.options.sessionMenuElement.contains(targetItem) && !targetItem.disabled ? targetItem : this.options.sessionMenuItemElements[this.sessionMenuCommandIndex];
+      if (!item || item.disabled) {
+        return;
+      }
+      this.runSessionMenuCommand(item.getAttribute("data-session-command"));
     }
     setSessionMenuItemHover(item, hovered) {
       item.classList.toggle("pi-toolbar__menu-item--hover", hovered);
