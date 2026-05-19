@@ -1108,7 +1108,7 @@ const activityStyles = /* css */ `    .activity-list {
       height: 10px;
       flex: 0 0 auto;
       border: 1.5px solid color-mix(in srgb, var(--vscode-descriptionForeground) 35%, transparent);
-      border-top-color: #ffffff;
+      border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
       border-radius: 999px;
       animation: pi-spin 0.8s linear infinite;
       will-change: transform;
@@ -1819,6 +1819,43 @@ const composerStyles = /* css */ `    .composer {
       cursor: default;
     }`;
 
+const reducedMotionStyles = /* css */ `    body.vscode-reduce-motion *,
+    body.vscode-reduce-motion *::before,
+    body.vscode-reduce-motion *::after {
+      animation: none !important;
+      scroll-behavior: auto !important;
+      transition: none !important;
+    }
+
+    body.vscode-reduce-motion .messages,
+    body.vscode-reduce-motion .sessions,
+    body.vscode-reduce-motion .composer,
+    body.vscode-reduce-motion .status__spinner,
+    body.vscode-reduce-motion .activity--running .activity__status::before,
+    body.vscode-reduce-motion .tau-stream-word {
+      will-change: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+
+      .messages,
+      .sessions,
+      .composer,
+      .status__spinner,
+      .activity--running .activity__status::before,
+      .tau-stream-word {
+        will-change: auto;
+      }
+    }
+`;
+
 export const chatWebviewStyles = [
   baseStyles,
   toolbarStyles,
@@ -1828,4 +1865,5 @@ export const chatWebviewStyles = [
   messageStyles,
   activityStyles,
   composerStyles,
+  reducedMotionStyles,
 ].join("");
