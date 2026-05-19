@@ -180,7 +180,7 @@ export class LocalSlashCommandController {
   }
 
   public async copyTextFromWebview(text: string, successMessage = 'Copied Pi response.'): Promise<void> {
-    await this.copyTextToClipboard(text, successMessage);
+    await this.copyTextToClipboard(text, successMessage, { successToast: true });
   }
 
   public async handleCompactSlashCommand(customInstructions: string): Promise<void> {
@@ -336,7 +336,7 @@ export class LocalSlashCommandController {
     await this.copyTextToClipboard(text, 'Copied last Pi response.');
   }
 
-  private async copyTextToClipboard(text: string, successMessage: string): Promise<void> {
+  private async copyTextToClipboard(text: string, successMessage: string, options: { successToast?: boolean } = {}): Promise<void> {
     if (!text) {
       this.options.showNotification('No assistant message to copy.', 'warning');
       return;
@@ -348,6 +348,12 @@ export class LocalSlashCommandController {
     }
 
     await this.options.writeClipboard(text);
+
+    if (options.successToast && this.options.showToast) {
+      this.options.showToast(successMessage);
+      return;
+    }
+
     this.options.showNotification(successMessage, 'info');
   }
 
