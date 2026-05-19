@@ -55,6 +55,7 @@ export class ComposerController {
   private streamingBehavior: WebviewStreamingBehavior = 'steer';
   private busySubmitHideTimeout: ReturnType<typeof setTimeout> | undefined;
   private modelSelectOptionsSignature = '';
+  private textareaLayoutSignature = '';
   private readonly addedDiffCounter: ReturnType<typeof createDiffCounter>;
   private readonly removedDiffCounter: ReturnType<typeof createDiffCounter>;
 
@@ -270,11 +271,11 @@ export class ComposerController {
     this.options.focusPromptInput();
   }
 
-  public syncComposer(options: { preserveBottom?: boolean } = {}): void {
+  public syncComposer(options: { preserveBottom?: boolean; forceResize?: boolean } = {}): void {
     const shouldPreserveBottom = Boolean(options.preserveBottom) && this.options.isMessagesAtBottom();
     this.syncSubmit();
     this.syncBusySubmitMode();
-    this.syncTextareaHeight();
+    this.syncTextareaHeightIfNeeded(Boolean(options.forceResize));
 
     if (shouldPreserveBottom) {
       this.options.scrollMessagesToBottom();
@@ -827,6 +828,17 @@ export class ComposerController {
     this.options.focusPromptInput();
   }
 
+  private syncTextareaHeightIfNeeded(force: boolean): void {
+    const nextSignature = this.getTextareaLayoutSignature();
+
+    if (!force && nextSignature === this.textareaLayoutSignature) {
+      return;
+    }
+
+    this.textareaLayoutSignature = nextSignature;
+    this.syncTextareaHeight();
+  }
+
   private syncTextareaHeight(): void {
     this.options.textarea.style.height = 'auto';
 
@@ -834,6 +846,24 @@ export class ComposerController {
     const nextHeight = Math.max(minTextareaHeight, Math.min(this.options.textarea.scrollHeight, maxHeight));
     this.options.textarea.style.height = nextHeight + 'px';
     this.options.textarea.style.overflowY = this.options.textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  }
+
+  private getTextareaLayoutSignature(): string {
+    const state = this.options.getState();
+    const promptContextSignature = state.promptContext
+      .map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.xml?.length ?? 0].join('\u0000'))
+      .join('\u0000');
+
+    return [
+      this.options.textarea.value,
+      window.innerWidth,
+      window.innerHeight,
+      state.viewMode,
+      state.busy ? '1' : '0',
+      state.workspaceDiffStats.addedLines,
+      state.workspaceDiffStats.removedLines,
+      promptContextSignature
+    ].join('\u0001');
   }
 
   private getMaxTextareaHeight(): number {

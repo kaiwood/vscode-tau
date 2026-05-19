@@ -361,6 +361,7 @@
     streamingBehavior = "steer";
     busySubmitHideTimeout;
     modelSelectOptionsSignature = "";
+    textareaLayoutSignature = "";
     addedDiffCounter;
     removedDiffCounter;
     attachEventListeners() {
@@ -529,7 +530,7 @@
       const shouldPreserveBottom = Boolean(options.preserveBottom) && this.options.isMessagesAtBottom();
       this.syncSubmit();
       this.syncBusySubmitMode();
-      this.syncTextareaHeight();
+      this.syncTextareaHeightIfNeeded(Boolean(options.forceResize));
       if (shouldPreserveBottom) {
         this.options.scrollMessagesToBottom();
       }
@@ -957,12 +958,34 @@
       this.syncComposer({ preserveBottom: true });
       this.options.focusPromptInput();
     }
+    syncTextareaHeightIfNeeded(force) {
+      const nextSignature = this.getTextareaLayoutSignature();
+      if (!force && nextSignature === this.textareaLayoutSignature) {
+        return;
+      }
+      this.textareaLayoutSignature = nextSignature;
+      this.syncTextareaHeight();
+    }
     syncTextareaHeight() {
       this.options.textarea.style.height = "auto";
       const maxHeight = this.getMaxTextareaHeight();
       const nextHeight = Math.max(minTextareaHeight, Math.min(this.options.textarea.scrollHeight, maxHeight));
       this.options.textarea.style.height = nextHeight + "px";
       this.options.textarea.style.overflowY = this.options.textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+    }
+    getTextareaLayoutSignature() {
+      const state2 = this.options.getState();
+      const promptContextSignature = state2.promptContext.map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.xml?.length ?? 0].join("\0")).join("\0");
+      return [
+        this.options.textarea.value,
+        window.innerWidth,
+        window.innerHeight,
+        state2.viewMode,
+        state2.busy ? "1" : "0",
+        state2.workspaceDiffStats.addedLines,
+        state2.workspaceDiffStats.removedLines,
+        promptContextSignature
+      ].join("");
     }
     getMaxTextareaHeight() {
       const reservedMessagesHeight = getReservedMessagesHeight();
