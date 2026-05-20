@@ -277,7 +277,8 @@ export class MessageListController {
           message,
           {
             ...(animateFromText === undefined ? {} : { animateFromText }),
-            outputColors: state.outputColors
+            outputColors: state.outputColors,
+            animationsEnabled: state.animationsEnabled
           }
         );
       }
@@ -296,7 +297,8 @@ export class MessageListController {
         index,
         {
           ...(animateFromText === undefined ? {} : { animateFromText }),
-          outputColors: state.outputColors
+          outputColors: state.outputColors,
+          animationsEnabled: state.animationsEnabled
         }
       ),
       message,
@@ -326,7 +328,7 @@ export class MessageListController {
         state.messages[index],
         showRole,
         index,
-        { outputColors: state.outputColors }
+        { outputColors: state.outputColors, animationsEnabled: state.animationsEnabled }
       ),
       message: state.messages[index],
       showRole,

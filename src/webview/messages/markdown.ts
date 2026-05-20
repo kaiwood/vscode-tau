@@ -4,6 +4,7 @@ import type { MarkdownRenderer } from '../types';
 
 export type RenderMarkdownOptions = {
   animateFromText?: string;
+  animationsEnabled?: boolean;
 };
 
 const markdownRenderer: MarkdownRenderer | undefined = window.markdownit
@@ -17,7 +18,9 @@ const markdownRenderer: MarkdownRenderer | undefined = window.markdownit
 export function renderMarkdownInto(element: HTMLElement, text: string, options: RenderMarkdownOptions = {}): void {
   if (!markdownRenderer || !window.DOMPurify) {
     element.textContent = text;
-    animateNewVisibleText(element, options.animateFromText);
+    if (options.animationsEnabled !== false) {
+      animateNewVisibleText(element, options.animateFromText);
+    }
     return;
   }
 
@@ -30,7 +33,9 @@ export function renderMarkdownInto(element: HTMLElement, text: string, options: 
   linkifyFileReferences(element);
   addCodeBlockActions(element);
   requestCodeHighlightsIn(element);
-  animateNewVisibleText(element, options.animateFromText);
+  if (options.animationsEnabled !== false) {
+    animateNewVisibleText(element, options.animateFromText);
+  }
 }
 
 export function renderHighlightedCodeInto(element: HTMLElement, code: string, filePath: string): boolean {

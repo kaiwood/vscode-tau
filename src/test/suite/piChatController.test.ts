@@ -950,7 +950,8 @@ suite('PiChatController', () => {
       workspaceDiffStats: { addedLines: 0, removedLines: 0 },
       slashCommands: [],
       slashCommandsRefreshing: false,
-      outputColors: true
+      outputColors: true,
+      animationsEnabled: true
     });
     harness.controller.dispose();
   });

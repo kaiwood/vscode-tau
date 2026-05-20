@@ -57,6 +57,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       getCwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       getPiPath: () => getPiPathSetting(),
       getOutputColors: () => getOutputColorsSetting(),
+      getAnimationsEnabled: () => getAnimationsEnabledSetting(),
       getReadyScript: () => getReadyScriptSetting(),
       getReadyScriptEnabled: () => getReadyScriptEnabledSetting(),
       runReadyScript: (scriptPath, cwd) => {
@@ -103,7 +104,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
           this.controller.handlePiPathChanged();
         }
 
-        if (event.affectsConfiguration('tau.outputColors')) {
+        if (event.affectsConfiguration('tau.outputColors') || event.affectsConfiguration('tau.animationsEnabled')) {
           this.controller.postState();
         }
 
@@ -691,6 +692,10 @@ function getPiPathSetting(): string | undefined {
 
 function getOutputColorsSetting(): boolean {
   return vscode.workspace.getConfiguration('tau').get<boolean>('outputColors', true);
+}
+
+function getAnimationsEnabledSetting(): boolean {
+  return vscode.workspace.getConfiguration('tau').get<boolean>('animationsEnabled', true);
 }
 
 function getReadyScriptSetting(): string | undefined {

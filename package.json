@@ -181,6 +181,7 @@
     "configuration": {
       "id": "tau",
       "title": "Tau",
+      "type": "object",
       "properties": {
         "tau.piPath": {
           "type": "string",
@@ -191,6 +192,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable ANSI and syntax colors in Tau output boxes. When disabled, ANSI escape sequences are stripped."
+        },
+        "tau.animationsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable animations in the Tau sidebar. Reduced-motion preferences still disable motion."
         },
         "tau.readyScript": {
           "type": "string",

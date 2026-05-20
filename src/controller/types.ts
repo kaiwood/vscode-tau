@@ -18,6 +18,7 @@ export type PiChatControllerOptions = {
   getCwd?: () => string | undefined;
   getPiPath?: () => string | undefined;
   getOutputColors?: () => boolean;
+  getAnimationsEnabled?: () => boolean;
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
   runReadyScript?: (scriptPath: string, cwd: string | undefined) => void;

@@ -180,6 +180,7 @@ window.addEventListener('message', (event) => {
   const nextState = parseWebviewStateMessage(event.data);
   const hasComposerTextUpdate = nextState.composerTextRevision > 0;
   state = nextState;
+  document.body.classList.toggle('tau-animations-disabled', !state.animationsEnabled);
   const wasListView = previousViewMode === 'sessions' || previousViewMode === 'tree';
   const isListView = state.viewMode === 'sessions' || state.viewMode === 'tree';
 

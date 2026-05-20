@@ -28,8 +28,21 @@ export function createDiffCounter(element: HTMLElement, prefix: '+' | '-'): Diff
   return counter;
 }
 
-export function updateDiffCounter(counter: DiffCounterState, targetValue: number): void {
+export function updateDiffCounter(counter: DiffCounterState, targetValue: number, animationsEnabled = true): void {
   const target = normalizeDiffLineCount(targetValue);
+
+  if (!animationsEnabled) {
+    if (counter.animationFrame !== undefined) {
+      cancelAnimationFrame(counter.animationFrame);
+      counter.animationFrame = undefined;
+    }
+
+    counter.target = target;
+    counter.startValue = target;
+    counter.duration = 0;
+    renderDiffCounter(counter, target);
+    return;
+  }
 
   if (target === counter.target) {
     return;

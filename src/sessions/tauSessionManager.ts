@@ -263,7 +263,8 @@ export class TauSessionManager {
       ...state,
       sessions: augmentSessions(sessions ?? [], this.sessions),
       currentSessionName: state.currentSessionName || active.title,
-      outputColors: this.options.getOutputColors?.() ?? true
+      outputColors: this.options.getOutputColors?.() ?? true,
+      animationsEnabled: this.options.getAnimationsEnabled?.() ?? true
     });
   }
 
@@ -415,6 +416,7 @@ function createEmptyState(): WebviewStateMessage {
     slashCommands: [],
     slashCommandsRefreshing: false,
     outputColors: true,
+    animationsEnabled: true,
     promptContext: [],
     viewMode: 'chat',
     sessions: [],

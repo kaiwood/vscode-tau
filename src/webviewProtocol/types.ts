@@ -103,6 +103,7 @@ export type WebviewStateMessage = ChatState & {
   slashCommands: WebviewSlashCommand[];
   slashCommandsRefreshing: boolean;
   outputColors: boolean;
+  animationsEnabled: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];
   composerText?: string;
@@ -139,6 +140,7 @@ export type CreateWebviewStateMessageOptions = {
   slashCommands?: WebviewSlashCommand[];
   slashCommandsRefreshing?: boolean;
   outputColors?: boolean;
+  animationsEnabled?: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];
   composer?: {

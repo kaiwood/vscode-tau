@@ -493,8 +493,8 @@ export class ComposerController {
     const addedLines = normalizeDiffLineCount(state.workspaceDiffStats.addedLines);
     const removedLines = normalizeDiffLineCount(state.workspaceDiffStats.removedLines);
 
-    updateDiffCounter(this.addedDiffCounter, addedLines);
-    updateDiffCounter(this.removedDiffCounter, removedLines);
+    updateDiffCounter(this.addedDiffCounter, addedLines, state.animationsEnabled);
+    updateDiffCounter(this.removedDiffCounter, removedLines, state.animationsEnabled);
     const label = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
     this.options.diffSummaryElement.setAttribute('aria-label', label);
     setTooltipText(this.options.diffSummaryElement, label);

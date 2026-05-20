@@ -246,8 +246,19 @@
     renderDiffCounter(counter, value);
     return counter;
   }
-  function updateDiffCounter(counter, targetValue) {
+  function updateDiffCounter(counter, targetValue, animationsEnabled = true) {
     const target = normalizeDiffLineCount(targetValue);
+    if (!animationsEnabled) {
+      if (counter.animationFrame !== void 0) {
+        cancelAnimationFrame(counter.animationFrame);
+        counter.animationFrame = void 0;
+      }
+      counter.target = target;
+      counter.startValue = target;
+      counter.duration = 0;
+      renderDiffCounter(counter, target);
+      return;
+    }
     if (target === counter.target) {
       return;
     }
@@ -724,8 +735,8 @@
       const state2 = this.options.getState();
       const addedLines = normalizeDiffLineCount(state2.workspaceDiffStats.addedLines);
       const removedLines = normalizeDiffLineCount(state2.workspaceDiffStats.removedLines);
-      updateDiffCounter(this.addedDiffCounter, addedLines);
-      updateDiffCounter(this.removedDiffCounter, removedLines);
+      updateDiffCounter(this.addedDiffCounter, addedLines, state2.animationsEnabled);
+      updateDiffCounter(this.removedDiffCounter, removedLines, state2.animationsEnabled);
       const label = `Show session changes: +${formatDiffLineCount(addedLines)} | -${formatDiffLineCount(removedLines)}`;
       this.options.diffSummaryElement.setAttribute("aria-label", label);
       setTooltipText(this.options.diffSummaryElement, label);
@@ -1538,7 +1549,9 @@
   function renderMarkdownInto(element, text, options = {}) {
     if (!markdownRenderer || !window.DOMPurify) {
       element.textContent = text;
-      animateNewVisibleText(element, options.animateFromText);
+      if (options.animationsEnabled !== false) {
+        animateNewVisibleText(element, options.animateFromText);
+      }
       return;
     }
     element.classList.add("message__body--markdown");
@@ -1549,7 +1562,9 @@
     linkifyFileReferences(element);
     addCodeBlockActions(element);
     requestCodeHighlightsIn(element);
-    animateNewVisibleText(element, options.animateFromText);
+    if (options.animationsEnabled !== false) {
+      animateNewVisibleText(element, options.animateFromText);
+    }
   }
   function renderHighlightedCodeInto(element, code, filePath) {
     const language = getPathLanguageHint(filePath);
@@ -2259,7 +2274,8 @@
             message,
             {
               ...animateFromText === void 0 ? {} : { animateFromText },
-              outputColors: state2.outputColors
+              outputColors: state2.outputColors,
+              animationsEnabled: state2.animationsEnabled
             }
           );
         }
@@ -2276,7 +2292,8 @@
           index,
           {
             ...animateFromText === void 0 ? {} : { animateFromText },
-            outputColors: state2.outputColors
+            outputColors: state2.outputColors,
+            animationsEnabled: state2.animationsEnabled
           }
         ),
         message,
@@ -2302,7 +2319,7 @@
           state2.messages[index],
           showRole,
           index,
-          { outputColors: state2.outputColors }
+          { outputColors: state2.outputColors, animationsEnabled: state2.animationsEnabled }
         ),
         message: state2.messages[index],
         showRole,
@@ -4099,6 +4116,7 @@
     slashCommands: [],
     slashCommandsRefreshing: false,
     outputColors: true,
+    animationsEnabled: true,
     welcomeDismissed: false,
     promptContext: [],
     composerText: "",
@@ -4133,6 +4151,7 @@
       slashCommands: Array.isArray(record.slashCommands) ? record.slashCommands : [],
       slashCommandsRefreshing: Boolean(record.slashCommandsRefreshing),
       outputColors: typeof record.outputColors === "boolean" ? record.outputColors : true,
+      animationsEnabled: typeof record.animationsEnabled === "boolean" ? record.animationsEnabled : true,
       welcomeDismissed: Boolean(record.welcomeDismissed),
       promptContext: Array.isArray(record.promptContext) ? record.promptContext : [],
       composerText: typeof record.composerText === "string" ? record.composerText : "",
@@ -4324,6 +4343,7 @@
     const nextState = parseWebviewStateMessage(event.data);
     const hasComposerTextUpdate = nextState.composerTextRevision > 0;
     state = nextState;
+    document.body.classList.toggle("tau-animations-disabled", !state.animationsEnabled);
     const wasListView = previousViewMode === "sessions" || previousViewMode === "tree";
     const isListView = state.viewMode === "sessions" || state.viewMode === "tree";
     if (previousViewMode === "sessions" && state.viewMode !== "sessions") {
