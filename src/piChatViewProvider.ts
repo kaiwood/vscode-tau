@@ -5,8 +5,10 @@ import {
   parseWebviewMessage
 } from './sidebar/chatWebview';
 import type { WebviewMessage, WebviewStateMessage } from './webviewProtocol/types';
-import { type PiRpcClientFactory } from './rpc/clientTypes';
+import { type PiRpcClientFactory, type PiRpcClientLike } from './rpc/clientTypes';
 import { PiRpcClient } from './rpc/client';
+import type { PiRpcClientOptions } from './rpc/types';
+import { PiSdkClient } from './sdk/piSdkClient';
 import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessionDiffSnapshot } from './diff/sessionDiffStorage';
 import { SessionDiffViewer } from './diff/sessionDiffViewer';
 import { ShikiCodeRenderer } from './highlighting/shikiCodeRenderer';
@@ -29,6 +31,14 @@ const tauBusyContextKey = 'tau.busy';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
 
+function createConfiguredPiClient(options: PiRpcClientOptions): PiRpcClientLike {
+  if (getUseSdkInsteadOfRpcSetting()) {
+    return new PiSdkClient(options);
+  }
+
+  return new PiRpcClient(options);
+}
+
 export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private webviewView: vscode.WebviewView | undefined;
   private pendingInputFocus = false;
@@ -48,12 +58,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
-    createClient: PiRpcClientFactory = (options) => new PiRpcClient(options),
+    createClient: PiRpcClientFactory | undefined = undefined,
     private readonly workspaceState?: vscode.Memento,
     private readonly globalState?: vscode.Memento
   ) {
     this.controller = new TauSessionManager({
-      createClient,
+      createClient: createClient ?? createConfiguredPiClient,
       getCwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       getPiPath: () => getPiPathSetting(),
       getOutputColors: () => getOutputColorsSetting(),
