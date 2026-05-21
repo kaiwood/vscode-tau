@@ -65,16 +65,51 @@ export class PiSdkClient implements PiRpcClientLike {
     };
   }
 
-  public prompt(_message: string, _streamingBehavior?: PiPromptStreamingBehavior): Promise<void> {
-    return this.unavailable();
+  public async prompt(message: string, streamingBehavior?: PiPromptStreamingBehavior): Promise<void> {
+    const { session } = await this.ensureRuntime();
+
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settleSuccess = () => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        resolve();
+      };
+      const settleError = (error: unknown) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        reject(error instanceof Error ? error : new Error(String(error)));
+      };
+
+      void session.prompt(message, {
+        ...(streamingBehavior ? { streamingBehavior } : {}),
+        source: 'rpc',
+        preflightResult: (success) => {
+          if (success) {
+            settleSuccess();
+          } else {
+            settleError(new Error('Pi SDK prompt preflight failed.'));
+          }
+        }
+      }).then(settleSuccess, settleError);
+    });
   }
 
-  public abort(): Promise<void> {
-    return this.unavailable();
+  public async abort(): Promise<void> {
+    const { session } = await this.ensureRuntime();
+    await session.abort();
   }
 
-  public reload(): Promise<void> {
-    return this.unavailable();
+  public async reload(): Promise<void> {
+    const runtime = await this.ensureRuntime();
+    await runtime.session.reload();
+    await this.bindRuntime(runtime);
   }
 
   public async getState(): Promise<PiSessionState> {
