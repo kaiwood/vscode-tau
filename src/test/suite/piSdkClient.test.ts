@@ -37,6 +37,16 @@ suite('PiSdkClient', () => {
 
     assert.strictEqual(harness.client.isRunning(), true);
     assert.strictEqual(state.sessionFile, '/sessions/current.jsonl');
+    assert.strictEqual(state.isStreaming, false);
+    assert.strictEqual(state.autoCompactionEnabled, true);
+    assert.deepStrictEqual(await harness.client.getSessionStats(), {
+      sessionFile: '/sessions/current.jsonl',
+      sessionId: 'session-id',
+      sessionName: undefined,
+      toolResults: 2,
+      tokens: { input: 10, output: 20, cacheRead: 3, cacheWrite: 4, total: 37 },
+      contextUsage: { tokens: 100, contextWindow: 1000, percent: 10 }
+    });
     assert.strictEqual(harness.session.bindCount, 1);
     assert.deepStrictEqual(harness.createdSessionManagers, [{ type: 'create', cwd: '/workspace', sessionDir: '/configured-sessions' }]);
 
@@ -291,7 +301,13 @@ class FakeSession {
   }
 
   public getSessionStats(): {} {
-    return { sessionFile: this.sessionFile, sessionId: this.sessionId };
+    return {
+      sessionFile: this.sessionFile,
+      sessionId: this.sessionId,
+      toolResults: 2,
+      tokens: { input: 10, output: 20, cacheRead: 3, cacheWrite: 4, total: 37 },
+      contextUsage: { tokens: 100, contextWindow: 1000, percent: 10 }
+    };
   }
 
   public getUserMessagesForForking(): [] {

@@ -115,7 +115,7 @@ export class PiSdkClient implements PiRpcClientLike {
   public async getState(): Promise<PiSessionState> {
     const { session } = await this.ensureRuntime();
 
-    return {
+    const state: PiSessionState = {
       model: session.model,
       thinkingLevel: session.thinkingLevel,
       isStreaming: session.isStreaming,
@@ -128,16 +128,17 @@ export class PiSdkClient implements PiRpcClientLike {
       autoCompactionEnabled: session.autoCompactionEnabled,
       messageCount: session.messages.length,
       pendingMessageCount: session.pendingMessageCount
-    } as PiSessionState;
+    };
+    return state;
   }
 
   public async getSessionStats(): Promise<PiSessionStats> {
     const { session } = await this.ensureRuntime();
-
-    return {
+    const stats: PiSessionStats = {
       ...session.getSessionStats(),
       sessionName: session.sessionName
-    } as PiSessionStats;
+    };
+    return stats;
   }
 
   public async getAvailableModels(): Promise<PiAvailableModels> {
