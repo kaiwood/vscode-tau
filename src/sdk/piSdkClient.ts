@@ -22,6 +22,7 @@ import type {
 } from '../rpc/types';
 import type { AgentSessionRuntime, SessionManager } from '@earendil-works/pi-coding-agent';
 import { createSdkExtensionUiContext } from './extensionUiBridge';
+import { mapSdkExtensionErrorToRpcEvent, mapSdkSessionEventToRpcEvent } from './piSdkEventMapper';
 import { loadPiSdk, type PiSdkLoader, type PiSdkModule } from './piSdkLoader';
 
 const unavailableMessage = 'Pi SDK integration is not available yet.';
@@ -37,6 +38,7 @@ export type PiSdkClientOptions = PiRpcClientOptions & {
 export class PiSdkClient implements PiRpcClientLike {
   private runtime: AgentSessionRuntime | undefined;
   private runtimePromise: Promise<AgentSessionRuntime> | undefined;
+  private unsubscribeSession: (() => void) | undefined;
   private disposed = false;
   private readonly eventListeners = new Set<(event: RpcEvent) => void>();
   private readonly errorListeners = new Set<(message: string) => void>();
@@ -153,6 +155,8 @@ export class PiSdkClient implements PiRpcClientLike {
 
     this.disposed = true;
     const runtime = this.runtime;
+    this.unsubscribeSession?.();
+    this.unsubscribeSession = undefined;
     this.runtime = undefined;
     this.runtimePromise = undefined;
     void runtime?.dispose().catch((error: unknown) => {
@@ -225,8 +229,13 @@ export class PiSdkClient implements PiRpcClientLike {
     await runtime.session.bindExtensions({
       uiContext: createSdkExtensionUiContext(this.options.extensionUi),
       onError: (error) => {
-        this.emitError(formatExtensionError(error));
+        this.emitEvent(mapSdkExtensionErrorToRpcEvent(error));
       }
+    });
+
+    this.unsubscribeSession?.();
+    this.unsubscribeSession = runtime.session.subscribe((event) => {
+      this.emitEvent(mapSdkSessionEventToRpcEvent(event));
     });
   }
 
@@ -241,25 +250,17 @@ export class PiSdkClient implements PiRpcClientLike {
     return Promise.reject(new Error(unavailableMessage));
   }
 
+  private emitEvent(event: RpcEvent): void {
+    for (const listener of this.eventListeners) {
+      listener(event);
+    }
+  }
+
   private emitError(message: string): void {
     for (const listener of this.errorListeners) {
       listener(message);
     }
   }
-}
-
-function formatExtensionError(error: { extensionPath?: string; event?: string; error?: string }): string {
-  const parts = ['Pi extension error'];
-
-  if (error.extensionPath) {
-    parts.push(`in ${error.extensionPath}`);
-  }
-
-  if (error.event) {
-    parts.push(`during ${error.event}`);
-  }
-
-  return `${parts.join(' ')}: ${error.error ?? 'Unknown extension error'}`;
 }
 
 function getErrorMessage(error: unknown): string {
