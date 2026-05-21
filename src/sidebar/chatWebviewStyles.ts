@@ -1056,7 +1056,8 @@ const messageStyles = /* css */ `    .message {
       bottom: auto;
     }
 
-    .pi-toolbar__sessions .tau-icon-action-tooltip {
+    .pi-toolbar__sessions .tau-icon-action-tooltip,
+    .composer__diff-summary .tau-icon-action-tooltip {
       right: auto;
       left: 0;
     }
