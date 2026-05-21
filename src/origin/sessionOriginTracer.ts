@@ -41,6 +41,13 @@ type ParsedToolCall = {
   timestamp?: string;
 };
 
+type TraceOriginMatchWithTimestamp = TraceOriginMatch & { timestampMs: number };
+
+type TraceOriginScanResult = {
+  pathScoped?: TraceOriginMatchWithTimestamp;
+  contentOnly?: TraceOriginMatchWithTimestamp;
+};
+
 export async function traceOrigin(
   inputs: TraceOriginInput[],
   options: TraceOriginOptions = {}
@@ -54,10 +61,7 @@ export async function traceOrigin(
   }
 
   const sessions = await getSessionCandidates(options);
-  const selectionInputs = normalizedInputs.filter((input) => input.kind === 'selection');
-  const pathScopedMatch = await traceOriginInSessions(sessions, normalizedInputs, { allowContentOnly: false });
-  const earliest = pathScopedMatch
-    ?? await traceOriginInSessions(sessions, selectionInputs, { allowContentOnly: true });
+  const earliest = pickTraceOriginResult(await traceOriginInSessions(sessions, normalizedInputs));
 
   if (!earliest) {
     return undefined;
@@ -69,28 +73,44 @@ export async function traceOrigin(
 
 async function traceOriginInSessions(
   sessions: SessionCandidate[],
-  inputs: TraceOriginInput[],
-  options: { allowContentOnly: boolean }
-): Promise<(TraceOriginMatch & { timestampMs: number }) | undefined> {
+  inputs: TraceOriginInput[]
+): Promise<TraceOriginScanResult> {
   if (sessions.length === 0 || inputs.length === 0) {
-    return undefined;
+    return {};
   }
 
-  let earliest: (TraceOriginMatch & { timestampMs: number }) | undefined;
+  const selectionInputs = inputs.filter((input) => input.kind === 'selection');
+  const result: TraceOriginScanResult = {};
 
   for (const session of sessions) {
-    const match = await traceOriginInSession(session, inputs, options);
-
-    if (!match) {
-      continue;
-    }
-
-    if (!earliest || match.timestampMs < earliest.timestampMs) {
-      earliest = match;
-    }
+    mergeTraceOriginResult(result, await traceOriginInSession(session, inputs, selectionInputs));
   }
 
-  return earliest;
+  return result;
+}
+
+function pickTraceOriginResult(result: TraceOriginScanResult): TraceOriginMatchWithTimestamp | undefined {
+  return result.pathScoped ?? result.contentOnly;
+}
+
+function mergeTraceOriginResult(target: TraceOriginScanResult, source: TraceOriginScanResult | undefined): void {
+  if (!source) {
+    return;
+  }
+
+  target.pathScoped = getEarlierTraceOriginMatch(target.pathScoped, source.pathScoped);
+  target.contentOnly = getEarlierTraceOriginMatch(target.contentOnly, source.contentOnly);
+}
+
+function getEarlierTraceOriginMatch(
+  current: TraceOriginMatchWithTimestamp | undefined,
+  candidate: TraceOriginMatchWithTimestamp | undefined
+): TraceOriginMatchWithTimestamp | undefined {
+  if (!candidate) {
+    return current;
+  }
+
+  return !current || candidate.timestampMs < current.timestampMs ? candidate : current;
 }
 
 async function getSessionCandidates(options: TraceOriginOptions): Promise<SessionCandidate[]> {
@@ -127,12 +147,12 @@ function dedupeSessions(sessions: SessionCandidate[]): SessionCandidate[] {
 async function traceOriginInSession(
   session: SessionCandidate,
   inputs: TraceOriginInput[],
-  options: { allowContentOnly: boolean }
-): Promise<(TraceOriginMatch & { timestampMs: number }) | undefined> {
+  selectionInputs: TraceOriginInput[]
+): Promise<TraceOriginScanResult | undefined> {
   let sessionCwd: string | undefined;
   let sessionId = session.id;
   let sessionEndedAtMs = Number.NEGATIVE_INFINITY;
-  let earliest: (TraceOriginMatch & { timestampMs: number }) | undefined;
+  const result: TraceOriginScanResult = {};
 
   try {
     for await (const record of parseSessionJsonlFileRecords(session.path)) {
@@ -162,7 +182,22 @@ async function traceOriginInSession(
           continue;
         }
 
-        if (!inputs.some((input) => toolCallMatchesInput(toolCall, filePath, input, sessionCwd, options))) {
+        const pathScoped = inputs.some((input) => toolCallMatchesInput(
+          toolCall,
+          filePath,
+          input,
+          sessionCwd,
+          { allowContentOnly: false }
+        ));
+        const contentOnly = selectionInputs.length > 0 && selectionInputs.some((input) => toolCallMatchesInput(
+          toolCall,
+          filePath,
+          input,
+          sessionCwd,
+          { allowContentOnly: true }
+        ));
+
+        if (!pathScoped && !contentOnly) {
           continue;
         }
 
@@ -177,8 +212,12 @@ async function traceOriginInSession(
           filePath
         };
 
-        if (!earliest || match.timestampMs < earliest.timestampMs) {
-          earliest = match;
+        if (pathScoped) {
+          result.pathScoped = getEarlierTraceOriginMatch(result.pathScoped, match);
+        }
+
+        if (contentOnly) {
+          result.contentOnly = getEarlierTraceOriginMatch(result.contentOnly, match);
         }
       }
     }
@@ -186,12 +225,23 @@ async function traceOriginInSession(
     return undefined;
   }
 
-  return earliest
-    ? {
-      ...earliest,
-      ...(Number.isFinite(sessionEndedAtMs) ? { sessionEndedAt: new Date(sessionEndedAtMs).toISOString() } : {})
+  if (!result.pathScoped && !result.contentOnly) {
+    return undefined;
+  }
+
+  if (Number.isFinite(sessionEndedAtMs)) {
+    const sessionEndedAt = new Date(sessionEndedAtMs).toISOString();
+
+    if (result.pathScoped) {
+      result.pathScoped = { ...result.pathScoped, sessionEndedAt };
     }
-    : undefined;
+
+    if (result.contentOnly) {
+      result.contentOnly = { ...result.contentOnly, sessionEndedAt };
+    }
+  }
+
+  return result;
 }
 
 function getMutationToolCalls(record: Record<string, unknown>): ParsedToolCall[] {

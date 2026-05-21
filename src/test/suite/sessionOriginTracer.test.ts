@@ -65,6 +65,58 @@ suite('SessionOriginTracer', () => {
     }
   });
 
+  test('keeps path-scoped matches ahead of older content-only fallback matches', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-priority-'));
+
+    try {
+      const sessionFile = path.join(dir, 'session.jsonl');
+      await fs.writeFile(sessionFile, [
+        JSON.stringify({ type: 'session', id: 'session', cwd: dir, timestamp: '2026-01-01T00:00:00.000Z' }),
+        JSON.stringify({
+          type: 'message',
+          id: 'old-path-message',
+          timestamp: '2026-01-01T00:00:01.000Z',
+          message: {
+            role: 'assistant',
+            content: [{
+              type: 'toolCall',
+              id: 'old-path-call',
+              name: 'edit',
+              arguments: { path: 'src/old.ts', edits: [{ oldText: '', newText: 'export const priority = true;\n' }] }
+            }]
+          }
+        }),
+        JSON.stringify({
+          type: 'message',
+          id: 'current-path-message',
+          timestamp: '2026-01-02T00:00:01.000Z',
+          message: {
+            role: 'assistant',
+            content: [{
+              type: 'toolCall',
+              id: 'current-path-call',
+              name: 'edit',
+              arguments: { path: 'src/current.ts', edits: [{ oldText: '', newText: 'export const priority = true;\n' }] }
+            }]
+          }
+        })
+      ].join('\n'));
+
+      const match = await traceOrigin([{
+        kind: 'selection',
+        path: 'src/current.ts',
+        absolutePath: path.join(dir, 'src', 'current.ts'),
+        text: 'export const priority = true;'
+      }], { sessionFiles: [sessionFile] });
+
+      assert.strictEqual(match?.recordId, 'current-path-call');
+      assert.strictEqual(match?.filePath, 'src/current.ts');
+      assert.strictEqual(match?.timestamp, '2026-01-02T00:00:01.000Z');
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('falls back to selected text when the current path does not match the original edit path', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-moved-'));
 
