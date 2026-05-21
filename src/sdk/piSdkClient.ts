@@ -179,16 +179,34 @@ export class PiSdkClient implements PiRpcClientLike {
     return { commands };
   }
 
-  public setModel(_provider: string, _modelId: string): Promise<PiModel> {
-    return this.unavailable();
+  public async setModel(provider: string, modelId: string): Promise<PiModel> {
+    const { session } = await this.ensureRuntime();
+    const model = session.modelRegistry.getAvailable().find((candidate) => (
+      candidate.provider === provider && candidate.id === modelId
+    ));
+
+    if (!model) {
+      throw new Error(`Model not found: ${provider}/${modelId}`);
+    }
+
+    await session.setModel(model);
+    return model;
   }
 
-  public setThinkingLevel(_level: string): Promise<void> {
-    return this.unavailable();
+  public async setThinkingLevel(level: string): Promise<void> {
+    const { session } = await this.ensureRuntime();
+    session.setThinkingLevel(level as Parameters<typeof session.setThinkingLevel>[0]);
   }
 
-  public setSessionName(_name: string): Promise<void> {
-    return this.unavailable();
+  public async setSessionName(name: string): Promise<void> {
+    const { session } = await this.ensureRuntime();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      throw new Error('Session name cannot be empty');
+    }
+
+    session.setSessionName(trimmedName);
   }
 
   public compact(_customInstructions?: string): Promise<PiCompactResult> {
