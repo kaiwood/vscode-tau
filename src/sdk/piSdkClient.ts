@@ -39,6 +39,7 @@ export class PiSdkClient implements PiRpcClientLike {
   private runtimePromise: Promise<AgentSessionRuntime> | undefined;
   private unsubscribeSession: (() => void) | undefined;
   private disposed = false;
+  private reportedCustomPiPathWarning = false;
   private readonly eventListeners = new Set<(event: RpcEvent) => void>();
   private readonly errorListeners = new Set<(message: string) => void>();
 
@@ -305,6 +306,7 @@ export class PiSdkClient implements PiRpcClientLike {
   }
 
   private async createRuntime(): Promise<AgentSessionRuntime> {
+    this.reportIgnoredPiPathIfNeeded();
     const sdk = await this.loadSdk();
     const cwd = this.options.cwd ?? process.cwd();
     const agentDir = sdk.getAgentDir();
@@ -337,8 +339,10 @@ export class PiSdkClient implements PiRpcClientLike {
     }
 
     runtime.setRebindSession(async () => {
+      this.reportRuntimeDiagnostics(runtime);
       await this.bindRuntime(runtime);
     });
+    this.reportRuntimeDiagnostics(runtime);
     await this.bindRuntime(runtime);
     return runtime;
   }
@@ -391,6 +395,33 @@ export class PiSdkClient implements PiRpcClientLike {
 
   private loadSdk(): Promise<PiSdkModule> {
     return (this.options.loadSdk ?? loadPiSdk)();
+  }
+
+  private reportIgnoredPiPathIfNeeded(): void {
+    if (!this.options.piPath || this.reportedCustomPiPathWarning) {
+      return;
+    }
+
+    this.reportedCustomPiPathWarning = true;
+    this.notify('Tau SDK mode uses the bundled Pi SDK and ignores tau.piPath.', 'warning');
+  }
+
+  private reportRuntimeDiagnostics(runtime: AgentSessionRuntime): void {
+    if (runtime.modelFallbackMessage) {
+      this.notify(runtime.modelFallbackMessage, 'warning');
+    }
+
+    for (const diagnostic of runtime.diagnostics) {
+      if (diagnostic.type === 'error') {
+        this.emitError(diagnostic.message);
+      } else {
+        this.notify(diagnostic.message, diagnostic.type);
+      }
+    }
+  }
+
+  private notify(message: string, notifyType: string): void {
+    this.options.showNotification?.(message, notifyType);
   }
 
   private emitEvent(event: RpcEvent): void {
