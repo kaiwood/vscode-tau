@@ -1,3 +1,4 @@
+import type { ExtensionUiRequestUi } from '../extensionUi/requestHandler';
 import type { PiRpcClientLike } from '../rpc/clientTypes';
 import type {
   ExtensionUiResponse,
@@ -19,11 +20,18 @@ import type {
   PiSwitchSessionResult,
   RpcEvent
 } from '../rpc/types';
+import type { PiSdkLoader } from './piSdkLoader';
 
 const unavailableMessage = 'Pi SDK integration is not available yet.';
 
+export type PiSdkClientOptions = PiRpcClientOptions & {
+  extensionUi?: ExtensionUiRequestUi;
+  loadSdk?: PiSdkLoader;
+  showNotification?: (message: string, notifyType: string) => void;
+};
+
 export class PiSdkClient implements PiRpcClientLike {
-  public constructor(_options: PiRpcClientOptions = {}) {}
+  public constructor(_options: PiSdkClientOptions = {}) {}
 
   public isRunning(): boolean {
     return false;
