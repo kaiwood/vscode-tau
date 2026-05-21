@@ -77,7 +77,8 @@ export function createTreeItemElement(
   const item = document.createElement('button');
   item.type = 'button';
   item.id = 'tree-' + index;
-  item.className = 'sessions__item'
+  const roleClass = getTreeRoleClass(treeItem.role);
+  item.className = 'sessions__item sessions__tree-item sessions__tree-item--' + roleClass
     + (index === options.selectedIndex ? ' sessions__item--active' : '')
     + (treeItem.current ? ' sessions__item--current' : '');
   item.setAttribute('role', 'option');
@@ -85,12 +86,127 @@ export function createTreeItemElement(
   item.setAttribute('data-index', String(index));
   item.disabled = options.disabled;
 
+  item.append(createTreePrefixElement(treeItem, index === options.selectedIndex));
+
   const title = document.createElement('span');
-  title.className = 'sessions__title';
-  title.textContent = treeItem.role + ': ' + (treeItem.text || '(empty)');
+  title.className = 'sessions__title sessions__tree-title'
+    + (treeItem.role === 'summary' ? ' sessions__tree-title--summary' : '');
+
+  if (treeItem.label) {
+    const label = document.createElement('span');
+    label.className = 'sessions__tree-label';
+    label.textContent = `[${treeItem.label}]`;
+    title.append(label);
+  }
+
+  if (treeItem.role === 'summary') {
+    const summaryBox = document.createElement('span');
+    summaryBox.className = 'activity activity--message activity--info sessions__tree-summary-activity';
+
+    const summaryHeader = document.createElement('span');
+    summaryHeader.className = 'activity__summary';
+
+    const summaryTitle = document.createElement('span');
+    summaryTitle.className = 'activity__title';
+    summaryTitle.textContent = 'Branch summary';
+    summaryHeader.append(summaryTitle);
+
+    const summaryText = document.createElement('span');
+    summaryText.className = 'activity__body sessions__tree-summary-activity-body';
+    summaryText.textContent = stripBranchSummaryPrefix(treeItem.text || '(empty)');
+    summaryBox.append(summaryHeader, summaryText);
+    title.append(summaryBox);
+  } else if (treeItem.role === 'tool') {
+    const toolText = document.createElement('span');
+    toolText.className = 'sessions__title-text sessions__tree-content';
+    toolText.textContent = treeItem.text || '[tool]';
+    title.append(toolText);
+  } else {
+    const role = document.createElement('span');
+    role.className = 'sessions__role sessions__tree-role';
+    role.textContent = treeItem.role + ':';
+    title.append(role);
+
+    const titleText = document.createElement('span');
+    titleText.className = 'sessions__title-text sessions__tree-content';
+    titleText.textContent = treeItem.text || '(empty)';
+    title.append(titleText);
+  }
+
   item.append(title);
 
   return item;
+}
+
+function stripBranchSummaryPrefix(text: string): string {
+  const prefix = 'Returned from branch.\n\n';
+  return text.startsWith(prefix) ? text.slice(prefix.length) : text;
+}
+
+function createTreePrefixElement(treeItem: TreeItem, selected: boolean): HTMLElement {
+  const prefix = document.createElement('span');
+  prefix.className = 'sessions__prefix sessions__tree-prefix';
+
+  const cursor = document.createElement('span');
+  cursor.className = 'sessions__tree-cursor';
+  cursor.textContent = selected ? '›' : '';
+  prefix.append(cursor);
+
+  for (const chunk of getTreePrefixChunks(treeItem.prefix ?? '')) {
+    const connector = document.createElement('span');
+    connector.className = 'sessions__tree-connector' + getTreeConnectorClass(chunk);
+    connector.textContent = getTreeConnectorText(chunk);
+    prefix.append(connector);
+  }
+
+  const activePath = document.createElement('span');
+  activePath.className = 'sessions__tree-active-path';
+  activePath.textContent = treeItem.activePath ? '•' : '';
+  prefix.append(activePath);
+
+  return prefix;
+}
+
+function getTreePrefixChunks(prefix: string): string[] {
+  const chunks: string[] = [];
+
+  for (let index = 0; index < prefix.length; index += 3) {
+    chunks.push(prefix.slice(index, index + 3));
+  }
+
+  return chunks;
+}
+
+function getTreeConnectorText(chunk: string): string {
+  if (chunk.includes('├')) {
+    return chunk.includes('⊟') ? '├⊟' : '├─';
+  }
+
+  if (chunk.includes('└')) {
+    return chunk.includes('⊟') ? '└⊟' : '└─';
+  }
+
+  if (chunk.includes('│')) {
+    return '│';
+  }
+
+  return '';
+}
+
+function getTreeConnectorClass(chunk: string): string {
+  if (chunk.includes('├') || chunk.includes('└')) {
+    return ' sessions__tree-connector--branch';
+  }
+
+  if (chunk.includes('│')) {
+    return ' sessions__tree-connector--gutter';
+  }
+
+  return ' sessions__tree-connector--blank';
+}
+
+function getTreeRoleClass(role: string): string {
+  return role.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'entry';
 }
 
 function createSessionListNameInput(options: CreateSessionItemElementOptions): HTMLInputElement {
