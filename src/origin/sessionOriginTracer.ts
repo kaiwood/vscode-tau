@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { parseSessionJsonlFileRecords } from '../pi/sessionJsonl';
-import { listPiSessions } from '../sessions/piSessionList';
+import { listPiSessionCandidates } from '../sessions/piSessionList';
 
 export type TraceOriginInput = {
   kind: 'file' | 'selection';
@@ -98,7 +98,7 @@ async function getSessionCandidates(options: TraceOriginOptions): Promise<Sessio
     return dedupeSessions(options.sessionFiles.map((sessionPath) => ({ path: sessionPath })));
   }
 
-  const sessions = await listPiSessions({ cwd: options.cwd, currentSessionFile: options.currentSessionFile });
+  const sessions = await listPiSessionCandidates({ cwd: options.cwd, currentSessionFile: options.currentSessionFile });
   return dedupeSessions(sessions.map((session) => ({
     path: session.path,
     id: session.id,

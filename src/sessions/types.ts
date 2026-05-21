@@ -21,6 +21,14 @@ export type ListPiSessionsOptions = {
   env?: NodeJS.ProcessEnv;
 };
 
+export type PiSessionCandidate = {
+  path: string;
+  id?: string;
+  cwd?: string;
+  mtimeMs: number;
+  size: number;
+};
+
 export type RawSessionInfo = Omit<PiSessionListItem, 'depth' | 'isLast' | 'ancestorContinues' | 'current'>;
 
 export type SessionTreeNode = {

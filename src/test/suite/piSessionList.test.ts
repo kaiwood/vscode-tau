@@ -2,9 +2,38 @@ import * as assert from 'assert';
 import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { listPiSessions } from '../../sessions/piSessionList';
+import { listPiSessionCandidates, listPiSessions } from '../../sessions/piSessionList';
 
 suite('Pi session list', () => {
+  test('lists lightweight session candidates from headers only', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tau-session-candidates-'));
+
+    try {
+      const sessionPath = join(dir, 'candidate.jsonl');
+      const ignoredPath = join(dir, 'ignored.txt');
+      const malformedPath = join(dir, 'malformed.jsonl');
+
+      await writeFile(sessionPath, [
+        JSON.stringify({ type: 'session', version: 3, id: 'candidate', timestamp: '2026-01-01T00:00:00.000Z', cwd: '/workspace' }),
+        '{not-json',
+        JSON.stringify({ type: 'message', id: 'u1', message: { role: 'user', content: 'Should not be needed' } })
+      ].join('\n') + '\n');
+      await writeFile(ignoredPath, JSON.stringify({ type: 'session', id: 'ignored', cwd: '/workspace' }));
+      await writeFile(malformedPath, JSON.stringify({ type: 'message', id: 'not-a-session' }) + '\n');
+
+      const candidates = await listPiSessionCandidates({ sessionDir: dir });
+
+      assert.strictEqual(candidates.length, 1);
+      assert.strictEqual(candidates[0].path, sessionPath);
+      assert.strictEqual(candidates[0].id, 'candidate');
+      assert.strictEqual(candidates[0].cwd, '/workspace');
+      assert.ok(candidates[0].mtimeMs > 0);
+      assert.ok(candidates[0].size > 0);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('falls back to current session file directory when cwd is unavailable', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'tau-sessions-'));
 

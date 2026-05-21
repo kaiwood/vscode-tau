@@ -4,8 +4,8 @@ import { homedir } from 'os';
 import { dirname, isAbsolute, join, resolve } from 'path';
 import { extractPiMessageText } from '../pi/messageContent';
 import { parseSessionJsonlFileRecords } from '../pi/sessionJsonl';
-import type { ListPiSessionsOptions, PiSessionListItem, RawSessionInfo, SessionTreeNode } from './types';
-export type { ListPiSessionsOptions, PiSessionListItem } from './types';
+import type { ListPiSessionsOptions, PiSessionCandidate, PiSessionListItem, RawSessionInfo, SessionTreeNode } from './types';
+export type { ListPiSessionsOptions, PiSessionCandidate, PiSessionListItem } from './types';
 
 const piSessionDirEnvName = 'PI_CODING_AGENT_SESSION_DIR';
 const maxConcurrentSessionFileReads = 8;
@@ -20,6 +20,14 @@ export async function listPiSessions(options: ListPiSessionsOptions = {}): Promi
   const sessions = sessionDir ? await listSessionsFromDir(sessionDir) : [];
 
   return decorateSessions(sessions, options.currentSessionFile);
+}
+
+export async function listPiSessionCandidates(options: ListPiSessionsOptions = {}): Promise<PiSessionCandidate[]> {
+  const env = options.env ?? process.env;
+  const sessionDir = options.sessionDir
+    ?? await resolveConfiguredSessionDir(options.cwd, options.currentSessionFile, env);
+
+  return sessionDir ? listSessionCandidatesFromDir(sessionDir) : [];
 }
 
 async function listSessionsFromDir(sessionDir: string): Promise<RawSessionInfo[]> {
@@ -44,6 +52,30 @@ async function listSessionsFromDir(sessionDir: string): Promise<RawSessionInfo[]
   );
 
   return sessions.filter((session): session is RawSessionInfo => Boolean(session));
+}
+
+async function listSessionCandidatesFromDir(sessionDir: string): Promise<PiSessionCandidate[]> {
+  if (!existsSync(sessionDir)) {
+    return [];
+  }
+
+  let names: string[];
+
+  try {
+    names = await readdir(sessionDir);
+  } catch {
+    return [];
+  }
+
+  const sessions = await mapWithConcurrency(
+    names
+      .filter((name) => name.endsWith('.jsonl'))
+      .map((name) => join(sessionDir, name)),
+    maxConcurrentSessionFileReads,
+    buildSessionCandidate
+  );
+
+  return sessions.filter((session): session is PiSessionCandidate => Boolean(session));
 }
 
 function decorateSessions(
@@ -126,6 +158,39 @@ function expandTildePath(path: string): string {
   }
 
   return path;
+}
+
+async function buildSessionCandidate(filePath: string): Promise<PiSessionCandidate | undefined> {
+  try {
+    const stats = await stat(filePath);
+    const header = await readSessionHeader(filePath);
+
+    if (!header || typeof header.id !== 'string') {
+      return undefined;
+    }
+
+    return {
+      path: filePath,
+      id: header.id,
+      cwd: typeof header.cwd === 'string' ? header.cwd : undefined,
+      mtimeMs: stats.mtimeMs,
+      size: stats.size
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+async function readSessionHeader(filePath: string): Promise<Record<string, unknown> | undefined> {
+  for await (const entry of parseSessionJsonlFileRecords(filePath)) {
+    if (!isRecord(entry)) {
+      continue;
+    }
+
+    return entry.type === 'session' ? entry : undefined;
+  }
+
+  return undefined;
 }
 
 async function buildSessionInfo(filePath: string): Promise<RawSessionInfo | undefined> {
