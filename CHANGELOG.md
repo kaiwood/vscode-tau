@@ -2,10 +2,6 @@
 
 All notable changes to Tau will be documented in this file.
 
-## Unreleased
-
-- Added Marketplace keywords and categories for better extension discovery.
-
-## 0.0.1 - Initial release
+## 1.0.0 - Initial release
 
 - Initial release.
