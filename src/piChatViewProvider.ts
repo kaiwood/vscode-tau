@@ -690,6 +690,10 @@ function getPiPathSetting(): string | undefined {
   return value && value !== 'pi' ? value : undefined;
 }
 
+export function getUseSdkInsteadOfRpcSetting(): boolean {
+  return vscode.workspace.getConfiguration('tau').get<boolean>('useSdkInsteadOfRpc', false);
+}
+
 function getOutputColorsSetting(): boolean {
   return vscode.workspace.getConfiguration('tau').get<boolean>('outputColors', true);
 }
