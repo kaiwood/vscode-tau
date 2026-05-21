@@ -21,6 +21,7 @@ import type {
   RpcEvent
 } from '../rpc/types';
 import type { AgentSessionRuntime, SessionManager } from '@earendil-works/pi-coding-agent';
+import { createSdkExtensionUiContext } from './extensionUiBridge';
 import { loadPiSdk, type PiSdkLoader, type PiSdkModule } from './piSdkLoader';
 
 const unavailableMessage = 'Pi SDK integration is not available yet.';
@@ -205,6 +206,7 @@ export class PiSdkClient implements PiRpcClientLike {
       throw new Error(sdkDisposedMessage);
     }
 
+    await this.bindRuntime(runtime);
     return runtime;
   }
 
@@ -217,6 +219,15 @@ export class PiSdkClient implements PiRpcClientLike {
     }
 
     return sdk.SessionManager.create(cwd, sessionDir);
+  }
+
+  private async bindRuntime(runtime: AgentSessionRuntime): Promise<void> {
+    await runtime.session.bindExtensions({
+      uiContext: createSdkExtensionUiContext(this.options.extensionUi),
+      onError: (error) => {
+        this.emitError(formatExtensionError(error));
+      }
+    });
   }
 
   private loadSdk(): Promise<PiSdkModule> {
@@ -235,6 +246,20 @@ export class PiSdkClient implements PiRpcClientLike {
       listener(message);
     }
   }
+}
+
+function formatExtensionError(error: { extensionPath?: string; event?: string; error?: string }): string {
+  const parts = ['Pi extension error'];
+
+  if (error.extensionPath) {
+    parts.push(`in ${error.extensionPath}`);
+  }
+
+  if (error.event) {
+    parts.push(`during ${error.event}`);
+  }
+
+  return `${parts.join(' ')}: ${error.error ?? 'Unknown extension error'}`;
 }
 
 function getErrorMessage(error: unknown): string {
