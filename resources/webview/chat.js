@@ -2470,11 +2470,12 @@
     }
     details.append(summary);
     if (typeof activity.body === "string" && activity.body.length > 0) {
-      const bodyCanVisuallyExpand = Boolean(activityId && activity.code);
+      const isCollapsibleCompactionOutput = activity.kind === "compaction" && !activity.code;
+      const bodyCanVisuallyExpand = Boolean(activityId && (activity.code || isCollapsibleCompactionOutput));
       const bodyExpanded = Boolean(activityId && activityBodyExpansion.get(activityId) && (activity.expandedBody || bodyCanVisuallyExpand));
       const bodyText = bodyExpanded && typeof activity.expandedBody === "string" ? activity.expandedBody : activity.body;
       const body = document.createElement(activity.code ? "pre" : "div");
-      body.className = `activity__body${activity.code ? " activity__body--code" : " activity__body--markdown"}${bodyExpanded ? " activity__body--expanded" : ""}`;
+      body.className = `activity__body${activity.code ? " activity__body--code" : " activity__body--markdown"}${isCollapsibleCompactionOutput ? " activity__body--compaction" : ""}${bodyExpanded ? " activity__body--expanded" : ""}`;
       let bodyToggle;
       if (activity.code) {
         bodyToggle = renderCodeActivityBody(body, activity, bodyText, {
@@ -2484,10 +2485,15 @@
         });
       } else {
         renderMarkdownInto(body, bodyText);
+        if (bodyExpanded && bodyCanVisuallyExpand) {
+          bodyToggle = { label: "Show less", activityId, messageIndex, expanded: true };
+        }
       }
       const overflowToggle = bodyCanVisuallyExpand && !bodyExpanded && !bodyToggle ? { label: "Show full output", activityId, messageIndex, expanded: false } : void 0;
       const copyBodyText = activity.title === "Branch summary" && typeof activity.expandedBody === "string" ? activity.expandedBody : bodyText;
-      details.append(activity.code ? createActivityBodyWrap(body, bodyText, getReadActivityPath(activity, bodyText), bodyToggle, overflowToggle, copyBodyText) : body);
+      const filePath = getReadActivityPath(activity, bodyText);
+      const bodyWrap = activity.code || bodyToggle || overflowToggle || filePath ? createActivityBodyWrap(body, bodyText, filePath, bodyToggle, overflowToggle, copyBodyText) : body;
+      details.append(bodyWrap);
       if (bodyExpanded && shouldScrollExpandedBodyToBottom(activity.body)) {
         scheduleActivityBodyScrollToBottom(body);
       }

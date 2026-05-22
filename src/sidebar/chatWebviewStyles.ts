@@ -1414,10 +1414,19 @@ const activityStyles = /* css */ `    .activity-list {
       max-height: calc(16 * 16px);
     }
 
+    .activity__body--compaction:not(.activity__body--expanded) {
+      box-sizing: content-box;
+      max-height: calc(2 * 1.4em);
+    }
+
     .activity__body--expanded {
       box-sizing: border-box;
       max-height: min(520px, 65vh);
       overflow: auto;
+    }
+
+    .activity__body-wrap > .activity__body--markdown {
+      padding-right: 36px;
     }
 
     .activity__body-wrap > .activity__body--code {
