@@ -8,6 +8,7 @@ All notable changes to Tau will be documented in this file.
 - Fixed handled Pi extension commands so they clear Tau's busy state after custom UI closes.
 - Fixed bundled SDK peer imports so Pi packages like `@juicesharp/rpiv-ask-user-question` can load in Tau.
 - Initialized the bundled Pi TUI theme so custom UI previews with markdown/code blocks can render in Tau.
+- Increased custom UI's vertical budget and reported row count so preview-heavy dialogs can render more content, with scrolling as fallback.
 - Added `Tau: Toggle Session List` for opening and closing the session list.
 - Renamed the session tree command to `Tau: Toggle Session Tree` and made it close the tree when already open.
 - Switched Tau to the bundled Pi SDK transport and removed the RPC/`piPath` configuration path.

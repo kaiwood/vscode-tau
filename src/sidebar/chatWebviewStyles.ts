@@ -2215,16 +2215,17 @@ const composerStyles = /* css */ `    .composer {
     }`;
 
 const customUiStyles = /* css */ `    .custom-ui {
+      --tau-custom-ui-bottom-offset: calc(1lh + 92px);
       position: absolute;
       left: 20px;
       right: 20px;
-      bottom: calc(1lh + 92px);
+      bottom: var(--tau-custom-ui-bottom-offset);
       z-index: 4;
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
       gap: 6px;
       min-height: 96px;
-      max-height: min(52vh, calc(100vh - 80px));
+      max-height: min(72vh, calc(100vh - var(--tau-custom-ui-bottom-offset) - 42px));
       max-width: calc(100% - 40px);
       margin: 0;
       padding: 8px 9px 9px;

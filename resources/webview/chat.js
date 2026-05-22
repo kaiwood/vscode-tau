@@ -1720,8 +1720,8 @@
     const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.35 || 18;
     const rect = element.getBoundingClientRect();
     const columns = Math.max(20, Math.floor(rect.width / charWidth));
-    const maxRowsFromViewport = Math.floor(Math.max(120, window.innerHeight * 0.45) / lineHeight);
-    const rows = Math.max(4, Math.min(80, maxRowsFromViewport));
+    const targetHeight = Math.max(rect.height, Math.min(window.innerHeight * 0.7, window.innerHeight - 140));
+    const rows = Math.max(4, Math.min(80, Math.floor(Math.max(120, targetHeight) / lineHeight)));
     return { columns, rows };
   }
   function terminalDataForKeyboardEvent(event) {
