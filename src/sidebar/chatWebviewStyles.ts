@@ -2422,18 +2422,20 @@ const customUiStyles = /* css */ `    .custom-ui {
       position: absolute;
       inset: 13px 14px 18px;
       z-index: 0;
+      overflow: hidden;
       pointer-events: none;
       background:
-        linear-gradient(90deg, transparent 0 7%, rgba(255, 255, 255, 0.08) 7% 8%, transparent 8% 100%),
-        repeating-linear-gradient(90deg, transparent 0 9px, rgba(255, 255, 255, 0.075) 9px 10px, transparent 10px 24px),
-        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0 1px, rgba(255, 255, 255, 0.035) 1px 12px, rgba(0, 0, 0, 0.28) 12px 15px, transparent 15px 20px),
-        radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.1), transparent 68%);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 54%),
+        repeating-linear-gradient(90deg, #f6f2e8 0 18px, transparent 18px 23px) 13px 7px / calc(100% - 26px) 10px no-repeat,
+        repeating-linear-gradient(90deg, #eee9df 0 18px, transparent 18px 23px) 24px 25px / calc(100% - 48px) 10px no-repeat,
+        repeating-linear-gradient(90deg, #e5ded1 0 20px, transparent 20px 25px) 42px 43px / calc(100% - 84px) 10px no-repeat,
+        radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 68%);
       border: 1px solid rgba(255, 255, 255, 0.055);
       border-radius: 12px 12px 18px 18px;
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.12),
         inset 0 -12px 18px rgba(0, 0, 0, 0.24);
-      opacity: 0.48;
+      opacity: 0.76;
     }
 
     body.tau-custom-ui-theme-modern .composer.composer--custom-hidden::after {
@@ -2464,7 +2466,9 @@ const customUiStyles = /* css */ `    .custom-ui {
     body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__info,
     body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__model-menu,
     body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__submit {
-      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
     }
 
     body.tau-custom-ui-theme-crt .custom-ui,
