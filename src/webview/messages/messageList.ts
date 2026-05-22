@@ -65,7 +65,9 @@ export class MessageListController {
   public syncBusyStatus(): void {
     const state = this.options.getState();
 
-    if (!state.busy) {
+    const latestRunningActivity = this.getLatestRunningActivity();
+
+    if (!state.busy || latestRunningActivity?.kind === 'compaction') {
       this.options.busyStatusElement.hidden = true;
       this.options.busyStatusTextElement.textContent = '';
       return;

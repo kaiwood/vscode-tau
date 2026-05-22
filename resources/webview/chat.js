@@ -2712,7 +2712,8 @@ ${after}`;
     }
     syncBusyStatus() {
       const state2 = this.options.getState();
-      if (!state2.busy) {
+      const latestRunningActivity = this.getLatestRunningActivity();
+      if (!state2.busy || latestRunningActivity?.kind === "compaction") {
         this.options.busyStatusElement.hidden = true;
         this.options.busyStatusTextElement.textContent = "";
         return;
