@@ -1538,10 +1538,11 @@ const composerStyles = /* css */ `    .composer {
     .composer__slash-menu {
       position: absolute;
       left: 9px;
+      right: 9px;
       bottom: calc(100% + 6px);
       z-index: 3;
       display: none;
-      width: min(360px, calc(100vw - 24px));
+      width: auto;
       max-height: min(280px, 45vh);
       overflow-y: auto;
       padding: 4px;
