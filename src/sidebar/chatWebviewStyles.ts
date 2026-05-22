@@ -787,33 +787,14 @@ const sessionListStyles = /* css */ `    .sessions__search {
       color: var(--vscode-testing-iconPassed, var(--vscode-terminal-ansiGreen, var(--vscode-foreground)));
     }
 
+    .sessions__tree-item--summary .sessions__tree-role {
+      color: var(--vscode-editorWarning-foreground, var(--vscode-terminal-ansiYellow, var(--vscode-foreground)));
+    }
+
     .sessions__tree-item--tool .sessions__tree-content,
     .sessions__tree-item--toolresult .sessions__tree-content,
     .sessions__tree-item--message .sessions__tree-content {
       color: var(--vscode-descriptionForeground);
-    }
-
-    .sessions__tree-title--summary {
-      align-items: stretch;
-      overflow: visible;
-      white-space: normal;
-    }
-
-    .sessions__tree-summary-activity {
-      display: block;
-      min-width: 0;
-      max-width: 100%;
-      text-align: left;
-    }
-
-    .sessions__tree-summary-activity .activity__summary,
-    .sessions__tree-summary-activity .activity__body {
-      display: block;
-    }
-
-    .sessions__tree-summary-activity-body {
-      overflow: visible;
-      text-overflow: clip;
     }
 
     .sessions__item--active .sessions__tree-prefix,

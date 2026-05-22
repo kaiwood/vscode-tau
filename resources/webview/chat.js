@@ -2708,28 +2708,14 @@ ${after}`;
     item.disabled = options.disabled;
     item.append(createTreePrefixElement(treeItem, index === options.selectedIndex));
     const title = document.createElement("span");
-    title.className = "sessions__title sessions__tree-title" + (treeItem.role === "summary" ? " sessions__tree-title--summary" : "");
+    title.className = "sessions__title sessions__tree-title";
     if (treeItem.label) {
       const label = document.createElement("span");
       label.className = "sessions__tree-label";
       label.textContent = `[${treeItem.label}]`;
       title.append(label);
     }
-    if (treeItem.role === "summary") {
-      const summaryBox = document.createElement("span");
-      summaryBox.className = "activity activity--message activity--info sessions__tree-summary-activity";
-      const summaryHeader = document.createElement("span");
-      summaryHeader.className = "activity__summary";
-      const summaryTitle = document.createElement("span");
-      summaryTitle.className = "activity__title";
-      summaryTitle.textContent = "Branch summary";
-      summaryHeader.append(summaryTitle);
-      const summaryText = document.createElement("span");
-      summaryText.className = "activity__body sessions__tree-summary-activity-body";
-      summaryText.textContent = stripBranchSummaryPrefix2(treeItem.text || "(empty)");
-      summaryBox.append(summaryHeader, summaryText);
-      title.append(summaryBox);
-    } else if (treeItem.role === "tool") {
+    if (treeItem.role === "tool") {
       const toolText = document.createElement("span");
       toolText.className = "sessions__title-text sessions__tree-content";
       toolText.textContent = treeItem.text || "[tool]";
@@ -2737,7 +2723,7 @@ ${after}`;
     } else {
       const role = document.createElement("span");
       role.className = "sessions__role sessions__tree-role";
-      role.textContent = treeItem.role + ":";
+      role.textContent = formatTreeRoleLabel(treeItem.role);
       title.append(role);
       const titleText = document.createElement("span");
       titleText.className = "sessions__title-text sessions__tree-content";
@@ -2747,9 +2733,8 @@ ${after}`;
     item.append(title);
     return item;
   }
-  function stripBranchSummaryPrefix2(text) {
-    const prefix = "Returned from branch.\n\n";
-    return text.startsWith(prefix) ? text.slice(prefix.length) : text;
+  function formatTreeRoleLabel(role) {
+    return role === "summary" ? "[branch summary]:" : role + ":";
   }
   function createTreePrefixElement(treeItem, selected) {
     const prefix = document.createElement("span");

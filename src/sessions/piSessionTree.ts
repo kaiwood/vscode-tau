@@ -371,8 +371,7 @@ function formatEntry(entry: RawEntry, toolCallsById: Map<string, ToolCallInfo>):
 }
 
 function formatBranchSummary(summary: unknown): string {
-  const text = extractPiMessageText(summary, { separator: ' ' }).trim();
-  return text ? `Returned from branch.\n\n${text}` : 'Returned from branch.';
+  return extractPiMessageText(summary, { separator: ' ' }).trim();
 }
 
 function summarizeMessage(message: Record<string, unknown>): string {
