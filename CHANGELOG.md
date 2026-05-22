@@ -4,6 +4,7 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Fixed focus returning to the prompt input after a Pi custom UI closes.
 - Improved Pi custom UI keyboard handling with text capture, repeat/release events, and post-input re-rendering.
 - Added first-version Pi custom UI support for extensions that call `ctx.ui.custom()`.
 - Fixed handled Pi extension commands so they clear Tau's busy state after custom UI closes.

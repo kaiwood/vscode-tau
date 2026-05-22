@@ -85,7 +85,8 @@ const customUiController = new CustomUiController({
   customUiElement,
   customUiOutputElement,
   customUiCloseButton,
-  form
+  form,
+  onClose: handleCustomUiClose
 });
 
 const messagesController = new MessageListController({
@@ -560,6 +561,18 @@ function startNewSession(): void {
   sessionsController.cancelSessionNameEdit();
   vscode.postMessage({ type: 'newSession' });
   focusPromptInput();
+}
+
+function handleCustomUiClose(): void {
+  if (state.viewMode !== 'chat') {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    if (state.viewMode === 'chat' && !customUiController.isActive()) {
+      textarea.focus({ preventScroll: true });
+    }
+  });
 }
 
 function focusPromptInput(): void {

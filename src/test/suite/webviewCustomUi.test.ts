@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { isTextInputKeyboardEvent, terminalDataForKeyboardEvent } from '../../webview/custom/customUi';
+import { CustomUiController, isTextInputKeyboardEvent, terminalDataForKeyboardEvent } from '../../webview/custom/customUi';
 
 suite('Webview custom UI keyboard helpers', () => {
   test('keeps legacy terminal data for key press compatibility', () => {
@@ -24,6 +24,49 @@ suite('Webview custom UI keyboard helpers', () => {
     assert.strictEqual(isTextInputKeyboardEvent(keyEvent({ key: 'a', altKey: true })), false);
     assert.strictEqual(isTextInputKeyboardEvent(keyEvent({ key: 'Enter' })), false);
   });
+
+  test('notifies when active custom UI hides', () => {
+    const form = fakeElement();
+    const customUiElement = fakeElement();
+    const customUiOutputElement = fakeElement();
+    let closeCount = 0;
+    const controller = new CustomUiController({
+      vscode: { postMessage: () => undefined },
+      customUiElement,
+      customUiOutputElement,
+      customUiCloseButton: fakeElement() as HTMLButtonElement,
+      form: form as HTMLFormElement,
+      onClose: () => {
+        closeCount += 1;
+      }
+    });
+
+    (controller as unknown as { activeId: string }).activeId = 'custom-1';
+
+    assert.strictEqual(controller.handleHostMessage({ type: 'customUiHide', id: 'custom-1' }), true);
+    assert.strictEqual(closeCount, 1);
+    assert.strictEqual(customUiElement.hidden, true);
+    assert.strictEqual(form.inert, false);
+  });
+
+  test('does not notify for stale custom UI hide messages', () => {
+    let closeCount = 0;
+    const controller = new CustomUiController({
+      vscode: { postMessage: () => undefined },
+      customUiElement: fakeElement(),
+      customUiOutputElement: fakeElement(),
+      customUiCloseButton: fakeElement() as HTMLButtonElement,
+      form: fakeElement() as HTMLFormElement,
+      onClose: () => {
+        closeCount += 1;
+      }
+    });
+
+    (controller as unknown as { activeId: string }).activeId = 'custom-1';
+
+    assert.strictEqual(controller.handleHostMessage({ type: 'customUiHide', id: 'custom-2' }), true);
+    assert.strictEqual(closeCount, 0);
+  });
 });
 
 type KeyEventOptions = {
@@ -42,4 +85,38 @@ function keyEvent(options: KeyEventOptions): KeyboardEvent {
     shiftKey: false,
     ...options
   } as KeyboardEvent;
+}
+
+function fakeElement(): HTMLElement {
+  const attributes = new Map<string, string>();
+  const classNames = new Set<string>();
+  const element = {
+    hidden: false,
+    inert: false,
+    classList: {
+      add: (...tokens: string[]) => tokens.forEach((token) => classNames.add(token)),
+      remove: (...tokens: string[]) => tokens.forEach((token) => classNames.delete(token)),
+      toggle: (token: string, force?: boolean) => {
+        const enabled = force ?? !classNames.has(token);
+        if (enabled) {
+          classNames.add(token);
+        } else {
+          classNames.delete(token);
+        }
+        return enabled;
+      },
+      contains: (token: string) => classNames.has(token)
+    } as unknown as DOMTokenList,
+    setAttribute: (name: string, value: string) => {
+      attributes.set(name, value);
+    },
+    removeAttribute: (name: string) => {
+      attributes.delete(name);
+    },
+    replaceChildren: () => undefined,
+    append: () => undefined,
+    focus: () => undefined
+  };
+
+  return element as unknown as HTMLElement;
 }

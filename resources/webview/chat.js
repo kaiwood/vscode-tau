@@ -1666,6 +1666,7 @@
       this.options.form.classList.remove("composer--custom-hidden");
       this.options.form.removeAttribute("aria-hidden");
       this.options.form.inert = false;
+      this.options.onClose?.();
     }
     cancel() {
       if (!this.activeId) {
@@ -5372,7 +5373,8 @@ ${after}`;
     customUiElement,
     customUiOutputElement,
     customUiCloseButton,
-    form
+    form,
+    onClose: handleCustomUiClose
   });
   var messagesController = new MessageListController({
     getState: () => state,
@@ -5756,6 +5758,16 @@ ${after}`;
     sessionsController.cancelSessionNameEdit();
     vscode.postMessage({ type: "newSession" });
     focusPromptInput();
+  }
+  function handleCustomUiClose() {
+    if (state.viewMode !== "chat") {
+      return;
+    }
+    requestAnimationFrame(() => {
+      if (state.viewMode === "chat" && !customUiController.isActive()) {
+        textarea.focus({ preventScroll: true });
+      }
+    });
   }
   function focusPromptInput() {
     requestAnimationFrame(() => {

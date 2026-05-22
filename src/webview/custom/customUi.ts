@@ -12,6 +12,7 @@ type CustomUiControllerOptions = {
   customUiOutputElement: HTMLElement;
   customUiCloseButton: HTMLButtonElement;
   form: HTMLFormElement;
+  onClose?: () => void;
 };
 
 const cursorMarkerPattern = /\x1b_pi:c\x07/g;
@@ -169,6 +170,7 @@ export class CustomUiController {
     this.options.form.classList.remove('composer--custom-hidden');
     this.options.form.removeAttribute('aria-hidden');
     this.options.form.inert = false;
+    this.options.onClose?.();
   }
 
   private cancel(): void {
