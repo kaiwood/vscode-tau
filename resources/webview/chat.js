@@ -1543,13 +1543,31 @@
     activeId;
     lastDimensionSignature = "";
     resizeFrame;
+    inputCaptureElement;
+    isComposing = false;
+    lastTextInputValue = "";
+    lastTextInputTime = 0;
+    compositionFallbackTimer;
     attachEventListeners() {
+      const inputCaptureElement = this.ensureInputCaptureElement();
       this.options.customUiCloseButton.addEventListener("click", () => this.cancel());
       this.options.customUiElement.addEventListener("keydown", (event) => {
         this.handleKeydown(event);
       });
+      this.options.customUiElement.addEventListener("keyup", (event) => {
+        this.handleKeyup(event);
+      });
       this.options.customUiElement.addEventListener("paste", (event) => {
         this.handlePaste(event);
+      });
+      inputCaptureElement.addEventListener("beforeinput", (event) => {
+        this.handleBeforeInput(event);
+      });
+      inputCaptureElement.addEventListener("compositionstart", () => {
+        this.handleCompositionStart();
+      });
+      inputCaptureElement.addEventListener("compositionend", (event) => {
+        this.handleCompositionEnd(event);
       });
     }
     handleHostMessage(message) {
@@ -1575,6 +1593,16 @@
         return false;
       }
       this.handleKeydown(event);
+      return true;
+    }
+    handleGlobalKeyup(event) {
+      if (!this.activeId) {
+        return false;
+      }
+      if (event.target === this.options.customUiCloseButton) {
+        return false;
+      }
+      this.handleKeyup(event);
       return true;
     }
     syncForRender(isListView) {
@@ -1606,7 +1634,7 @@
       this.options.form.classList.add("composer--custom-hidden");
       this.options.form.setAttribute("aria-hidden", "true");
       this.options.form.inert = true;
-      this.options.customUiElement.focus({ preventScroll: true });
+      this.focusInputCapture();
       this.scheduleDimensionsPost();
     }
     render(id, lines, outputColors) {
@@ -1629,6 +1657,9 @@
       }
       this.activeId = void 0;
       this.lastDimensionSignature = "";
+      this.isComposing = false;
+      this.clearCompositionFallback();
+      this.clearInputCaptureValue();
       this.options.customUiElement.hidden = true;
       this.options.customUiElement.inert = true;
       this.options.customUiOutputElement.replaceChildren();
@@ -1654,6 +1685,43 @@
       event.stopPropagation();
       this.postInput(text);
     }
+    handleBeforeInput(event) {
+      if (!this.activeId) {
+        return;
+      }
+      if (!isTextInsertionInput(event)) {
+        return;
+      }
+      if (event.isComposing || this.isComposing || event.inputType === "insertCompositionText") {
+        return;
+      }
+      const data = event.data ?? "";
+      if (!data) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.postTextInput(data);
+    }
+    handleCompositionStart() {
+      this.isComposing = true;
+    }
+    handleCompositionEnd(event) {
+      this.isComposing = false;
+      this.clearInputCaptureValue();
+      const data = event.data ?? "";
+      if (!data || this.isRecentTextInput(data)) {
+        return;
+      }
+      this.clearCompositionFallback();
+      this.compositionFallbackTimer = window.setTimeout(() => {
+        this.compositionFallbackTimer = void 0;
+        if (!this.activeId || this.isRecentTextInput(data)) {
+          return;
+        }
+        this.postTextInput(data);
+      }, 0);
+    }
     handleKeydown(event) {
       if (!this.activeId) {
         return;
@@ -1661,13 +1729,79 @@
       if (event.target === this.options.customUiCloseButton) {
         return;
       }
-      const data = terminalDataForKeyboardEvent(event);
+      if (event.isComposing || this.isComposing || event.key === "Process" || event.key === "Dead") {
+        return;
+      }
+      if (isTextInputKeyboardEvent(event)) {
+        return;
+      }
+      const data = terminalDataForKeyboardEvent(event, event.repeat ? "repeat" : "press");
       if (data === void 0) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
       this.postInput(data);
+    }
+    handleKeyup(event) {
+      if (!this.activeId) {
+        return;
+      }
+      if (event.target === this.options.customUiCloseButton) {
+        return;
+      }
+      if (event.isComposing || this.isComposing || event.key === "Process" || event.key === "Dead") {
+        return;
+      }
+      const data = terminalDataForKeyboardEvent(event, "release");
+      if (data === void 0) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.postInput(data);
+    }
+    ensureInputCaptureElement() {
+      if (this.inputCaptureElement) {
+        return this.inputCaptureElement;
+      }
+      const element = document.createElement("textarea");
+      element.className = "custom-ui__input-capture";
+      element.setAttribute("aria-label", "Extension UI keyboard input");
+      element.autocapitalize = "off";
+      element.autocomplete = "off";
+      element.spellcheck = false;
+      element.rows = 1;
+      element.tabIndex = -1;
+      this.options.customUiElement.append(element);
+      this.inputCaptureElement = element;
+      return element;
+    }
+    focusInputCapture() {
+      const element = this.ensureInputCaptureElement();
+      element.value = "";
+      element.focus({ preventScroll: true });
+    }
+    clearInputCaptureValue() {
+      if (this.inputCaptureElement) {
+        this.inputCaptureElement.value = "";
+      }
+    }
+    clearCompositionFallback() {
+      if (this.compositionFallbackTimer !== void 0) {
+        window.clearTimeout(this.compositionFallbackTimer);
+        this.compositionFallbackTimer = void 0;
+      }
+    }
+    postTextInput(data) {
+      this.clearCompositionFallback();
+      this.lastTextInputValue = data;
+      this.lastTextInputTime = Date.now();
+      this.clearInputCaptureValue();
+      this.postInput(data);
+    }
+    isRecentTextInput(data) {
+      return this.lastTextInputValue === data && Date.now() - this.lastTextInputTime < 100;
     }
     postInput(data) {
       if (!this.activeId) {
@@ -1724,9 +1858,15 @@
     const rows = Math.max(4, Math.min(80, Math.floor(Math.max(120, targetHeight) / lineHeight)));
     return { columns, rows };
   }
-  function terminalDataForKeyboardEvent(event) {
+  function isTextInputKeyboardEvent(event) {
+    return !event.metaKey && !event.ctrlKey && !event.altKey && isSingleCodePoint(event.key);
+  }
+  function terminalDataForKeyboardEvent(event, eventType = "press") {
     if (event.metaKey) {
       return void 0;
+    }
+    if (eventType !== "press") {
+      return kittyDataForKeyboardEvent(event, eventType);
     }
     if (event.ctrlKey && !event.altKey && event.key.length === 1) {
       const lower = event.key.toLowerCase();
@@ -1738,9 +1878,60 @@
     if (special !== void 0) {
       return event.altKey && special.length > 0 && !special.startsWith("\x1B") ? `\x1B${special}` : special;
     }
-    if (event.key.length === 1 && !event.ctrlKey) {
+    if (isSingleCodePoint(event.key) && !event.ctrlKey) {
       return event.altKey ? `\x1B${event.key}` : event.key;
     }
+    return void 0;
+  }
+  function kittyDataForKeyboardEvent(event, eventType) {
+    const modifier = kittyModifierForEvent(event);
+    const eventCode = eventType === "repeat" ? 2 : 3;
+    const special = kittySpecialKeyData(event, modifier, eventCode);
+    if (special !== void 0) {
+      return special;
+    }
+    if (!isSingleCodePoint(event.key)) {
+      return void 0;
+    }
+    const codepoint = event.key.codePointAt(0);
+    return codepoint === void 0 ? void 0 : `\x1B[${codepoint};${modifier}:${eventCode}u`;
+  }
+  function kittyModifierForEvent(event) {
+    return 1 + (event.shiftKey ? 1 : 0) + (event.altKey ? 2 : 0) + (event.ctrlKey ? 4 : 0);
+  }
+  function kittySpecialKeyData(event, modifier, eventCode) {
+    const arrowCode = arrowKittyCode(event.key);
+    if (arrowCode !== void 0) {
+      return `\x1B[1;${modifier}:${eventCode}${arrowCode}`;
+    }
+    if (event.key === "Home") return `\x1B[1;${modifier}:${eventCode}H`;
+    if (event.key === "End") return `\x1B[1;${modifier}:${eventCode}F`;
+    const functional = functionalKittyCode(event.key);
+    if (functional !== void 0) {
+      return `\x1B[${functional};${modifier}:${eventCode}~`;
+    }
+    const codepoint = csiUCodepoint(event.key);
+    return codepoint === void 0 ? void 0 : `\x1B[${codepoint};${modifier}:${eventCode}u`;
+  }
+  function arrowKittyCode(key) {
+    if (key === "ArrowUp") return "A";
+    if (key === "ArrowDown") return "B";
+    if (key === "ArrowRight") return "C";
+    if (key === "ArrowLeft") return "D";
+    return void 0;
+  }
+  function functionalKittyCode(key) {
+    if (key === "Insert") return 2;
+    if (key === "Delete") return 3;
+    if (key === "PageUp") return 5;
+    if (key === "PageDown") return 6;
+    return void 0;
+  }
+  function csiUCodepoint(key) {
+    if (key === "Escape") return 27;
+    if (key === "Tab") return 9;
+    if (key === "Enter") return 13;
+    if (key === "Backspace") return 127;
     return void 0;
   }
   function specialKeyData(event) {
@@ -1758,6 +1949,12 @@
     if (event.key === "ArrowRight") return event.shiftKey ? "\x1B[c" : event.ctrlKey ? "\x1BOc" : "\x1B[C";
     if (event.key === "ArrowLeft") return event.shiftKey ? "\x1B[d" : event.ctrlKey ? "\x1BOd" : "\x1B[D";
     return void 0;
+  }
+  function isTextInsertionInput(event) {
+    return event.inputType === "insertText" || event.inputType === "insertCompositionText" || event.inputType === "insertFromComposition";
+  }
+  function isSingleCodePoint(value) {
+    return Array.from(value).length === 1;
   }
   function isCustomUiHostMessage(value) {
     if (!value || typeof value !== "object" || !("type" in value)) {
@@ -5327,6 +5524,9 @@ ${after}`;
     if (messagesController.handleChatPageScroll(event)) {
       return;
     }
+  }, true);
+  window.addEventListener("keyup", (event) => {
+    customUiController.handleGlobalKeyup(event);
   }, true);
   window.addEventListener("resize", () => {
     render();

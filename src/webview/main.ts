@@ -272,6 +272,10 @@ window.addEventListener('keydown', (event) => {
   }
 }, true);
 
+window.addEventListener('keyup', (event) => {
+  customUiController.handleGlobalKeyup(event);
+}, true);
+
 window.addEventListener('resize', () => {
   render();
   composerController.syncComposer({ preserveBottom: true });

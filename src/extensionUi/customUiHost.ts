@@ -3,6 +3,7 @@ import type { ExtensionCustomUiFactory, ExtensionCustomUiOptions } from './types
 type CustomUiComponent = {
   render(width: number): string[];
   handleInput?(data: string): void;
+  wantsKeyRelease?: boolean;
   invalidate(): void;
   dispose?(): void;
 };
@@ -106,8 +107,13 @@ export class ExtensionCustomUiHost {
       return;
     }
 
+    if (isKeyRelease(data) && !active.component.wantsKeyRelease) {
+      return;
+    }
+
     try {
       active.component.handleInput?.(data);
+      this.scheduleRender(id);
     } catch (error) {
       this.options.notify(`Pi extension UI input failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
       this.finish(id, undefined);
@@ -253,6 +259,21 @@ function clampInteger(value: number, min: number, max: number, fallback: number)
   }
 
   return Math.min(Math.max(Math.floor(value), min), max);
+}
+
+function isKeyRelease(data: string): boolean {
+  if (data.includes('\x1b[200~')) {
+    return false;
+  }
+
+  return data.includes(':3u')
+    || data.includes(':3~')
+    || data.includes(':3A')
+    || data.includes(':3B')
+    || data.includes(':3C')
+    || data.includes(':3D')
+    || data.includes(':3H')
+    || data.includes(':3F');
 }
 
 const colorCodes: Record<string, number> = {

@@ -21,16 +21,35 @@ export class CustomUiController {
   private activeId: string | undefined;
   private lastDimensionSignature = '';
   private resizeFrame: number | undefined;
+  private inputCaptureElement: HTMLTextAreaElement | undefined;
+  private isComposing = false;
+  private lastTextInputValue = '';
+  private lastTextInputTime = 0;
+  private compositionFallbackTimer: number | undefined;
 
   public constructor(private readonly options: CustomUiControllerOptions) {}
 
   public attachEventListeners(): void {
+    const inputCaptureElement = this.ensureInputCaptureElement();
+
     this.options.customUiCloseButton.addEventListener('click', () => this.cancel());
     this.options.customUiElement.addEventListener('keydown', (event) => {
       this.handleKeydown(event);
     });
+    this.options.customUiElement.addEventListener('keyup', (event) => {
+      this.handleKeyup(event);
+    });
     this.options.customUiElement.addEventListener('paste', (event) => {
       this.handlePaste(event);
+    });
+    inputCaptureElement.addEventListener('beforeinput', (event) => {
+      this.handleBeforeInput(event);
+    });
+    inputCaptureElement.addEventListener('compositionstart', () => {
+      this.handleCompositionStart();
+    });
+    inputCaptureElement.addEventListener('compositionend', (event) => {
+      this.handleCompositionEnd(event);
     });
   }
 
@@ -63,6 +82,19 @@ export class CustomUiController {
     }
 
     this.handleKeydown(event);
+    return true;
+  }
+
+  public handleGlobalKeyup(event: KeyboardEvent): boolean {
+    if (!this.activeId) {
+      return false;
+    }
+
+    if (event.target === this.options.customUiCloseButton) {
+      return false;
+    }
+
+    this.handleKeyup(event);
     return true;
   }
 
@@ -100,7 +132,7 @@ export class CustomUiController {
     this.options.form.classList.add('composer--custom-hidden');
     this.options.form.setAttribute('aria-hidden', 'true');
     this.options.form.inert = true;
-    this.options.customUiElement.focus({ preventScroll: true });
+    this.focusInputCapture();
     this.scheduleDimensionsPost();
   }
 
@@ -128,6 +160,9 @@ export class CustomUiController {
 
     this.activeId = undefined;
     this.lastDimensionSignature = '';
+    this.isComposing = false;
+    this.clearCompositionFallback();
+    this.clearInputCaptureValue();
     this.options.customUiElement.hidden = true;
     this.options.customUiElement.inert = true;
     this.options.customUiOutputElement.replaceChildren();
@@ -159,6 +194,53 @@ export class CustomUiController {
     this.postInput(text);
   }
 
+  private handleBeforeInput(event: InputEvent): void {
+    if (!this.activeId) {
+      return;
+    }
+
+    if (!isTextInsertionInput(event)) {
+      return;
+    }
+
+    if (event.isComposing || this.isComposing || event.inputType === 'insertCompositionText') {
+      return;
+    }
+
+    const data = event.data ?? '';
+    if (!data) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.postTextInput(data);
+  }
+
+  private handleCompositionStart(): void {
+    this.isComposing = true;
+  }
+
+  private handleCompositionEnd(event: CompositionEvent): void {
+    this.isComposing = false;
+    this.clearInputCaptureValue();
+
+    const data = event.data ?? '';
+    if (!data || this.isRecentTextInput(data)) {
+      return;
+    }
+
+    this.clearCompositionFallback();
+    this.compositionFallbackTimer = window.setTimeout(() => {
+      this.compositionFallbackTimer = undefined;
+      if (!this.activeId || this.isRecentTextInput(data)) {
+        return;
+      }
+
+      this.postTextInput(data);
+    }, 0);
+  }
+
   private handleKeydown(event: KeyboardEvent): void {
     if (!this.activeId) {
       return;
@@ -168,7 +250,15 @@ export class CustomUiController {
       return;
     }
 
-    const data = terminalDataForKeyboardEvent(event);
+    if (event.isComposing || this.isComposing || event.key === 'Process' || event.key === 'Dead') {
+      return;
+    }
+
+    if (isTextInputKeyboardEvent(event)) {
+      return;
+    }
+
+    const data = terminalDataForKeyboardEvent(event, event.repeat ? 'repeat' : 'press');
     if (data === undefined) {
       return;
     }
@@ -176,6 +266,78 @@ export class CustomUiController {
     event.preventDefault();
     event.stopPropagation();
     this.postInput(data);
+  }
+
+  private handleKeyup(event: KeyboardEvent): void {
+    if (!this.activeId) {
+      return;
+    }
+
+    if (event.target === this.options.customUiCloseButton) {
+      return;
+    }
+
+    if (event.isComposing || this.isComposing || event.key === 'Process' || event.key === 'Dead') {
+      return;
+    }
+
+    const data = terminalDataForKeyboardEvent(event, 'release');
+    if (data === undefined) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.postInput(data);
+  }
+
+  private ensureInputCaptureElement(): HTMLTextAreaElement {
+    if (this.inputCaptureElement) {
+      return this.inputCaptureElement;
+    }
+
+    const element = document.createElement('textarea');
+    element.className = 'custom-ui__input-capture';
+    element.setAttribute('aria-label', 'Extension UI keyboard input');
+    element.autocapitalize = 'off';
+    element.autocomplete = 'off';
+    element.spellcheck = false;
+    element.rows = 1;
+    element.tabIndex = -1;
+    this.options.customUiElement.append(element);
+    this.inputCaptureElement = element;
+    return element;
+  }
+
+  private focusInputCapture(): void {
+    const element = this.ensureInputCaptureElement();
+    element.value = '';
+    element.focus({ preventScroll: true });
+  }
+
+  private clearInputCaptureValue(): void {
+    if (this.inputCaptureElement) {
+      this.inputCaptureElement.value = '';
+    }
+  }
+
+  private clearCompositionFallback(): void {
+    if (this.compositionFallbackTimer !== undefined) {
+      window.clearTimeout(this.compositionFallbackTimer);
+      this.compositionFallbackTimer = undefined;
+    }
+  }
+
+  private postTextInput(data: string): void {
+    this.clearCompositionFallback();
+    this.lastTextInputValue = data;
+    this.lastTextInputTime = Date.now();
+    this.clearInputCaptureValue();
+    this.postInput(data);
+  }
+
+  private isRecentTextInput(data: string): boolean {
+    return this.lastTextInputValue === data && Date.now() - this.lastTextInputTime < 100;
   }
 
   private postInput(data: string): void {
@@ -246,9 +408,19 @@ function measureTerminalDimensions(element: HTMLElement): { columns: number; row
   return { columns, rows };
 }
 
-function terminalDataForKeyboardEvent(event: KeyboardEvent): string | undefined {
+type CustomUiKeyEventType = 'press' | 'repeat' | 'release';
+
+export function isTextInputKeyboardEvent(event: Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'key' | 'metaKey'>): boolean {
+  return !event.metaKey && !event.ctrlKey && !event.altKey && isSingleCodePoint(event.key);
+}
+
+export function terminalDataForKeyboardEvent(event: KeyboardEvent, eventType: CustomUiKeyEventType = 'press'): string | undefined {
   if (event.metaKey) {
     return undefined;
+  }
+
+  if (eventType !== 'press') {
+    return kittyDataForKeyboardEvent(event, eventType);
   }
 
   if (event.ctrlKey && !event.altKey && event.key.length === 1) {
@@ -263,10 +435,73 @@ function terminalDataForKeyboardEvent(event: KeyboardEvent): string | undefined 
     return event.altKey && special.length > 0 && !special.startsWith('\x1b') ? `\x1b${special}` : special;
   }
 
-  if (event.key.length === 1 && !event.ctrlKey) {
+  if (isSingleCodePoint(event.key) && !event.ctrlKey) {
     return event.altKey ? `\x1b${event.key}` : event.key;
   }
 
+  return undefined;
+}
+
+function kittyDataForKeyboardEvent(event: KeyboardEvent, eventType: Exclude<CustomUiKeyEventType, 'press'>): string | undefined {
+  const modifier = kittyModifierForEvent(event);
+  const eventCode = eventType === 'repeat' ? 2 : 3;
+  const special = kittySpecialKeyData(event, modifier, eventCode);
+
+  if (special !== undefined) {
+    return special;
+  }
+
+  if (!isSingleCodePoint(event.key)) {
+    return undefined;
+  }
+
+  const codepoint = event.key.codePointAt(0);
+  return codepoint === undefined ? undefined : `\x1b[${codepoint};${modifier}:${eventCode}u`;
+}
+
+function kittyModifierForEvent(event: KeyboardEvent): number {
+  return 1 + (event.shiftKey ? 1 : 0) + (event.altKey ? 2 : 0) + (event.ctrlKey ? 4 : 0);
+}
+
+function kittySpecialKeyData(event: KeyboardEvent, modifier: number, eventCode: 2 | 3): string | undefined {
+  const arrowCode = arrowKittyCode(event.key);
+  if (arrowCode !== undefined) {
+    return `\x1b[1;${modifier}:${eventCode}${arrowCode}`;
+  }
+
+  if (event.key === 'Home') return `\x1b[1;${modifier}:${eventCode}H`;
+  if (event.key === 'End') return `\x1b[1;${modifier}:${eventCode}F`;
+
+  const functional = functionalKittyCode(event.key);
+  if (functional !== undefined) {
+    return `\x1b[${functional};${modifier}:${eventCode}~`;
+  }
+
+  const codepoint = csiUCodepoint(event.key);
+  return codepoint === undefined ? undefined : `\x1b[${codepoint};${modifier}:${eventCode}u`;
+}
+
+function arrowKittyCode(key: string): string | undefined {
+  if (key === 'ArrowUp') return 'A';
+  if (key === 'ArrowDown') return 'B';
+  if (key === 'ArrowRight') return 'C';
+  if (key === 'ArrowLeft') return 'D';
+  return undefined;
+}
+
+function functionalKittyCode(key: string): number | undefined {
+  if (key === 'Insert') return 2;
+  if (key === 'Delete') return 3;
+  if (key === 'PageUp') return 5;
+  if (key === 'PageDown') return 6;
+  return undefined;
+}
+
+function csiUCodepoint(key: string): number | undefined {
+  if (key === 'Escape') return 27;
+  if (key === 'Tab') return 9;
+  if (key === 'Enter') return 13;
+  if (key === 'Backspace') return 127;
   return undefined;
 }
 
@@ -285,6 +520,16 @@ function specialKeyData(event: KeyboardEvent): string | undefined {
   if (event.key === 'ArrowRight') return event.shiftKey ? '\x1b[c' : event.ctrlKey ? '\x1bOc' : '\x1b[C';
   if (event.key === 'ArrowLeft') return event.shiftKey ? '\x1b[d' : event.ctrlKey ? '\x1bOd' : '\x1b[D';
   return undefined;
+}
+
+function isTextInsertionInput(event: InputEvent): boolean {
+  return event.inputType === 'insertText'
+    || event.inputType === 'insertCompositionText'
+    || event.inputType === 'insertFromComposition';
+}
+
+function isSingleCodePoint(value: string): boolean {
+  return Array.from(value).length === 1;
 }
 
 function isCustomUiHostMessage(value: unknown): value is CustomUiHostMessage {

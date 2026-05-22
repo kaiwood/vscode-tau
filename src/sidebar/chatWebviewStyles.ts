@@ -2301,6 +2301,26 @@ const customUiStyles = /* css */ `    .custom-ui {
       tab-size: 2;
     }
 
+    .custom-ui__input-capture {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      overflow: hidden;
+      resize: none;
+      color: transparent;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      pointer-events: none;
+    }
+
     .custom-ui__line {
       min-height: 1.35em;
       white-space: pre;
