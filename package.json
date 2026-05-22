@@ -54,7 +54,7 @@
       },
       {
         "command": "tau.showSessionTree",
-        "title": "Show Session Tree",
+        "title": "Toggle Session Tree",
         "category": "Tau"
       },
       {

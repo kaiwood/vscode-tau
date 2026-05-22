@@ -1420,6 +1420,35 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('toggle session tree opens and closes the live session tree', async () => {
+    const treeItems: WebviewTreeItem[] = [{
+      entryId: 'entry-1',
+      role: 'user',
+      text: 'Fix tests',
+      current: true,
+      activePath: true,
+      depth: 0,
+      isLast: true,
+      ancestorContinues: []
+    }];
+    const client = new FakePiClient({ treeItems });
+    const harness = createControllerHarness([client]);
+
+    harness.controller.toggleSessionTree();
+    await flushPromises();
+
+    assert.strictEqual(harness.createCalls, 1);
+    assert.strictEqual(client.treeCalls, 1);
+    assert.strictEqual(lastState(harness).viewMode, 'tree');
+    assert.deepStrictEqual(lastState(harness).treeItems, treeItems);
+
+    harness.controller.toggleSessionTree();
+
+    assert.strictEqual(client.treeCalls, 1);
+    assert.strictEqual(lastState(harness).viewMode, undefined);
+    harness.controller.dispose();
+  });
+
   test('tree navigation forwards branch summary options', async () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);

@@ -93,6 +93,10 @@ export class SessionViewController {
     return this.sessions.length;
   }
 
+  public get isTreeVisible(): boolean {
+    return this.viewMode === 'tree';
+  }
+
   public getWebviewState(sessionLoading: boolean): SessionViewState | undefined {
     if (!this.shouldPublish(sessionLoading)) {
       return undefined;
@@ -138,6 +142,15 @@ export class SessionViewController {
     this.treeError = '';
     this.options.postState();
     void this.refreshTree();
+  }
+
+  public toggleTree(): void {
+    if (this.viewMode === 'tree') {
+      this.hideSessions();
+      return;
+    }
+
+    this.showTree();
   }
 
   public showChat(options: { clearSessionsError?: boolean; clearTreeError?: boolean } = {}): void {

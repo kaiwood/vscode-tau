@@ -4,6 +4,7 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Renamed the session tree command to `Tau: Toggle Session Tree` and made it close the tree when already open.
 - Switched Tau to the bundled Pi SDK transport and removed the RPC/`piPath` configuration path.
 - Added session tree label display for Pi-labeled entries.
 - Added session tree label editing with `Shift+L`.

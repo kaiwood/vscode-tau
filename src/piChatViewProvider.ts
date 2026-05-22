@@ -251,8 +251,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     await this.focus();
   }
 
-  public async showSessionTree(): Promise<void> {
-    await this.controller.runLocalSlashCommand('tree');
+  public async toggleSessionTree(): Promise<void> {
+    this.controller.toggleSessionTree();
     await this.focus();
   }
 

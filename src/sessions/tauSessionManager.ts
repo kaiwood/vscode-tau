@@ -90,6 +90,10 @@ export class TauSessionManager {
     await this.active().controller.runLocalSlashCommand(name);
   }
 
+  public toggleSessionTree(): void {
+    this.active().controller.toggleSessionTree();
+  }
+
   public addPromptContext(context: PiPromptContextInput | PiPromptContextInput[]): void {
     this.active().controller.addPromptContext(context);
   }
