@@ -6,6 +6,7 @@ All notable changes to Tau will be documented in this file.
 
 - Fixed compaction summary output so it starts collapsed, can be expanded, and scrolls when long.
 - Removed the duplicate busy message below the running compaction activity box.
+- Matched compaction output box background to other output boxes.
 - Fixed focus returning to the prompt input after a Pi custom UI closes.
 - Improved Pi custom UI keyboard handling with text capture, repeat/release events, and post-input re-rendering.
 - Added first-version Pi custom UI support for extensions that call `ctx.ui.custom()`.

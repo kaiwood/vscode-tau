@@ -1414,6 +1414,10 @@ const activityStyles = /* css */ `    .activity-list {
       max-height: calc(16 * 16px);
     }
 
+    .activity__body--compaction {
+      background: var(--tau-code-background);
+    }
+
     .activity__body--compaction:not(.activity__body--expanded) {
       box-sizing: content-box;
       max-height: calc(2 * 1.4em);
