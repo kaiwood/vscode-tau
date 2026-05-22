@@ -5,7 +5,7 @@ All notable changes to Tau will be documented in this file.
 ## Unreleased
 
 - Added a `tau.customUiTheme` setting with default, modern, CRT, amber, and matrix styles for Pi custom UI terminal panels.
-- Refined the modern custom UI theme so the existing prompt area reads as a subtle keyboard deck while custom UI is active.
+- Refined the modern custom UI theme so the existing prompt area becomes a decorative keyboard deck while custom UI is active.
 - Added a visible block cursor for Pi custom UI components that emit `CURSOR_MARKER`.
 - Fixed compaction summary output so it starts collapsed, can be expanded, and scrolls when long.
 - Removed the duplicate busy message below the running compaction activity box.

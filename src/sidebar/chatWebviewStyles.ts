@@ -2420,29 +2420,51 @@ const customUiStyles = /* css */ `    .custom-ui {
     body.tau-custom-ui-theme-modern .composer.composer--custom-hidden::before {
       content: "";
       position: absolute;
-      inset: 11px 12px 9px;
+      inset: 13px 14px 18px;
+      z-index: 0;
       pointer-events: none;
       background:
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.065) 0 1px, transparent 1px 18px),
-        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 18px),
-        radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08), transparent 62%);
+        linear-gradient(90deg, transparent 0 7%, rgba(255, 255, 255, 0.08) 7% 8%, transparent 8% 100%),
+        repeating-linear-gradient(90deg, transparent 0 9px, rgba(255, 255, 255, 0.075) 9px 10px, transparent 10px 24px),
+        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0 1px, rgba(255, 255, 255, 0.035) 1px 12px, rgba(0, 0, 0, 0.28) 12px 15px, transparent 15px 20px),
+        radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.1), transparent 68%);
+      border: 1px solid rgba(255, 255, 255, 0.055);
       border-radius: 12px 12px 18px 18px;
-      opacity: 0.42;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -12px 18px rgba(0, 0, 0, 0.24);
+      opacity: 0.48;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__input {
-      padding: 2px 8px 5px;
-      color: color-mix(in srgb, var(--vscode-input-foreground) 86%, var(--vscode-input-background) 14%);
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid color-mix(in srgb, var(--vscode-foreground) 9%, transparent);
-      border-radius: 10px;
-      box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.18);
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden::after {
+      content: "";
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 8px;
+      z-index: 1;
+      height: 8px;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 10px 50%, rgba(105, 255, 160, 0.55) 0 2px, transparent 2.5px),
+        radial-gradient(circle at 24px 50%, rgba(255, 214, 118, 0.36) 0 1.7px, transparent 2.3px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(0, 0, 0, 0.22));
+      border-radius: 999px;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 5px 10px rgba(0, 0, 0, 0.22);
+      opacity: 0.7;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__button,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__model,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__context {
-      filter: saturate(0.82) brightness(0.92);
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__slash-menu,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__context-badges,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__input,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__busy-submit,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__session-actions,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__info,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__model-menu,
+    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__submit {
+      display: none !important;
     }
 
     body.tau-custom-ui-theme-crt .custom-ui,
