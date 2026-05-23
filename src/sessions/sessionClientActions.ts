@@ -1,6 +1,6 @@
 import type { ExtensionUi } from '../extensionUi/types';
 import type { PiClientFactory, PiClient } from '../pi/clientTypes';
-import type { PiClientOptions } from '../pi/types';
+import type { PiClientOptions, PiCloneResult, PiCompactResult, PiExportHtmlResult } from '../pi/types';
 import { formatCompactionTitle, formatForkMessageLabel, formatForkMessages } from './sessionFormatting';
 
 export type SessionClientActionUi = {
@@ -15,43 +15,82 @@ export type BackgroundSessionClientOptions = {
   onError: (message: string) => void;
 };
 
-export async function forkSessionWithClient(client: PiClient, options: SessionClientActionUi): Promise<void> {
-  const select = options.extensionUi?.select;
+export type ForkSessionResult =
+  | { status: 'unavailable' }
+  | { status: 'empty' }
+  | { status: 'cancelled' }
+  | { status: 'forked'; text: string };
+
+export async function forkSession(client: PiClient, options: { select?: ExtensionUi['select'] }): Promise<ForkSessionResult> {
+  const select = options.select;
 
   if (!select) {
-    options.showNotification('Fork selection is not available in this environment.', 'warning');
-    return;
+    return { status: 'unavailable' };
   }
 
   const forkMessages = formatForkMessages((await client.getForkMessages()).messages);
 
   if (forkMessages.length === 0) {
-    options.showNotification('No messages to fork from.', 'warning');
-    return;
+    return { status: 'empty' };
   }
 
   const labels = forkMessages.map((message, index) => formatForkMessageLabel(message, index));
   const picked = await select('Fork from message', labels);
 
   if (!picked) {
-    return;
+    return { status: 'cancelled' };
   }
 
   const selected = forkMessages[labels.indexOf(picked)];
 
   if (!selected) {
-    return;
+    return { status: 'cancelled' };
   }
 
   const result = await client.fork(selected.entryId);
 
-  if (!result.cancelled) {
+  if (result.cancelled) {
+    return { status: 'cancelled' };
+  }
+
+  return {
+    status: 'forked',
+    text: typeof result.text === 'string' ? result.text.trim() : selected.text
+  };
+}
+
+export async function cloneSession(client: PiClient): Promise<PiCloneResult> {
+  return await client.clone();
+}
+
+export async function compactSession(client: PiClient, customInstructions?: string): Promise<PiCompactResult> {
+  return await client.compact(customInstructions);
+}
+
+export async function exportSessionHtml(client: PiClient, outputPath?: string): Promise<PiExportHtmlResult> {
+  return await client.exportHtml(outputPath);
+}
+
+export async function forkSessionWithClient(client: PiClient, options: SessionClientActionUi): Promise<void> {
+  const result = await forkSession(client, { select: options.extensionUi?.select });
+
+  if (result.status === 'unavailable') {
+    options.showNotification('Fork selection is not available in this environment.', 'warning');
+    return;
+  }
+
+  if (result.status === 'empty') {
+    options.showNotification('No messages to fork from.', 'warning');
+    return;
+  }
+
+  if (result.status === 'forked') {
     options.showToast?.('Forked session.');
   }
 }
 
 export async function cloneSessionWithClient(client: PiClient, options: SessionClientActionUi): Promise<void> {
-  const result = await client.clone();
+  const result = await cloneSession(client);
 
   if (!result.cancelled) {
     options.showToast?.('Cloned session.');
@@ -59,12 +98,12 @@ export async function cloneSessionWithClient(client: PiClient, options: SessionC
 }
 
 export async function compactSessionWithClient(client: PiClient, options: SessionClientActionUi): Promise<void> {
-  const result = await client.compact(undefined);
+  const result = await compactSession(client);
   options.showToast?.(`${formatCompactionTitle(result.tokensBefore)}.`);
 }
 
 export async function exportSessionWithClient(client: PiClient, options: SessionClientActionUi): Promise<void> {
-  const result = await client.exportHtml(undefined);
+  const result = await exportSessionHtml(client);
   const path = typeof result.path === 'string' && result.path ? result.path : 'HTML file';
   options.showToast?.(`Exported session to ${path}.`);
 }

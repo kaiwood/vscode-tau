@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'fs/promises';
 import { homedir } from 'os';
 import { dirname, isAbsolute, join, resolve } from 'path';
 import { extractPiMessageText } from '../pi/messageContent';
-import { parseSessionJsonlFileRecords } from '../pi/sessionJsonl';
+import { parseSessionJsonlFileRecords, readSessionJsonlHeader } from '../pi/sessionJsonl';
 import type { ListPiSessionsOptions, PiSessionCandidate, PiSessionListItem, RawSessionInfo, SessionTreeNode } from './types';
 export type { ListPiSessionsOptions, PiSessionCandidate, PiSessionListItem } from './types';
 
@@ -163,7 +163,7 @@ function expandTildePath(path: string): string {
 async function buildSessionCandidate(filePath: string): Promise<PiSessionCandidate | undefined> {
   try {
     const stats = await stat(filePath);
-    const header = await readSessionHeader(filePath);
+    const header = await readSessionJsonlHeader(filePath);
 
     if (!header || typeof header.id !== 'string') {
       return undefined;
@@ -179,18 +179,6 @@ async function buildSessionCandidate(filePath: string): Promise<PiSessionCandida
   } catch {
     return undefined;
   }
-}
-
-async function readSessionHeader(filePath: string): Promise<Record<string, unknown> | undefined> {
-  for await (const entry of parseSessionJsonlFileRecords(filePath)) {
-    if (!isRecord(entry)) {
-      continue;
-    }
-
-    return entry.type === 'session' ? entry : undefined;
-  }
-
-  return undefined;
 }
 
 async function buildSessionInfo(filePath: string): Promise<RawSessionInfo | undefined> {

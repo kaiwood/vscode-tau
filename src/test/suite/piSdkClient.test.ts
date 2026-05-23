@@ -210,6 +210,9 @@ suite('PiSdkClient', () => {
     await harness.client.setSessionName('  Renamed  ');
     assert.strictEqual(harness.session.sessionName, 'Renamed');
 
+    await harness.client.setSessionName('   ');
+    assert.strictEqual(harness.session.sessionName, '');
+
     harness.client.dispose();
   });
 

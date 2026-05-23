@@ -220,7 +220,10 @@ export class SessionViewController {
       const currentSession = this.sessions.find((session) => this.sessionFile
         ? normalizeSessionPath(session.path) === normalizeSessionPath(this.sessionFile)
         : session.current);
-      this.applyCurrentSessionName(currentSession?.name);
+
+      if (currentSession) {
+        this.applyCurrentSessionName(currentSession.name ?? '');
+      }
     } catch (error) {
       if (refreshId === this.sessionsRefreshSequence) {
         this.sessionsError = getErrorMessage(error);

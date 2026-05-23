@@ -9,11 +9,10 @@ import { filterModelOptions, formatModelOptionLabel } from './modelFormatting';
 import type { SessionViewController } from '../sessions/sessionViewController';
 import {
   formatCompactionTitle,
-  formatForkMessageLabel,
-  formatForkMessages,
   formatSessionInfo,
   getSessionFile
 } from '../sessions/sessionFormatting';
+import { cloneSession, compactSession, exportSessionHtml, forkSession } from '../sessions/sessionClientActions';
 
 export type LocalSlashCommand = { name: string; args: string };
 
@@ -190,7 +189,7 @@ export class LocalSlashCommandController {
     this.options.postState();
 
     try {
-      const result = await this.options.getClient().compact(customInstructions || undefined);
+      const result = await compactSession(this.options.getClient(), customInstructions || undefined);
       const summary = typeof result.summary === 'string' ? result.summary.trim() : '';
       this.options.session.upsertActivity('compaction', {
         kind: 'compaction',
@@ -265,52 +264,31 @@ export class LocalSlashCommandController {
   }
 
   private async handleForkSlashCommand(): Promise<void> {
-    const select = this.options.extensionUi?.select;
+    const result = await forkSession(this.options.getClient(), { select: this.options.extensionUi?.select });
 
-    if (!select) {
+    if (result.status === 'unavailable') {
       this.options.session.addSystemMessage('Fork selection is not available in this environment.');
       this.options.postState();
       return;
     }
 
-    const forkMessages = formatForkMessages((await this.options.getClient().getForkMessages()).messages);
-
-    if (forkMessages.length === 0) {
+    if (result.status === 'empty') {
       this.options.session.addSystemMessage('No messages to fork from.');
       this.options.postState();
       return;
     }
 
-    const labels = forkMessages.map((message, index) => formatForkMessageLabel(message, index));
-    const picked = await select('Fork from message', labels);
-
-    if (!picked) {
+    if (result.status === 'cancelled') {
       return;
     }
-
-    const selected = forkMessages[labels.indexOf(picked)];
-
-    if (!selected) {
-      return;
-    }
-
-    const result = await this.options.getClient().fork(selected.entryId);
-
-    if (result.cancelled) {
-      return;
-    }
-
-    const forkText = typeof result.text === 'string'
-      ? result.text.trim()
-      : selected.text;
 
     await this.options.adoptReplacedSession({ refreshSessions: true });
-    this.options.setComposerText(forkText);
+    this.options.setComposerText(result.text);
     this.options.postState();
   }
 
   private async handleCloneSlashCommand(): Promise<void> {
-    const result = await this.options.getClient().clone();
+    const result = await cloneSession(this.options.getClient());
 
     if (result.cancelled) {
       return;
@@ -354,7 +332,7 @@ export class LocalSlashCommandController {
   }
 
   private async handleExportSlashCommand(outputPath: string): Promise<void> {
-    const result = await this.options.getClient().exportHtml(outputPath || undefined);
+    const result = await exportSessionHtml(this.options.getClient(), outputPath || undefined);
     const path = typeof result.path === 'string' && result.path ? result.path : 'HTML file';
     this.options.session.addSystemMessage(`Exported session to ${path}.`);
     this.options.postState();

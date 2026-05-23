@@ -212,13 +212,7 @@ export class PiSdkClient implements PiClient {
 
   public async setSessionName(name: string): Promise<void> {
     const { session } = await this.ensureRuntime();
-    const trimmedName = name.trim();
-
-    if (!trimmedName) {
-      throw new Error('Session name cannot be empty');
-    }
-
-    session.setSessionName(trimmedName);
+    session.setSessionName(name.trim());
   }
 
   public async compact(customInstructions?: string): Promise<PiCompactResult> {

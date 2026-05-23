@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { withSessionClient } from '../../sessions/sessionClientActions';
+import { forkSession, withSessionClient } from '../../sessions/sessionClientActions';
 import type { PiClient } from '../../pi/clientTypes';
 import type { PiClientOptions, PiEvent } from '../../pi/types';
 
@@ -28,14 +28,32 @@ suite('sessionClientActions', () => {
     assert.strictEqual(client.disposed, true);
   });
 
+  test('forkSession returns selected fork text for callers to orchestrate', async () => {
+    const client = createFakeClient({
+      forkMessages: { messages: [{ entryId: 'entry-1', text: 'Original prompt' }] },
+      forkResult: { cancelled: false, text: '  selected prompt  ' }
+    });
+
+    const result = await forkSession(client, {
+      select: async (_title, options) => options[0]
+    });
+
+    assert.deepStrictEqual(result, { status: 'forked', text: 'selected prompt' });
+  });
+
 });
+
+type FakeClientOptions = {
+  forkMessages?: Awaited<ReturnType<PiClient['getForkMessages']>>;
+  forkResult?: Awaited<ReturnType<PiClient['fork']>>;
+};
 
 type FakeClient = PiClient & {
   disposed: boolean;
   emit(event: PiEvent): void;
 };
 
-function createFakeClient(): FakeClient {
+function createFakeClient(options: FakeClientOptions = {}): FakeClient {
   const eventListeners = new Set<(event: PiEvent) => void>();
   const client = {
     disposed: false,
@@ -92,10 +110,10 @@ function createFakeClient(): FakeClient {
       return {};
     },
     async getForkMessages() {
-      return {};
+      return options.forkMessages ?? {};
     },
     async fork() {
-      return {};
+      return options.forkResult ?? {};
     },
     async clone() {
       return {};

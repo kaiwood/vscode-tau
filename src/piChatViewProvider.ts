@@ -1,4 +1,3 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import {
@@ -22,6 +21,7 @@ import type { PiPromptContextInput, PiPromptTraceOriginLinkedCommit } from './pr
 import { findCurrentPathGitCommit, findTraceLinkedGitCommit } from './origin/gitOriginContext';
 import { traceOrigin, type TraceOriginInput, type TraceOriginMatch } from './origin/sessionOriginTracer';
 import { readCachedSessionMeta, writeCachedSessionMeta } from './metadata/cache';
+import { readSessionJsonlHeaderCwdSync } from './pi/sessionJsonl';
 import { getWorkspaceCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './workspace/cwdSafety';
 
 export const chatViewType = 'tau.chatView';
@@ -739,7 +739,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       return sessionFile;
     }
 
-    const sessionCwd = readSessionHeaderCwd(sessionFile);
+    const sessionCwd = readSessionJsonlHeaderCwdSync(sessionFile);
     const unsafeReason = getUnsafeCwdReason(sessionCwd);
 
     if (!sessionCwd || !unsafeReason) {
@@ -876,43 +876,6 @@ function getReadyScriptEnabledSetting(): boolean {
 
 function getRejectEditWriteOutsideWorkspaceSetting(): boolean {
   return vscode.workspace.getConfiguration('tau').get<boolean>('rejectEditWriteOutsideWorkspace', false);
-}
-
-function readSessionHeaderCwd(sessionFile: string): string | undefined {
-  let fd: number | undefined;
-
-  try {
-    fd = fs.openSync(sessionFile, 'r');
-    const buffer = Buffer.alloc(64 * 1024);
-    const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
-    const firstLine = buffer.subarray(0, bytesRead).toString('utf8').split('\n', 1)[0]?.trim();
-
-    if (!firstLine) {
-      return undefined;
-    }
-
-    const record = JSON.parse(firstLine) as unknown;
-
-    if (isRecord(record) && record.type === 'session' && typeof record.cwd === 'string') {
-      return record.cwd;
-    }
-  } catch {
-    return undefined;
-  } finally {
-    if (fd !== undefined) {
-      try {
-        fs.closeSync(fd);
-      } catch {
-        // Ignore close failures for best-effort session header inspection.
-      }
-    }
-  }
-
-  return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 function resolveWorkspaceFileUri(filePath: string): vscode.Uri | undefined {

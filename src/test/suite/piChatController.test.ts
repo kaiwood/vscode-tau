@@ -1426,6 +1426,45 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('webview session rename can clear the current session name', async () => {
+    let sessionName: string | undefined = 'Old name';
+    const client = new FakePiClient({
+      state: {
+        model: { provider: 'openai', id: 'gpt-test', reasoning: false },
+        thinkingLevel: 'off',
+        sessionFile: '/sessions/current.jsonl'
+      }
+    });
+    const harness = createControllerHarness([client], {
+      cwd: '/workspace',
+      initialSessionFile: '/sessions/current.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => [{
+        path: '/sessions/current.jsonl',
+        id: 'current',
+        cwd: '/workspace',
+        ...(sessionName ? { name: sessionName } : {}),
+        created: '2026-01-01T00:00:00.000Z',
+        modified: '2026-01-01T00:01:00.000Z',
+        messageCount: 2,
+        firstMessage: 'First prompt',
+        depth: 0,
+        isLast: true,
+        ancestorContinues: [],
+        current: currentSessionFile === '/sessions/current.jsonl'
+      }]
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'ready' });
+    await flushPromises();
+    sessionName = undefined;
+    await harness.controller.handleWebviewMessage({ type: 'setSessionName', name: '   ' });
+
+    assert.deepStrictEqual(client.sessionNames, ['']);
+    assert.strictEqual(lastState(harness).currentSessionName, '');
+    assert.strictEqual(lastState(harness).sessions?.[0]?.name, undefined);
+    harness.controller.dispose();
+  });
+
   test('webview session rename updates the current session before Pi confirms', async () => {
     let sessionName = 'Old name';
     const renameDeferred = createDeferred<void>();
