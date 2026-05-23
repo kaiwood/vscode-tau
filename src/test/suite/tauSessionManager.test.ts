@@ -211,6 +211,34 @@ suite('TauSessionManager', () => {
     harness.manager.dispose();
   });
 
+  test('renames a running open background session without opening another client', async () => {
+    const backgroundClient = new FakePiClient({
+      state: {
+        sessionFile: '/sessions/one.jsonl',
+        model: { provider: 'openai', id: 'gpt-test', reasoning: false },
+        thinkingLevel: 'off'
+      }
+    });
+    const activeClient = new FakePiClient();
+    const harness = createManagerHarness([backgroundClient, activeClient], {
+      initialSessionFile: '/sessions/one.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => createSessionItems(currentSessionFile)
+    });
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'keep running' });
+    await harness.manager.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+    await harness.manager.handleWebviewMessage({ type: 'showSessions' });
+    await harness.manager.handleWebviewMessage({ type: 'setSessionItemName', sessionPath: '/sessions/one.jsonl', name: 'Renamed while running' });
+    await flushPromises();
+
+    assert.deepStrictEqual(backgroundClient.sessionNames, ['Renamed while running']);
+    assert.strictEqual(harness.createCalls, 2);
+    assert.strictEqual(findSession(lastState(harness), '/sessions/one.jsonl')?.name, 'Renamed while running');
+    assert.strictEqual(findSession(lastState(harness), '/sessions/one.jsonl')?.liveStatus, 'running');
+    harness.manager.dispose();
+  });
+
   test('blocks forks while a background session is running', async () => {
     const firstClient = new FakePiClient();
     const secondClient = new FakePiClient();
@@ -327,6 +355,7 @@ class FakePiClient implements PiClient {
   public disposed = false;
   public readonly prompts: string[] = [];
   public readonly forkedEntries: string[] = [];
+  public readonly sessionNames: string[] = [];
   private readonly eventListeners = new Set<(event: PiEvent) => void>();
   private readonly errorListeners = new Set<(message: string) => void>();
 
@@ -385,7 +414,9 @@ class FakePiClient implements PiClient {
 
   public async setThinkingLevel(): Promise<void> {}
 
-  public async setSessionName(): Promise<void> {}
+  public async setSessionName(name: string): Promise<void> {
+    this.sessionNames.push(name);
+  }
 
   public async compact(): Promise<{}> {
     return {};

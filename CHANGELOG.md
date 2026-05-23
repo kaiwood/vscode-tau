@@ -4,6 +4,7 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Allowed session renaming while Pi is working, including running open sessions.
 - Fixed Tau startup so Pi waits for VS Code workspace folders before starting, cannot silently run from an unsafe root cwd, and supports optional `tau.rejectEditWriteOutsideWorkspace` edit/write mutation guarding.
 - Added a `tau.customUiTheme` setting with default, modern, CRT, amber, and matrix styles for Pi custom UI terminal panels.
 - Refined the modern custom UI theme so the existing prompt area becomes a decorative keyboard deck while custom UI is active.

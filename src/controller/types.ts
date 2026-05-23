@@ -30,6 +30,7 @@ export type PiChatControllerOptions = {
   writeClipboard?: (text: string) => PromiseLike<void> | Promise<void> | void;
   listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
   deleteSession?: (sessionPath: string, displayName: string) => Promise<boolean>;
+  renameOpenSession?: (sessionPath: string, name: string) => Promise<boolean>;
   showSessionChanges?: (sessionPath: string, displayName: string) => Promise<void>;
   loadSessionDiffSnapshot?: (sessionFile: string) => SessionDiffSnapshot | undefined;
   saveSessionDiffSnapshot?: (sessionFile: string, snapshot: SessionDiffSnapshot) => void;

@@ -71,6 +71,7 @@ export class PiChatController {
       initialSessionFile: options.initialSessionFile,
       listSessions: options.listSessions,
       onSessionFileChange: options.onSessionFileChange,
+      renameOpenSession: options.renameOpenSession,
       showNotification: options.showNotification,
       showSessionChanges: options.showSessionChanges,
       showToast: options.showToast,
@@ -184,6 +185,10 @@ export class PiChatController {
     this.disposeClient();
   }
 
+  public async setCurrentSessionName(name: string): Promise<void> {
+    await this.slashCommandController.setCurrentSessionName(name, { announce: false });
+  }
+
   public async handleWebviewMessage(message: WebviewMessage): Promise<void> {
     switch (message.type) {
       case 'ready':
@@ -277,7 +282,11 @@ export class PiChatController {
       }
 
       if (localSlashCommand) {
-        this.addBusySlashCommandNotice(localSlashCommand.name);
+        if (localSlashCommand.name === 'name') {
+          await this.slashCommandController.handle(localSlashCommand);
+        } else {
+          this.addBusySlashCommandNotice(localSlashCommand.name);
+        }
         return;
       }
 
@@ -328,7 +337,7 @@ export class PiChatController {
   }
 
   public async runLocalSlashCommand(name: string, args = ''): Promise<void> {
-    if (this.session.isBusy) {
+    if (this.session.isBusy && name !== 'name') {
       this.addBusySlashCommandNotice(name);
       return;
     }

@@ -4063,7 +4063,7 @@ ${after}`;
       const toolbarTitle = state2.viewMode === "sessions" ? "Sessions" : state2.viewMode === "tree" ? "Session tree" : this.options.getCurrentSessionTitle();
       const toolbarTimestamp = isListView ? "" : formatRelativeTime(this.options.getCurrentSessionTimestamp());
       const toolbarTitleTooltip = [toolbarTitle, toolbarTimestamp].filter(Boolean).join(" \xB7 ");
-      if ((isListView || state2.busy) && this.sessionNameEditing) {
+      if (isListView && this.sessionNameEditing) {
         this.cancelSessionNameEdit();
       }
       this.options.toolbarTitleTextElement.textContent = toolbarTitle;
@@ -4075,9 +4075,9 @@ ${after}`;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       this.options.sessionMenuWrapElement.hidden = isListView;
       this.options.sessionHelpWrapElement.hidden = state2.viewMode !== "sessions";
-      this.options.sessionMenuButton.disabled = state2.busy || this.sessionNameEditing;
+      this.options.sessionMenuButton.disabled = this.sessionNameEditing;
       this.syncSessionCommandMenuItems();
-      if (isListView || state2.busy || this.sessionNameEditing) {
+      if (isListView || this.sessionNameEditing) {
         this.closeSessionCommandMenu();
       }
       if (state2.viewMode !== "sessions") {
@@ -4153,7 +4153,7 @@ ${after}`;
       const state2 = this.options.getState();
       event?.preventDefault();
       event?.stopPropagation();
-      if (state2.viewMode === "sessions" || state2.viewMode === "tree" || state2.busy) {
+      if (state2.viewMode === "sessions" || state2.viewMode === "tree") {
         return;
       }
       this.options.closeSlashMenu();
@@ -4190,12 +4190,11 @@ ${after}`;
       this.syncSessionNameEditor();
     }
     syncSessionNameEditor() {
-      const state2 = this.options.getState();
       this.options.toolbarTitleElement.classList.toggle("pi-toolbar__title--editing", this.sessionNameEditing);
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
-      this.options.sessionMenuButton.disabled = state2.busy || this.sessionNameEditing;
+      this.options.sessionMenuButton.disabled = this.sessionNameEditing;
     }
     toggleSessionCommandMenu(event) {
       event?.preventDefault();
@@ -4224,7 +4223,7 @@ ${after}`;
       const state2 = this.options.getState();
       for (const item of this.options.sessionMenuItemElements) {
         const command = item.getAttribute("data-session-command");
-        item.disabled = state2.busy || this.sessionNameEditing || command === "delete" && !this.options.getCurrentSessionPath();
+        item.disabled = this.sessionNameEditing || state2.busy && command !== "rename" || command === "delete" && !this.options.getCurrentSessionPath();
       }
     }
     handleSessionCommandMenuKeydown(event) {
@@ -4294,7 +4293,7 @@ ${after}`;
     }
     openSessionCommandMenu(options = {}) {
       const state2 = this.options.getState();
-      if (state2.viewMode === "sessions" || state2.viewMode === "tree" || state2.busy || this.sessionNameEditing) {
+      if (state2.viewMode === "sessions" || state2.viewMode === "tree" || this.sessionNameEditing) {
         return;
       }
       this.options.closeSlashMenu();
@@ -5279,6 +5278,9 @@ ${after}`;
       const state2 = this.options.getState();
       if (command === "delete") {
         return this.canDeleteSession(session);
+      }
+      if (command === "rename") {
+        return true;
       }
       return session.liveStatus !== "running" && !(session.current && state2.busy);
     }

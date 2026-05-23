@@ -104,11 +104,6 @@ export class LocalSlashCommandController {
   }
 
   public async setSessionNameFromWebview(name: string): Promise<void> {
-    if (this.options.session.isBusy) {
-      this.options.showNotification('Wait for Pi to finish before renaming the session.', 'warning');
-      return;
-    }
-
     try {
       await this.setCurrentSessionName(name, { announce: false });
     } catch (error) {

@@ -1130,6 +1130,10 @@ export class SessionViewController {
       return this.canDeleteSession(session);
     }
 
+    if (command === 'rename') {
+      return true;
+    }
+
     return session.liveStatus !== 'running' && !(session.current && state.busy);
   }
 

@@ -159,6 +159,7 @@ export class TauSessionManager {
         ...this.options,
         initialSessionFile,
         initialSessionMeta: this.options.initialSessionMeta,
+        renameOpenSession: (sessionPath, name) => this.renameOpenSessionFrom(id, sessionPath, name),
         postState: (message) => this.handleSessionState(id, message),
         onSessionMetaChange: (metadata) => this.handleSessionMetaChange(id, metadata),
         onSessionFileChange: (sessionFile) => this.handleSessionFileChange(id, sessionFile)
@@ -300,6 +301,18 @@ export class TauSessionManager {
       animationsEnabled: this.options.getAnimationsEnabled?.() ?? true,
       customUiTheme: this.options.getCustomUiTheme?.() ?? 'default'
     });
+  }
+
+  private async renameOpenSessionFrom(sourceSessionId: string, sessionFile: string, name: string): Promise<boolean> {
+    const session = this.findOpenSessionBySessionFile(sessionFile);
+
+    if (!session || session.id === sourceSessionId) {
+      return false;
+    }
+
+    await session.controller.setCurrentSessionName(name);
+    session.title = name.trim() || session.title;
+    return true;
   }
 
   private findOpenSessionBySessionFile(sessionFile: string): OpenSession | undefined {
@@ -509,8 +522,11 @@ function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSessi
       return session;
     }
 
+    const name = openSession.state?.currentSessionName?.trim() || session.name;
+
     return {
       ...session,
+      name,
       liveStatus: openSession.status,
       unread: openSession.unread
     };

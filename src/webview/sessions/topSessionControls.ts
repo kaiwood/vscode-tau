@@ -117,7 +117,7 @@ export class TopSessionControls {
     const toolbarTimestamp = isListView ? '' : formatRelativeTime(this.options.getCurrentSessionTimestamp());
     const toolbarTitleTooltip = [toolbarTitle, toolbarTimestamp].filter(Boolean).join(' · ');
 
-    if ((isListView || state.busy) && this.sessionNameEditing) {
+    if (isListView && this.sessionNameEditing) {
       this.cancelSessionNameEdit();
     }
 
@@ -130,10 +130,10 @@ export class TopSessionControls {
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
     this.options.sessionMenuWrapElement.hidden = isListView;
     this.options.sessionHelpWrapElement.hidden = state.viewMode !== 'sessions';
-    this.options.sessionMenuButton.disabled = state.busy || this.sessionNameEditing;
+    this.options.sessionMenuButton.disabled = this.sessionNameEditing;
     this.syncSessionCommandMenuItems();
 
-    if (isListView || state.busy || this.sessionNameEditing) {
+    if (isListView || this.sessionNameEditing) {
       this.closeSessionCommandMenu();
     }
 
@@ -230,7 +230,7 @@ export class TopSessionControls {
     event?.preventDefault();
     event?.stopPropagation();
 
-    if (state.viewMode === 'sessions' || state.viewMode === 'tree' || state.busy) {
+    if (state.viewMode === 'sessions' || state.viewMode === 'tree') {
       return;
     }
 
@@ -276,12 +276,11 @@ export class TopSessionControls {
   }
 
   private syncSessionNameEditor(): void {
-    const state = this.options.getState();
     this.options.toolbarTitleElement.classList.toggle('pi-toolbar__title--editing', this.sessionNameEditing);
     this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
     this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
-    this.options.sessionMenuButton.disabled = state.busy || this.sessionNameEditing;
+    this.options.sessionMenuButton.disabled = this.sessionNameEditing;
   }
 
   private toggleSessionCommandMenu(event?: MouseEvent): void {
@@ -320,7 +319,9 @@ export class TopSessionControls {
 
     for (const item of this.options.sessionMenuItemElements) {
       const command = item.getAttribute('data-session-command');
-      item.disabled = state.busy || this.sessionNameEditing || (command === 'delete' && !this.options.getCurrentSessionPath());
+      item.disabled = this.sessionNameEditing
+        || (state.busy && command !== 'rename')
+        || (command === 'delete' && !this.options.getCurrentSessionPath());
     }
   }
 
@@ -405,7 +406,7 @@ export class TopSessionControls {
   private openSessionCommandMenu(options: { focusMenu?: boolean; focusLast?: boolean } = {}): void {
     const state = this.options.getState();
 
-    if (state.viewMode === 'sessions' || state.viewMode === 'tree' || state.busy || this.sessionNameEditing) {
+    if (state.viewMode === 'sessions' || state.viewMode === 'tree' || this.sessionNameEditing) {
       return;
     }
 

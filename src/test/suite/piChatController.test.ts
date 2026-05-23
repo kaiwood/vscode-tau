@@ -1150,6 +1150,19 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('name slash command is allowed while busy', async () => {
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client]);
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/name Busy rename' });
+
+    assert.deepStrictEqual(client.prompts, ['hello']);
+    assert.deepStrictEqual(client.sessionNames, ['Busy rename']);
+    assert.strictEqual(lastState(harness).currentSessionName, 'Busy rename');
+    harness.controller.dispose();
+  });
+
   test('new session action is blocked while busy', async () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);

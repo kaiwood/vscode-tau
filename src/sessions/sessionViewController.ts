@@ -44,6 +44,7 @@ type SessionViewControllerOptions = Pick<
   | 'getCwd'
   | 'listSessions'
   | 'onSessionFileChange'
+  | 'renameOpenSession'
   | 'showNotification'
   | 'showSessionChanges'
   | 'showToast'
@@ -433,11 +434,6 @@ export class SessionViewController {
       ?? createFallbackSessionItem(trimmedPath);
     const isCurrentSession = Boolean(session.current) || normalizeSessionPath(this.sessionFile) === normalizedPath;
 
-    if (session.liveStatus === 'running' || (isCurrentSession && this.options.isBusy())) {
-      this.options.showNotification('Wait for the session to finish before running this command.', 'warning');
-      return;
-    }
-
     const trimmedName = name.trim();
     const previousName = typeof session.name === 'string' ? session.name : undefined;
     const renameSequence = (this.sessionItemNameRenameSequences.get(normalizedPath) ?? 0) + 1;
@@ -453,9 +449,14 @@ export class SessionViewController {
       if (isCurrentSession) {
         await this.options.setCurrentSessionName(trimmedName, { announce: false });
       } else {
-        await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
-          await client.setSessionName(trimmedName);
-        });
+        const renamedOpenSession = await this.options.renameOpenSession?.(session.path, trimmedName);
+
+        if (!renamedOpenSession) {
+          await withSessionClient(session.path, this.getBackgroundSessionClientOptions(), async (client) => {
+            await client.setSessionName(trimmedName);
+          });
+        }
+
         this.options.showToast?.(trimmedName ? 'Session renamed.' : 'Session name cleared.');
       }
 
