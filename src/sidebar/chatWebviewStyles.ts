@@ -939,22 +939,15 @@ const sessionListStyles = /* css */ `    .sessions__search {
       white-space: nowrap;
     }
 
-    .sessions__actions {
-      display: flex;
+    .sessions__menu-wrap {
+      position: relative;
       grid-column: 3;
       grid-row: 1 / 3;
       align-self: start;
-      gap: 2px;
-      height: 22px;
-    }
-
-    .sessions__menu-wrap {
-      position: relative;
       width: 22px;
       height: 22px;
     }
 
-    .sessions__delete-button,
     .sessions__menu-button {
       position: relative;
       display: grid;
@@ -971,18 +964,13 @@ const sessionListStyles = /* css */ `    .sessions__search {
       overflow: visible;
     }
 
-    .sessions--pointer-hover .sessions__item:hover .sessions__delete-button,
     .sessions--pointer-hover .sessions__item:hover .sessions__menu-button,
-    .sessions__item--active .sessions__delete-button,
     .sessions__item--active .sessions__menu-button,
-    .sessions__delete-button:focus-visible,
     .sessions__menu-button:focus-visible,
     .sessions__menu-button[aria-expanded="true"] {
       opacity: 0.78;
     }
 
-    .sessions__delete-button:hover:not(:disabled),
-    .sessions__delete-button:focus-visible,
     .sessions__menu-button:hover:not(:disabled),
     .sessions__menu-button:focus-visible,
     .sessions__menu-button[aria-expanded="true"] {
@@ -991,7 +979,6 @@ const sessionListStyles = /* css */ `    .sessions__search {
       opacity: 1;
     }
 
-    .sessions__delete-button:disabled,
     .sessions__menu-button:disabled {
       cursor: default;
       opacity: 0.35;
@@ -1266,7 +1253,6 @@ const messageStyles = /* css */ `    .message {
     .pi-toolbar__new-session .tau-icon-action-tooltip,
     .pi-toolbar__menu-button .tau-icon-action-tooltip,
     .pi-toolbar__help-button .tau-icon-action-tooltip,
-    .sessions__delete-button .tau-icon-action-tooltip,
     .sessions__menu-button .tau-icon-action-tooltip,
     .sessions__named-filter .tau-icon-action-tooltip {
       top: calc(100% + 5px);
@@ -1304,8 +1290,6 @@ const messageStyles = /* css */ `    .message {
     .composer__mode-button:focus-visible .tau-icon-action-tooltip,
     .composer__model[aria-expanded="false"]:hover .tau-icon-action-tooltip,
     .composer__model[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
-    .sessions__delete-button:hover:not(:disabled) .tau-icon-action-tooltip,
-    .sessions__delete-button:focus-visible:not(:disabled) .tau-icon-action-tooltip,
     .sessions__menu-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
     .sessions__menu-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
     .sessions__named-filter:hover .tau-icon-action-tooltip,

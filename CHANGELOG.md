@@ -5,7 +5,6 @@ All notable changes to Tau will be documented in this file.
 ## Unreleased
 
 - Added a New session icon to the session list toolbar.
-- Added a hover action to move sessions to Trash directly from the session list.
 - Allowed clearing a session name from Tau's sidebar UI.
 - Fixed `tau.readyScript` so it waits for Pi auto-retry and compaction work before running.
 - Kept Pi custom UI scoped to its originating open session, including background sessions.
