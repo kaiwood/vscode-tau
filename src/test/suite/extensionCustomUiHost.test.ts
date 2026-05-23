@@ -153,6 +153,53 @@ suite('ExtensionCustomUiHost', () => {
     assert.strictEqual(await resultPromise, undefined);
   });
 
+  test('keeps custom UI alive while detached and restores on attach', async () => {
+    const messages: CustomUiHostMessage[] = [];
+    const inputs: string[] = [];
+    let activeState: boolean | undefined;
+    let value = 'initial';
+    const host = new ExtensionCustomUiHost({
+      isAvailable: () => true,
+      postMessage: (message) => {
+        messages.push(message);
+        return true;
+      },
+      getOutputColors: () => true,
+      notify: () => undefined,
+      onActiveChange: (active) => {
+        activeState = active;
+      }
+    });
+
+    const resultPromise = host.custom<string>(() => ({
+      render: () => [value],
+      handleInput: (data) => {
+        inputs.push(data);
+        value = data;
+      },
+      invalidate: () => undefined
+    }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const show = messages.find((message): message is { type: 'customUiShow'; id: string } => message.type === 'customUiShow');
+    assert.ok(show);
+    assert.strictEqual(activeState, true);
+
+    host.setAttached(false);
+    host.handleInput(show.id, 'hidden');
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    host.setAttached(true);
+
+    assert.deepStrictEqual(inputs, ['hidden']);
+    assert.deepStrictEqual(messages.filter((message) => message.type === 'customUiHide'), [{ type: 'customUiHide', id: show.id }]);
+    assert.ok(messages.some((message) => message.type === 'customUiRender' && message.id === show.id && message.lines[0] === 'hidden'));
+
+    host.cancel(show.id);
+    assert.strictEqual(await resultPromise, undefined);
+    assert.strictEqual(activeState, false);
+  });
+
   test('updates dimensions and cancels active UI', async () => {
     const messages: CustomUiHostMessage[] = [];
     let disposed = false;

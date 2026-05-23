@@ -13,6 +13,10 @@ import type {
   PiEvent
 } from '../../pi/types';
 
+type ProviderWithDeleteSession = {
+  deleteSession(sessionPath: string, displayName: string): Promise<boolean>;
+};
+
 suite('PiChatViewProvider', () => {
   test('posts cached legacy model metadata and persists refreshed session metadata', async () => {
     const workspaceState = new FakeMemento({
@@ -111,7 +115,7 @@ suite('PiChatViewProvider', () => {
       provider.resolveWebviewView(view.asWebviewView());
       await flushPromises();
 
-      assert.deepStrictEqual(clientOptions, [{ cwd: '/workspace' }]);
+      assert.deepStrictEqual(clientOptions.map(withoutExtensionUi), [{ cwd: '/workspace' }]);
       assert.strictEqual(workspaceState.get<unknown>('tau.currentSessionFile'), '/sessions/new.jsonl');
       provider.dispose();
     } finally {
@@ -147,7 +151,7 @@ suite('PiChatViewProvider', () => {
     provider.resolveWebviewView(view.asWebviewView());
     await flushPromises();
 
-    assert.deepStrictEqual(clientOptions, [
+    assert.deepStrictEqual(clientOptions.map(withoutExtensionUi), [
       { cwd: '/workspace', sessionFile: '/sessions/current.jsonl' }
     ]);
     assert.deepStrictEqual(lastPostedState(view).messages, [
@@ -200,6 +204,30 @@ suite('PiChatViewProvider', () => {
     assert.match(view.webview.html, /Ask Pi about this workspace\./);
     assert.strictEqual(lastPostedState(view).welcomeDismissed, true);
     provider.dispose();
+  });
+
+  test('deletes sessions without confirmation when configured', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-delete-session-'));
+    const sessionFile = path.join(tempDir, 'session.jsonl');
+    const configuration = vscode.workspace.getConfiguration('tau');
+    const previousValue = configuration.inspect<boolean>('confirmSessionDeletion')?.globalValue;
+    const provider = new PiChatViewProvider(vscode.Uri.file('/extension'), () => {
+      throw new Error('Unexpected Pi client creation');
+    });
+
+    try {
+      await fs.writeFile(sessionFile, JSON.stringify({ type: 'session', id: 'session' }) + '\n', 'utf8');
+      await configuration.update('confirmSessionDeletion', false, vscode.ConfigurationTarget.Global);
+
+      const deleted = await (provider as unknown as ProviderWithDeleteSession).deleteSession(sessionFile, 'Session');
+
+      assert.strictEqual(deleted, true);
+      await assert.rejects(fs.stat(sessionFile));
+    } finally {
+      provider.dispose();
+      await configuration.update('confirmSessionDeletion', previousValue, vscode.ConfigurationTarget.Global);
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   test('clears webview-specific disposables when views are replaced, disposed, or provider is disposed', () => {
@@ -488,6 +516,15 @@ class FakePiClient implements PiClient {
   public dispose(): void {
     this.disposed = true;
   }
+}
+
+function withoutExtensionUi(value: unknown): unknown {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const { extensionUi: _extensionUi, ...rest } = value as Record<string, unknown>;
+  return rest;
 }
 
 function lastPostedState(view: FakeWebviewView): WebviewStateMessage {

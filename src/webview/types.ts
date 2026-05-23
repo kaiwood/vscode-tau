@@ -47,6 +47,7 @@ export type SessionItem = {
   current: boolean;
   liveStatus?: 'idle' | 'running' | 'done' | 'error';
   unread?: boolean;
+  customUiOpen?: boolean;
 };
 
 export type TreeItem = {

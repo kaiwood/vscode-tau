@@ -1,3 +1,5 @@
+import type { ExtensionUi } from '../extensionUi/types';
+
 export type PiEventBase = Record<string, unknown> & {
   type: string;
 };
@@ -202,4 +204,5 @@ export type PiPromptStreamingBehavior = 'steer' | 'followUp';
 export type PiClientOptions = {
   cwd?: string;
   sessionFile?: string;
+  extensionUi?: ExtensionUi;
 };

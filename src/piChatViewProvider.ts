@@ -9,7 +9,7 @@ import type { WebviewCustomUiTheme, WebviewMessage, WebviewStateMessage } from '
 import { type PiClientFactory, type PiClient } from './pi/clientTypes';
 import type { PiClientOptions } from './pi/types';
 import { PiSdkClient } from './sdk/piSdkClient';
-import { ExtensionCustomUiHost, type CustomUiHostMessage } from './extensionUi/customUiHost';
+import type { CustomUiHostMessage } from './extensionUi/customUiHost';
 import type { ExtensionUi } from './extensionUi/types';
 import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessionDiffSnapshot } from './diff/sessionDiffStorage';
 import { SessionDiffViewer } from './diff/sessionDiffViewer';
@@ -47,7 +47,7 @@ function createConfiguredPiClient(
 ): PiClient {
   return new PiSdkClient({
     ...options,
-    extensionUi: dependencies.extensionUi,
+    extensionUi: options.extensionUi ?? dependencies.extensionUi,
     showNotification: dependencies.showNotification,
     rejectEditWriteOutsideWorkspace: dependencies.getRejectEditWriteOutsideWorkspace
   });
@@ -71,7 +71,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private readonly webviewDisposables: vscode.Disposable[] = [];
   private sidebarFocusContext: boolean | undefined;
   private busyContext: boolean | undefined;
-  private readonly customUiHost: ExtensionCustomUiHost;
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
@@ -80,13 +79,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly globalState?: vscode.Memento,
     private readonly workspaceCwdProvider: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
   ) {
-    this.customUiHost = new ExtensionCustomUiHost({
-      isAvailable: () => Boolean(this.webviewReady && this.webviewView),
-      postMessage: (message) => this.postCustomUiMessage(message),
-      getOutputColors: () => getOutputColorsSetting(),
-      notify: (message, notifyType) => this.showNotification(message, notifyType)
-    });
-
     const extensionUi: ExtensionUi = {
       notify: (message, notifyType) => this.showNotification(message, notifyType),
       select: (title, options) => vscode.window.showQuickPick(options, {
@@ -97,8 +89,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       input: (title, placeholder) => vscode.window.showInputBox({
         title,
         placeHolder: placeholder
-      }),
-      custom: (factory, options) => this.customUiHost.custom(factory, options)
+      })
     };
     const configuredCreateClient = createClient ?? ((options: PiClientOptions) => createConfiguredPiClient(options, {
       extensionUi,
@@ -128,6 +119,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       showToast: (message, kind) => this.showToast(message, kind),
       writeClipboard: (text) => vscode.env.clipboard.writeText(text),
       extensionUi,
+      customUi: {
+        isAvailable: () => Boolean(this.webviewReady && this.webviewView),
+        postMessage: (message) => this.postCustomUiMessage(message),
+        getOutputColors: () => getOutputColorsSetting()
+      },
       initialSessionMeta: readCachedSessionMeta(this.workspaceState),
       initialSessionFile,
       onSessionMetaChange: (metadata) => writeCachedSessionMeta(this.workspaceState, metadata),
@@ -177,7 +173,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       disposable.dispose();
     }
 
-    this.customUiHost.dispose();
     this.codeRenderer.dispose();
     this.sessionDiffViewer.dispose();
     this.controller.dispose();
@@ -217,7 +212,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
           return;
         }
 
-        this.customUiHost.cancelActive();
+        this.controller.setCustomUiViewAttached(false);
         this.webviewView = undefined;
         this.webviewReady = false;
         this.setSidebarFocusContext(false);
@@ -420,6 +415,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     if (message.type === 'ready') {
       this.webviewReady = true;
+      this.controller.setCustomUiViewAttached(true);
       this.codeRenderer.warmup();
       await this.controller.handleWebviewMessage(message);
       this.postInputFocusSoon();
@@ -431,21 +427,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     if (message.type === 'highlightCode') {
       await this.handleCodeHighlightRequest(message.id, message.code, message.language, message.themeId);
-      return;
-    }
-
-    if (message.type === 'customUiInput') {
-      this.customUiHost.handleInput(message.id, message.data);
-      return;
-    }
-
-    if (message.type === 'customUiCancel') {
-      this.customUiHost.cancel(message.id);
-      return;
-    }
-
-    if (message.type === 'customUiDimensions') {
-      this.customUiHost.updateDimensions(message.id, message.columns, message.rows);
       return;
     }
 
@@ -520,7 +501,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private disposeWebviewDisposables(): void {
-    this.customUiHost.cancelActive();
+    this.controller.setCustomUiViewAttached(false);
 
     for (const disposable of this.webviewDisposables.splice(0)) {
       disposable.dispose();
@@ -572,15 +553,17 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private async deleteSession(sessionPath: string, displayName: string): Promise<boolean> {
-    const moveToTrash = 'Move to Trash';
-    const selected = await vscode.window.showWarningMessage(
-      `Move "${displayName}" to Trash?`,
-      { modal: true, detail: sessionPath },
-      moveToTrash
-    );
+    if (getConfirmSessionDeletionSetting()) {
+      const moveToTrash = 'Move to Trash';
+      const selected = await vscode.window.showWarningMessage(
+        `Move "${displayName}" to Trash?`,
+        { modal: true, detail: sessionPath },
+        moveToTrash
+      );
 
-    if (selected !== moveToTrash) {
-      return false;
+      if (selected !== moveToTrash) {
+        return false;
+      }
     }
 
     await vscode.workspace.fs.delete(vscode.Uri.file(sessionPath), { useTrash: true });
@@ -871,6 +854,10 @@ function getOutputColorsSetting(): boolean {
 
 function getAnimationsEnabledSetting(): boolean {
   return vscode.workspace.getConfiguration('tau').get<boolean>('animationsEnabled', true);
+}
+
+function getConfirmSessionDeletionSetting(): boolean {
+  return vscode.workspace.getConfiguration('tau').get<boolean>('confirmSessionDeletion', true);
 }
 
 function getCustomUiThemeSetting(): WebviewCustomUiTheme {

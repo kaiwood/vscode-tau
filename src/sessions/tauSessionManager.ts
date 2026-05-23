@@ -1,10 +1,18 @@
 import { PiChatController } from '../piChatController';
+import { ExtensionCustomUiHost, type CustomUiHostMessage } from '../extensionUi/customUiHost';
+import type { ExtensionUi } from '../extensionUi/types';
 import type { PiChatControllerOptions } from '../controller/types';
 import type { PiChatSessionMetaSnapshot } from '../metadata/types';
 import type { PiPromptContextInput } from '../prompt/types';
 import type { WebviewMessage, WebviewSessionItem, WebviewStateMessage } from '../webviewProtocol/types';
 
-export type TauSessionManagerOptions = PiChatControllerOptions;
+export type TauSessionManagerOptions = PiChatControllerOptions & {
+  customUi?: {
+    isAvailable(): boolean;
+    postMessage(message: CustomUiHostMessage): boolean;
+    getOutputColors(): boolean;
+  };
+};
 
 type OpenSessionStatus = 'idle' | 'running' | 'done' | 'error';
 
@@ -19,6 +27,8 @@ type OpenSession = {
   status: OpenSessionStatus;
   unread: boolean;
   title: string;
+  customUiOpen: boolean;
+  customUiHost: ExtensionCustomUiHost | undefined;
   inactiveSince: number | undefined;
   inactiveDisposeTimer: ReturnType<typeof setTimeout> | undefined;
 };
@@ -26,6 +36,7 @@ type OpenSession = {
 export class TauSessionManager {
   private readonly sessions: OpenSession[] = [];
   private sessionCatalog: WebviewSessionItem[] = [];
+  private customUiViewAttached = false;
   private activeSessionId = '';
   private sessionSequence = 0;
 
@@ -36,6 +47,7 @@ export class TauSessionManager {
   public dispose(): void {
     for (const session of this.sessions.splice(0)) {
       this.clearInactiveDisposal(session);
+      session.customUiHost?.dispose();
       session.controller.dispose();
     }
   }
@@ -71,6 +83,21 @@ export class TauSessionManager {
 
     if (message.type === 'sessionItemCommand' && message.command === 'fork' && this.hasRunningBackgroundSession()) {
       this.options.showNotification('Wait for background sessions to finish before forking.', 'warning');
+      return;
+    }
+
+    if (message.type === 'customUiInput') {
+      this.active().customUiHost?.handleInput(message.id, message.data);
+      return;
+    }
+
+    if (message.type === 'customUiCancel') {
+      this.active().customUiHost?.cancel(message.id);
+      return;
+    }
+
+    if (message.type === 'customUiDimensions') {
+      this.active().customUiHost?.updateDimensions(message.id, message.columns, message.rows);
       return;
     }
 
@@ -118,6 +145,15 @@ export class TauSessionManager {
     void this.active().controller.refreshSessionDiffStats();
   }
 
+  public setCustomUiViewAttached(attached: boolean): void {
+    if (this.customUiViewAttached === attached) {
+      return;
+    }
+
+    this.customUiViewAttached = attached;
+    this.syncCustomUiAttachment();
+  }
+
   public noteWorkspacePending(): void {
     this.active().controller.noteWorkspacePending();
   }
@@ -134,6 +170,7 @@ export class TauSessionManager {
     for (const session of this.sessions) {
       if (session.id !== this.activeSessionId) {
         this.clearInactiveDisposal(session);
+        session.customUiHost?.dispose();
         session.controller.dispose();
       }
     }
@@ -145,6 +182,8 @@ export class TauSessionManager {
     active.title = sessionFile ? 'Loading session' : 'New session';
     active.unread = false;
     active.status = 'idle';
+    active.customUiHost?.cancelActive();
+    active.customUiOpen = false;
     active.inactiveSince = undefined;
     active.controller.restartForWorkspaceChange(cwd, sessionFile);
   }
@@ -153,10 +192,13 @@ export class TauSessionManager {
     const previousActive = this.activeSessionId ? this.active() : undefined;
     const id = `open-${++this.sessionSequence}`;
     const initialSessionFile = options.initial ? this.options.initialSessionFile : options.sessionFile;
+    const customUiHost = this.createCustomUiHost(id);
+    const extensionUi = this.createSessionExtensionUi(customUiHost);
     const session: OpenSession = {
       id,
       controller: new PiChatController({
         ...this.options,
+        extensionUi,
         initialSessionFile,
         initialSessionMeta: this.options.initialSessionMeta,
         renameOpenSession: (sessionPath, name) => this.renameOpenSessionFrom(id, sessionPath, name),
@@ -169,6 +211,8 @@ export class TauSessionManager {
       status: 'idle',
       unread: false,
       title: options.initial ? 'Current session' : options.sessionFile ? 'Loading session' : 'New session',
+      customUiOpen: false,
+      customUiHost,
       inactiveSince: undefined,
       inactiveDisposeTimer: undefined
     };
@@ -187,6 +231,7 @@ export class TauSessionManager {
       }
     }
 
+    this.syncCustomUiAttachment();
     this.reconcileSessionDisposal();
     session.controller.postState();
     void session.controller.refreshSessionDiffStats();
@@ -216,10 +261,72 @@ export class TauSessionManager {
     }
 
     this.updateActivePersistence(session);
+    this.syncCustomUiAttachment();
     this.reconcileSessionDisposal();
     void session.controller.refreshSessionDiffStats();
     void session.controller.handleWebviewMessage({ type: 'hideSessions' });
     this.postState();
+  }
+
+  private createCustomUiHost(id: string): ExtensionCustomUiHost | undefined {
+    const customUi = this.options.customUi;
+
+    if (!customUi) {
+      return undefined;
+    }
+
+    const host = new ExtensionCustomUiHost({
+      isAvailable: customUi.isAvailable,
+      postMessage: customUi.postMessage,
+      getOutputColors: customUi.getOutputColors,
+      notify: (message, notifyType) => this.options.showNotification(message, notifyType),
+      onActiveChange: (active) => this.handleCustomUiActiveChange(id, active)
+    });
+    host.setAttached(false);
+    return host;
+  }
+
+  private createSessionExtensionUi(customUiHost: ExtensionCustomUiHost | undefined): ExtensionUi | undefined {
+    const baseUi = this.options.extensionUi;
+
+    if (!customUiHost) {
+      return baseUi;
+    }
+
+    return {
+      ...baseUi,
+      notify: baseUi?.notify ?? ((message, notifyType) => this.options.showNotification(message, notifyType)),
+      select: baseUi?.select ?? (async () => undefined),
+      confirm: baseUi?.confirm ?? (async () => undefined),
+      input: baseUi?.input ?? (async () => undefined),
+      custom: (factory, options) => customUiHost.custom(factory, options)
+    };
+  }
+
+  private syncCustomUiAttachment(): void {
+    for (const session of this.sessions) {
+      session.customUiHost?.setAttached(this.customUiViewAttached && session.id === this.activeSessionId);
+    }
+  }
+
+  private handleCustomUiActiveChange(id: string, active: boolean): void {
+    const session = this.sessions.find((entry) => entry.id === id);
+
+    if (!session) {
+      return;
+    }
+
+    session.customUiOpen = active;
+
+    if (active && id !== this.activeSessionId) {
+      session.unread = true;
+    }
+
+    const disposedInactiveSession = this.reconcileSessionDisposal();
+
+    if (id === this.activeSessionId || this.active().state?.viewMode === 'sessions' || disposedInactiveSession) {
+      this.postState();
+    }
   }
 
   private active(): OpenSession {
@@ -295,7 +402,7 @@ export class TauSessionManager {
 
     this.options.postState({
       ...state,
-      sessions: augmentSessions(sessions ?? [], this.sessions),
+      sessions: augmentSessions(sessions ?? [], this.sessions, this.activeSessionId),
       currentSessionName: state.currentSessionName || active.title,
       outputColors: this.options.getOutputColors?.() ?? true,
       animationsEnabled: this.options.getAnimationsEnabled?.() ?? true,
@@ -426,6 +533,7 @@ export class TauSessionManager {
 
     this.clearInactiveDisposal(session);
     this.sessions.splice(index, 1);
+    session.customUiHost?.dispose();
     session.controller.dispose();
     return true;
   }
@@ -440,7 +548,7 @@ export class TauSessionManager {
   }
 
   private isInactiveSession(session: OpenSession): boolean {
-    return session.id !== this.activeSessionId && session.status !== 'running';
+    return session.id !== this.activeSessionId && session.status !== 'running' && !session.customUiOpen;
   }
 }
 
@@ -510,7 +618,7 @@ function getOpenSessionTitle(message: WebviewStateMessage, fallback: string): st
   return fallback;
 }
 
-function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSession[]): WebviewSessionItem[] {
+function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSession[], activeSessionId: string): WebviewSessionItem[] {
   return sessions.map((session) => {
     const sessionPath = normalizeSessionPath(session.path);
     const openSession = openSessions.find((entry) => {
@@ -528,7 +636,8 @@ function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSessi
       ...session,
       name,
       liveStatus: openSession.status,
-      unread: openSession.unread
+      unread: openSession.unread || (openSession.customUiOpen && openSession.id !== activeSessionId),
+      customUiOpen: openSession.customUiOpen
     };
   });
 }

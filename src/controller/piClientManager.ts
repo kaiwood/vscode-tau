@@ -1,4 +1,5 @@
 import type { PiClientFactory, PiClient } from '../pi/clientTypes';
+import type { ExtensionUi } from '../extensionUi/types';
 import type { PiClientOptions, PiEvent } from '../pi/types';
 
 type DisposableLike = {
@@ -10,6 +11,7 @@ export type PiClientManagerOptions = {
   getCwd?: () => string | undefined;
   getCurrentSessionFile: () => string | undefined;
   getSessionGeneration: () => number;
+  extensionUi?: ExtensionUi;
   onEvent: (event: PiEvent) => void;
   onError: (message: string) => void;
 };
@@ -42,6 +44,10 @@ export class PiClientManager {
     this.nextSessionFile = undefined;
 
     const clientOptions: PiClientOptions = { cwd: this.options.getCwd?.() };
+
+    if (this.options.extensionUi) {
+      clientOptions.extensionUi = this.options.extensionUi;
+    }
 
     if (sessionFile) {
       clientOptions.sessionFile = sessionFile;

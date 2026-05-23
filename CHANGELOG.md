@@ -4,6 +4,8 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Kept Pi custom UI scoped to its originating open session, including background sessions.
+- Added a `tau.confirmSessionDeletion` setting to optionally skip session deletion confirmation.
 - Allowed session renaming while Pi is working, including running open sessions.
 - Fixed Tau startup so Pi waits for VS Code workspace folders before starting, cannot silently run from an unsafe root cwd, and supports optional `tau.rejectEditWriteOutsideWorkspace` edit/write mutation guarding.
 - Added a `tau.customUiTheme` setting with default, modern, CRT, amber, and matrix styles for Pi custom UI terminal panels.

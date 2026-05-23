@@ -79,6 +79,7 @@ export type WebviewSessionItem = {
   current: boolean;
   liveStatus?: 'idle' | 'running' | 'done' | 'error';
   unread?: boolean;
+  customUiOpen?: boolean;
 };
 
 export type WebviewTreeItem = {

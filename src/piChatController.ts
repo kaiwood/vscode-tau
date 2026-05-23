@@ -95,6 +95,7 @@ export class PiChatController {
       getCwd: options.getCwd,
       getCurrentSessionFile: () => this.sessionView.currentSessionFile,
       getSessionGeneration: () => this.session.generation,
+      extensionUi: options.extensionUi,
       onEvent: (event) => this.handlePiEvent(event),
       onError: (message) => this.handleClientError(message)
     });

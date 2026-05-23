@@ -33,6 +33,7 @@ export type ExtensionCustomUiHostOptions = {
   postMessage(message: CustomUiHostMessage): boolean;
   getOutputColors(): boolean;
   notify(message: string, notifyType: string): void;
+  onActiveChange?(active: boolean): void;
 };
 
 const defaultColumns = 80;
@@ -41,6 +42,7 @@ const defaultRows = 12;
 export class ExtensionCustomUiHost {
   private active: ActiveCustomUi | undefined;
   private nextId = 1;
+  private attached = true;
 
   public constructor(private readonly options: ExtensionCustomUiHostOptions) {}
 
@@ -90,16 +92,46 @@ export class ExtensionCustomUiHost {
             finished: false
           };
           this.active = active as ActiveCustomUi;
-          setComponentFocused(active.component, true);
+          setComponentFocused(active.component, this.attached);
           customOptions?.onHandle?.(createOverlayHandle(() => this.cancel(id)) as never);
-          this.options.postMessage({ type: 'customUiShow', id });
-          this.render(id);
+          this.options.onActiveChange?.(true);
+          if (this.attached) {
+            this.options.postMessage({ type: 'customUiShow', id });
+            this.render(id);
+          }
         })
         .catch((error) => {
           this.options.notify(`Pi extension UI failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
           resolve(undefined);
         });
     });
+  }
+
+  public setAttached(attached: boolean): void {
+    if (this.attached === attached) {
+      return;
+    }
+
+    this.attached = attached;
+    const active = this.active;
+
+    if (!active || active.finished) {
+      return;
+    }
+
+    if (active.renderTimer) {
+      clearTimeout(active.renderTimer);
+      active.renderTimer = undefined;
+    }
+
+    setComponentFocused(active.component, attached);
+
+    if (attached) {
+      this.options.postMessage({ type: 'customUiShow', id: active.id });
+      this.render(active.id);
+    } else {
+      this.options.postMessage({ type: 'customUiHide', id: active.id });
+    }
   }
 
   public handleInput(id: string, data: string): void {
@@ -158,7 +190,7 @@ export class ExtensionCustomUiHost {
   private scheduleRender(id: string): void {
     const active = this.active;
 
-    if (!active || active.id !== id || active.renderTimer || active.finished) {
+    if (!active || active.id !== id || active.renderTimer || active.finished || !this.attached) {
       return;
     }
 
@@ -171,7 +203,7 @@ export class ExtensionCustomUiHost {
   private render(id: string): void {
     const active = this.active;
 
-    if (!active || active.id !== id || active.finished) {
+    if (!active || active.id !== id || active.finished || !this.attached) {
       return;
     }
 
@@ -211,7 +243,10 @@ export class ExtensionCustomUiHost {
     }
 
     this.active = undefined;
-    this.options.postMessage({ type: 'customUiHide', id });
+    this.options.onActiveChange?.(false);
+    if (this.attached) {
+      this.options.postMessage({ type: 'customUiHide', id });
+    }
     active.resolve(result);
   }
 

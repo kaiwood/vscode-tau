@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import { TauSessionManager, type TauSessionManagerOptions } from '../../sessions/tauSessionManager';
+import type { CustomUiHostMessage } from '../../extensionUi/customUiHost';
 import type { WebviewSessionItem, WebviewStateMessage, WebviewTreeItem } from '../../webviewProtocol/types';
 import type { PiClient } from '../../pi/clientTypes';
 import type {
@@ -53,6 +54,45 @@ suite('TauSessionManager', () => {
 
     assert.strictEqual(sessionFiles.at(-1), '/sessions/one.jsonl');
     assert.strictEqual(lastState(harness).currentSessionFile, '/sessions/one.jsonl');
+    harness.manager.dispose();
+  });
+
+  test('keeps background custom UI hidden until its session is selected', async () => {
+    const firstClient = new FakePiClient({ state: { sessionFile: '/sessions/one.jsonl' } });
+    const secondClient = new FakePiClient();
+    const harness = createManagerHarness([firstClient, secondClient], {
+      initialSessionFile: '/sessions/one.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => createSessionItems(currentSessionFile)
+    });
+    harness.manager.setCustomUiViewAttached(true);
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'run in the background' });
+    await harness.manager.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+
+    const customPromise = harness.clientOptions[0].extensionUi?.custom?.<string>((_tui, _theme, _keybindings, done) => ({
+      render: () => ['background custom ui'],
+      handleInput: (data) => done(data),
+      invalidate: () => undefined
+    }));
+    await flushPromises();
+    await harness.manager.handleWebviewMessage({ type: 'showSessions' });
+
+    assert.ok(customPromise);
+    assert.strictEqual(harness.customUiMessages.some((message) => message.type === 'customUiShow'), false);
+    const backgroundSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(backgroundSession?.customUiOpen, true);
+    assert.strictEqual(backgroundSession?.unread, true);
+
+    await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
+    await flushPromises();
+
+    const show = harness.customUiMessages.find((message): message is { type: 'customUiShow'; id: string } => message.type === 'customUiShow');
+    assert.ok(show);
+    assert.ok(harness.customUiMessages.some((message) => message.type === 'customUiRender' && message.id === show.id && message.lines[0] === 'background custom ui'));
+
+    await harness.manager.handleWebviewMessage({ type: 'customUiInput', id: show.id, data: 'answered' });
+    assert.strictEqual(await customPromise, 'answered');
     harness.manager.dispose();
   });
 
@@ -264,6 +304,7 @@ type ManagerHarness = {
   states: WebviewStateMessage[];
   notifications: { message: string; type: string }[];
   clientOptions: PiClientOptions[];
+  customUiMessages: CustomUiHostMessage[];
   readonly createCalls: number;
 };
 
@@ -282,6 +323,7 @@ function createManagerHarness(
   const states: WebviewStateMessage[] = [];
   const notifications: { message: string; type: string }[] = [];
   const clientOptions: PiClientOptions[] = [];
+  const customUiMessages: CustomUiHostMessage[] = [];
   const pendingClients = [...clients];
   let createCalls = 0;
 
@@ -300,6 +342,14 @@ function createManagerHarness(
     onSessionFileChange: options.onSessionFileChange,
     listSessions: options.listSessions,
     loadSessionDiffSnapshot: options.loadSessionDiffSnapshot,
+    customUi: {
+      isAvailable: () => true,
+      postMessage: (message) => {
+        customUiMessages.push(message);
+        return true;
+      },
+      getOutputColors: () => true
+    },
     extensionUi: {
       notify: (message, type) => notifications.push({ message, type }),
       select: async () => undefined,
@@ -313,6 +363,7 @@ function createManagerHarness(
     states,
     notifications,
     clientOptions,
+    customUiMessages,
     get createCalls(): number {
       return createCalls;
     }
