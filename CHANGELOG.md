@@ -4,6 +4,7 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Allowed Tau to start without an open workspace by using the user home directory, unless `tau.rejectEditWriteOutsideWorkspace` is enabled.
 - Fixed chat autoscroll so delayed rendering does not stop output following, and preserved chat scroll when returning from session list/tree.
 - Added a New session icon to the session list toolbar.
 - Allowed clearing a session name from Tau's sidebar UI.

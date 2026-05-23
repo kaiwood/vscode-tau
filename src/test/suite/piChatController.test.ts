@@ -59,7 +59,7 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
-  test('webview ready waits when workspace cwd is not available yet', async () => {
+  test('webview ready uses home cwd when workspace cwd is not available', async () => {
     const sessionFiles: Array<string | undefined> = [];
     const harness = createControllerHarness([new FakePiClient()], {
       cwd: undefined,
@@ -70,18 +70,35 @@ suite('PiChatController', () => {
     await harness.controller.handleWebviewMessage({ type: 'ready' });
     await flushPromises();
 
-    assert.strictEqual(harness.createCalls, 0);
-    assert.deepStrictEqual(sessionFiles, []);
-    assert.deepStrictEqual(lastState(harness).messages, [
-      { role: 'system', text: 'Waiting for VS Code to provide the workspace folder before starting Pi.' }
-    ]);
+    assert.strictEqual(harness.createCalls, 1);
+    assert.deepStrictEqual(harness.clientOptions, [{ cwd: os.homedir(), sessionFile: '/sessions/current.jsonl' }]);
+    assert.deepStrictEqual(sessionFiles, [undefined]);
+    assert.deepStrictEqual(lastState(harness).messages, []);
     assert.strictEqual(lastState(harness).sessionLoading, undefined);
     harness.controller.dispose();
   });
 
-  test('workspace availability resumes the pending initial session', async () => {
+  test('webview ready rejects missing workspace cwd when workspace mutation guard is enabled', async () => {
+    const harness = createControllerHarness([new FakePiClient()], {
+      cwd: undefined,
+      getRejectEditWriteOutsideWorkspace: () => true
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'ready' });
+    await flushPromises();
+
+    assert.strictEqual(harness.createCalls, 0);
+    assert.match(harness.notifications[0]?.message ?? '', /rejectEditWriteOutsideWorkspace is enabled/);
+    assert.deepStrictEqual(lastState(harness).messages, [
+      { role: 'system', text: 'Tau cannot start Pi because no workspace folder is available while tau.rejectEditWriteOutsideWorkspace is enabled. Open a project folder and try again.', error: true }
+    ]);
+    harness.controller.dispose();
+  });
+
+  test('workspace change restarts after home cwd fallback', async () => {
     let cwd: string | undefined;
-    const client = new FakePiClient({
+    const homeClient = new FakePiClient();
+    const workspaceClient = new FakePiClient({
       state: {
         sessionFile: '/sessions/current.jsonl',
         model: { provider: 'openai', id: 'live-model', reasoning: false },
@@ -89,7 +106,7 @@ suite('PiChatController', () => {
       },
       messages: [{ role: 'user', content: 'Restored prompt' }]
     });
-    const harness = createControllerHarness([client], {
+    const harness = createControllerHarness([homeClient, workspaceClient], {
       getCwd: () => cwd,
       initialSessionFile: '/sessions/current.jsonl'
     });
@@ -97,12 +114,17 @@ suite('PiChatController', () => {
     await harness.controller.handleWebviewMessage({ type: 'ready' });
     await flushPromises();
     cwd = '/workspace';
-    harness.controller.noteWorkspaceAvailable(cwd);
+    harness.controller.restartForWorkspaceChange(cwd, '/sessions/current.jsonl');
     await flushPromises();
     await flushPromises();
 
-    assert.deepStrictEqual(harness.clientOptions, [{ cwd: '/workspace', sessionFile: '/sessions/current.jsonl' }]);
-    assert.deepStrictEqual(lastState(harness).messages, [{ role: 'user', text: 'Restored prompt' }]);
+    assert.deepStrictEqual(harness.clientOptions, [
+      { cwd: os.homedir(), sessionFile: '/sessions/current.jsonl' },
+      { cwd: '/workspace', sessionFile: '/sessions/current.jsonl' }
+    ]);
+    assert.deepStrictEqual(lastState(harness).messages, [
+      { role: 'system', text: 'Workspace changed to /workspace. Restarting Pi for the new workspace.' }
+    ]);
     harness.controller.dispose();
   });
 
@@ -2313,6 +2335,7 @@ type ControllerHarnessOptions = {
   showSessionChanges?: (sessionPath: string, displayName: string) => Promise<void>;
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
+  getRejectEditWriteOutsideWorkspace?: () => boolean;
   runReadyScript?: PiChatControllerOptions['runReadyScript'];
 };
 
@@ -2356,6 +2379,7 @@ function createControllerHarness(
     showSessionChanges: options.showSessionChanges,
     getReadyScript: options.getReadyScript,
     getReadyScriptEnabled: options.getReadyScriptEnabled,
+    getRejectEditWriteOutsideWorkspace: options.getRejectEditWriteOutsideWorkspace,
     runReadyScript: options.runReadyScript
   };
 

@@ -21,6 +21,7 @@ export type PiChatControllerOptions = {
   getCustomUiTheme?: () => WebviewCustomUiTheme;
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
+  getRejectEditWriteOutsideWorkspace?: () => boolean;
   runReadyScript?: (scriptPath: string, cwd: string | undefined) => void;
   stateScheduler?: StatePublisherScheduler;
   initialSessionMeta?: PiChatSessionMetaSnapshot;

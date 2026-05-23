@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import * as os from 'node:os';
 import { PiSdkClient } from '../../sdk/piSdkClient';
 import { createSdkExtensionUiContext } from '../../sdk/extensionUiBridge';
 import { loadPiSdk, resetPiSdkLoaderForTests, type PiSdkModule } from '../../sdk/piSdkLoader';
@@ -85,14 +86,23 @@ suite('PiSdkClient', () => {
     harness.client.dispose();
   });
 
-  test('rejects startup without a safe workspace cwd', async () => {
-    const notifications: Array<{ message: string; notifyType: string }> = [];
-    const harness = createSdkHarness({ cwd: undefined, notifications });
+  test('uses home cwd when no workspace cwd is available', async () => {
+    const harness = createSdkHarness({ cwd: undefined });
 
-    await assert.rejects(harness.client.getState(), /no workspace folder is available yet/);
+    await harness.client.getState();
+
+    assert.deepStrictEqual(harness.createdSessionManagers, [{ type: 'create', cwd: os.homedir(), sessionDir: '/configured-sessions' }]);
+    harness.client.dispose();
+  });
+
+  test('rejects startup without a workspace cwd when workspace mutation guard is enabled', async () => {
+    const notifications: Array<{ message: string; notifyType: string }> = [];
+    const harness = createSdkHarness({ cwd: undefined, rejectEditWriteOutsideWorkspace: true, notifications });
+
+    await assert.rejects(harness.client.getState(), /rejectEditWriteOutsideWorkspace is enabled/);
 
     assert.strictEqual(harness.createdSessionManagers.length, 0);
-    assert.match(notifications[0]?.message ?? '', /no workspace folder is available yet/);
+    assert.match(notifications[0]?.message ?? '', /rejectEditWriteOutsideWorkspace is enabled/);
     assert.strictEqual(notifications[0]?.notifyType, 'warning');
     harness.client.dispose();
   });

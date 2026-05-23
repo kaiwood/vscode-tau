@@ -123,6 +123,33 @@ suite('PiChatViewProvider', () => {
     }
   });
 
+  test('starts with home cwd when no workspace folder is available', async () => {
+    const clientOptions: unknown[] = [];
+    const client = new FakePiClient({
+      state: {
+        model: { provider: 'openai', id: 'live-model', reasoning: false },
+        thinkingLevel: 'off'
+      }
+    });
+    const provider = new PiChatViewProvider(
+      vscode.Uri.file('/extension'),
+      (options) => {
+        clientOptions.push(options);
+        return client;
+      },
+      undefined,
+      undefined,
+      () => undefined
+    );
+    const view = new FakeWebviewView();
+
+    provider.resolveWebviewView(view.asWebviewView());
+    await flushPromises();
+
+    assert.deepStrictEqual(clientOptions.map(withoutExtensionUi), [{ cwd: os.homedir() }]);
+    provider.dispose();
+  });
+
   test('restores and persists current session file through workspace state', async () => {
     const workspaceState = new FakeMemento({
       'tau.currentSessionFile': '/sessions/current.jsonl'

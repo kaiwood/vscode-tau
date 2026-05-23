@@ -24,7 +24,7 @@ import { createSdkExtensionUiContext } from './extensionUiBridge';
 import { mapSdkExtensionErrorToPiEvent, mapSdkSessionEventToPiEvent } from './piSdkEventMapper';
 import { flattenPiSessionTree, type FlattenableSessionTreeNode } from '../sessions/piSessionTree';
 import { loadPiSdk, type PiSdkLoader, type PiSdkModule } from './piSdkLoader';
-import { assertSafeWorkspaceCwd } from '../workspace/cwdSafety';
+import { assertPiStartupCwd } from '../workspace/cwdSafety';
 import { createWorkspaceMutationGuardTools } from './workspaceMutationGuard';
 
 const sdkDisposedMessage = 'Pi SDK client disposed.';
@@ -391,7 +391,7 @@ export class PiSdkClient implements PiClient {
 
   private resolveWorkspaceCwd(): string {
     try {
-      return assertSafeWorkspaceCwd(this.options.cwd);
+      return assertPiStartupCwd(this.options.cwd, this.shouldRejectEditWriteOutsideWorkspace());
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.options.showNotification?.(message, 'warning');

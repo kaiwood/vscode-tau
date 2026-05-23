@@ -22,7 +22,7 @@ import { findCurrentPathGitCommit, findTraceLinkedGitCommit } from './origin/git
 import { traceOrigin, type TraceOriginInput, type TraceOriginMatch } from './origin/sessionOriginTracer';
 import { readCachedSessionMeta, writeCachedSessionMeta } from './metadata/cache';
 import { readSessionJsonlHeaderCwdSync } from './pi/sessionJsonl';
-import { getWorkspaceCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './workspace/cwdSafety';
+import { getPiStartupCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './workspace/cwdSafety';
 
 export const chatViewType = 'tau.chatView';
 export type { PiClient } from './pi/clientTypes';
@@ -33,7 +33,6 @@ const tauSidebarFocusContextKey = 'tau.sidebarFocus';
 const tauBusyContextKey = 'tau.busy';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
-const workspacePendingWarningDelayMs = 5000;
 
 type ConfiguredPiClientDependencies = {
   extensionUi: ExtensionUi;
@@ -65,7 +64,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private readonly sessionDiffViewer = new SessionDiffViewer((message, notifyType) => this.showNotification(message, notifyType));
   private contextUsagePollTimer: NodeJS.Timeout | undefined;
   private sessionDiffStatsRefreshTimer: NodeJS.Timeout | undefined;
-  private workspacePendingWarningTimer: NodeJS.Timeout | undefined;
   private lastWorkspaceCwd: string | undefined;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly webviewDisposables: vscode.Disposable[] = [];
@@ -106,6 +104,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       getCustomUiTheme: () => getCustomUiThemeSetting(),
       getReadyScript: () => getReadyScriptSetting(),
       getReadyScriptEnabled: () => getReadyScriptEnabledSetting(),
+      getRejectEditWriteOutsideWorkspace: () => getRejectEditWriteOutsideWorkspaceSetting(),
       runReadyScript: (scriptPath, cwd) => {
         runReadyScript(scriptPath, cwd, {
           onError: (message) => this.showNotification(message, 'warning')
@@ -135,7 +134,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       showSessionChanges: (sessionPath, displayName) => this.sessionDiffViewer.showSessionChanges(sessionPath, displayName)
     });
 
-    const initialWorkspaceState = getWorkspaceCwdState(this.workspaceCwdProvider());
+    const initialWorkspaceState = getPiStartupCwdState(this.workspaceCwdProvider(), getRejectEditWriteOutsideWorkspaceSetting());
     this.lastWorkspaceCwd = initialWorkspaceState.status === 'ready' ? initialWorkspaceState.cwd : undefined;
 
     this.setSidebarFocusContext(false);
@@ -149,6 +148,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
           || event.affectsConfiguration('tau.customUiTheme')
         ) {
           this.controller.postState();
+        }
+
+        if (event.affectsConfiguration('tau.rejectEditWriteOutsideWorkspace')) {
+          this.handleWorkspaceFoldersChanged();
         }
 
         if (event.affectsConfiguration('editor.tokenColorCustomizations') || event.affectsConfiguration('editor.semanticTokenColorCustomizations')) {
@@ -166,7 +169,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.setBusyContext(false);
     this.stopContextUsagePolling();
     this.stopSessionDiffStatsRefreshTimer();
-    this.stopWorkspacePendingWarningTimer();
     this.disposeWebviewDisposables();
 
     for (const disposable of this.disposables.splice(0)) {
@@ -620,17 +622,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private refreshLiveMetadata(): void {
-    const workspaceState = getWorkspaceCwdState(this.workspaceCwdProvider());
+    const startupState = getPiStartupCwdState(this.workspaceCwdProvider(), getRejectEditWriteOutsideWorkspaceSetting());
 
-    if (workspaceState.status === 'pending') {
-      this.controller.noteWorkspacePending();
-      this.startWorkspacePendingWarningTimer();
-      return;
-    }
-
-    if (workspaceState.status === 'ready') {
-      this.lastWorkspaceCwd ??= workspaceState.cwd;
-      this.stopWorkspacePendingWarningTimer();
+    if (startupState.status === 'ready') {
+      this.lastWorkspaceCwd ??= startupState.cwd;
     }
 
     this.controller.refreshSessionMeta({ startClient: true });
@@ -638,17 +633,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   private handleWorkspaceFoldersChanged(): void {
     this.scheduleSessionDiffStatsRefresh();
-    const workspaceState = getWorkspaceCwdState(this.workspaceCwdProvider());
+    const startupState = getPiStartupCwdState(this.workspaceCwdProvider(), getRejectEditWriteOutsideWorkspaceSetting());
 
-    if (workspaceState.status === 'pending') {
-      this.controller.noteWorkspacePending();
-      this.startWorkspacePendingWarningTimer();
-      return;
-    }
-
-    this.stopWorkspacePendingWarningTimer();
-
-    if (workspaceState.status === 'unsafe') {
+    if (startupState.status === 'blocked') {
       this.lastWorkspaceCwd = undefined;
       this.controller.refreshSessionMeta({ startClient: true, force: true });
       return;
@@ -657,19 +644,19 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const previousCwd = this.lastWorkspaceCwd;
     const persistedSessionFile = readCurrentSessionFile(this.workspaceState);
     const sessionFile = this.sanitizeInitialSessionFile(persistedSessionFile);
-    this.lastWorkspaceCwd = workspaceState.cwd;
+    this.lastWorkspaceCwd = startupState.cwd;
 
     if (!previousCwd) {
       if (persistedSessionFile && !sessionFile) {
-        this.controller.restartForWorkspaceChange(workspaceState.cwd, undefined);
+        this.controller.restartForWorkspaceChange(startupState.cwd, undefined);
       } else {
-        this.controller.noteWorkspaceAvailable(workspaceState.cwd);
+        this.controller.noteWorkspaceAvailable(startupState.cwd);
       }
       return;
     }
 
-    if (previousCwd !== workspaceState.cwd) {
-      this.controller.restartForWorkspaceChange(workspaceState.cwd, sessionFile);
+    if (previousCwd !== startupState.cwd) {
+      this.controller.restartForWorkspaceChange(startupState.cwd, sessionFile);
     }
   }
 
@@ -688,29 +675,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     clearTimeout(this.sessionDiffStatsRefreshTimer);
     this.sessionDiffStatsRefreshTimer = undefined;
-  }
-
-  private startWorkspacePendingWarningTimer(): void {
-    if (this.workspacePendingWarningTimer) {
-      return;
-    }
-
-    this.workspacePendingWarningTimer = setTimeout(() => {
-      this.workspacePendingWarningTimer = undefined;
-
-      if (getWorkspaceCwdState(this.workspaceCwdProvider()).status === 'pending') {
-        this.controller.noteWorkspacePendingWarning();
-      }
-    }, workspacePendingWarningDelayMs);
-  }
-
-  private stopWorkspacePendingWarningTimer(): void {
-    if (!this.workspacePendingWarningTimer) {
-      return;
-    }
-
-    clearTimeout(this.workspacePendingWarningTimer);
-    this.workspacePendingWarningTimer = undefined;
   }
 
   private startContextUsagePolling(): void {

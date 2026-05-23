@@ -27,7 +27,7 @@ import { SessionHistoryController } from './sessions/sessionHistoryController';
 import { PiClientManager } from './controller/piClientManager';
 import { PiEventHandler } from './controller/piEventHandler';
 import { SessionViewController } from './sessions/sessionViewController';
-import { getWorkspaceCwdState } from './workspace/cwdSafety';
+import { getPiStartupCwdState, type PiStartupCwdState } from './workspace/cwdSafety';
 
 export type { PiChatControllerOptions } from './controller/types';
 export type { PiChatContextUsage, PiChatModelMeta, PiChatSessionMetaSnapshot } from './metadata/sessionMetadata';
@@ -67,7 +67,6 @@ export class PiChatController {
       createClient: options.createClient,
       deleteSession: options.deleteSession,
       extensionUi: options.extensionUi,
-      getCwd: options.getCwd,
       initialSessionFile: options.initialSessionFile,
       listSessions: options.listSessions,
       onSessionFileChange: options.onSessionFileChange,
@@ -75,6 +74,7 @@ export class PiChatController {
       showNotification: options.showNotification,
       showSessionChanges: options.showSessionChanges,
       showToast: options.showToast,
+      getCwd: () => this.getPiStartupCwd(),
       applySessionFile: (sessionFile) => this.sessionDiffController.applySessionFile(sessionFile),
       adoptReplacedSession: (adoptOptions) => this.sessionHistory.adoptReplacedSession(adoptOptions),
       getClient: () => this.getClient(),
@@ -92,7 +92,7 @@ export class PiChatController {
 
     this.clientManager = new PiClientManager({
       createClient: options.createClient,
-      getCwd: options.getCwd,
+      getCwd: () => this.getPiStartupCwd(),
       getCurrentSessionFile: () => this.sessionView.currentSessionFile,
       getSessionGeneration: () => this.session.generation,
       extensionUi: options.extensionUi,
@@ -682,7 +682,7 @@ export class PiChatController {
       return false;
     }
 
-    this.options.runReadyScript(scriptPath, this.options.getCwd?.());
+    this.options.runReadyScript(scriptPath, this.getPiStartupCwd());
     return true;
   }
 
@@ -700,27 +700,47 @@ export class PiChatController {
   }
 
   private getClient(): PiClient {
-    if (!this.ensureWorkspaceReadyForClient()) {
-      throw new Error('Tau is waiting for VS Code to provide a workspace folder before starting Pi.');
+    const state = this.getPiStartupCwdState();
+
+    if (state.status !== 'ready') {
+      const message = this.getPiStartupErrorMessage(state);
+      this.handlePiStartupBlocked(message);
+      throw new Error(message);
     }
 
     return this.clientManager.getClient();
   }
 
   private ensureWorkspaceReadyForClient(): boolean {
-    const state = getWorkspaceCwdState(this.options.getCwd?.());
+    const state = this.getPiStartupCwdState();
 
     if (state.status === 'ready') {
       return true;
     }
 
-    if (state.status === 'pending') {
-      this.addWorkspaceWaitingNotice(false);
-    } else {
-      this.handleClientError(`Tau cannot start Pi because ${state.reason}. Open a project folder and try again.`);
-    }
-
+    this.handlePiStartupBlocked(this.getPiStartupErrorMessage(state));
     return false;
+  }
+
+  private getPiStartupErrorMessage(state: Extract<PiStartupCwdState, { status: 'blocked' }>): string {
+    return `Tau cannot start Pi because ${state.reason}. Open a project folder and try again.`;
+  }
+
+  private handlePiStartupBlocked(message: string): void {
+    this.options.showNotification(message, 'warning');
+    this.handleClientError(message);
+  }
+
+  private getPiStartupCwd(): string | undefined {
+    const state = this.getPiStartupCwdState();
+    return state.status === 'ready' ? state.cwd : undefined;
+  }
+
+  private getPiStartupCwdState(): PiStartupCwdState {
+    return getPiStartupCwdState(
+      this.options.getCwd?.(),
+      Boolean(this.options.getRejectEditWriteOutsideWorkspace?.())
+    );
   }
 
   private addWorkspaceWaitingNotice(warn: boolean): void {
