@@ -1,12 +1,12 @@
-import { PiChatController } from '../piChatController';
+import { TauChatController } from '../tauChatController';
 import { ExtensionCustomUiHost, type CustomUiHostMessage } from '../extensionUi/customUiHost';
 import type { ExtensionUi } from '../extensionUi/types';
-import type { PiChatControllerOptions } from '../controller/types';
-import type { PiChatSessionMetaSnapshot } from '../metadata/types';
+import type { TauChatControllerOptions } from '../controller/types';
+import type { TauChatSessionMetaSnapshot } from '../metadata/types';
 import type { PiPromptContextInput } from '../prompt/types';
 import type { WebviewMessage, WebviewMessagePatch, WebviewSessionItem, WebviewStateMessage } from '../webviewProtocol/types';
 
-export type TauSessionManagerOptions = PiChatControllerOptions & {
+export type TauSessionManagerOptions = TauChatControllerOptions & {
   customUi?: {
     isAvailable(): boolean;
     postMessage(message: CustomUiHostMessage): boolean;
@@ -21,7 +21,7 @@ const maxInactiveOpenSessions = 3;
 
 type OpenSession = {
   id: string;
-  controller: PiChatController;
+  controller: TauChatController;
   state: WebviewStateMessage | undefined;
   sessionFile: string | undefined;
   status: OpenSessionStatus;
@@ -211,7 +211,7 @@ export class TauSessionManager {
     const extensionUi = this.createSessionExtensionUi(customUiHost);
     const session: OpenSession = {
       id,
-      controller: new PiChatController({
+      controller: new TauChatController({
         ...this.options,
         extensionUi,
         initialSessionFile,
@@ -399,7 +399,7 @@ export class TauSessionManager {
     to.controller.replacePromptContext(context);
   }
 
-  private handleSessionMetaChange(id: string, metadata: PiChatSessionMetaSnapshot): void {
+  private handleSessionMetaChange(id: string, metadata: TauChatSessionMetaSnapshot): void {
     if (id === this.activeSessionId) {
       this.options.onSessionMetaChange?.(metadata);
     }

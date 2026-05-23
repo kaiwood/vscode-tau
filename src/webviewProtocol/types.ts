@@ -12,7 +12,7 @@ export type WebviewPromptContextAttachment = {
   xml?: string;
 };
 
-export type WebviewSessionItemCommand = 'rename' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
+export type WebviewSessionItemCommand = 'rename' | 'showChanges' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
 
 export type WebviewMessage =
   | { type: 'ready' }

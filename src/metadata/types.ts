@@ -1,6 +1,6 @@
 import type { WebviewModelOption, WebviewSlashCommand } from '../webviewProtocol/types';
 
-export type PiChatModelMeta = {
+export type TauChatModelMeta = {
   label: string;
   provider: string;
   id: string;
@@ -8,16 +8,16 @@ export type PiChatModelMeta = {
   thinkingLevel: string;
 };
 
-export type PiChatContextUsage = {
+export type TauChatContextUsage = {
   label: string;
   title: string;
   level: string;
 };
 
-export type PiChatSessionMetaSnapshot = {
-  model?: PiChatModelMeta;
+export type TauChatSessionMetaSnapshot = {
+  model?: TauChatModelMeta;
   modelOptions?: WebviewModelOption[];
-  contextUsage?: PiChatContextUsage;
+  contextUsage?: TauChatContextUsage;
 };
 
 export type SessionMetadataWebviewState = {
@@ -29,7 +29,7 @@ export type SessionMetadataWebviewState = {
     thinkingLevel: string;
     options: WebviewModelOption[];
   };
-  contextUsage: PiChatContextUsage;
+  contextUsage: TauChatContextUsage;
   metadataRefreshing: boolean;
   slashCommands: WebviewSlashCommand[];
   slashCommandsRefreshing: boolean;

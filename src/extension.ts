@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { chatViewType, PiChatViewProvider } from './piChatViewProvider';
+import { tauChatViewType, TauChatViewProvider } from './tauChatViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
-  const provider = new PiChatViewProvider(
+  const provider = new TauChatViewProvider(
     context.extensionUri,
     undefined,
     context.workspaceState,
@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     provider,
-    vscode.window.registerWebviewViewProvider(chatViewType, provider),
+    vscode.window.registerWebviewViewProvider(tauChatViewType, provider),
     vscode.commands.registerCommand('tau.newSession', () => provider.newSession()),
     vscode.commands.registerCommand('tau.resume', () => provider.resume()),
     vscode.commands.registerCommand('tau.fork', () => provider.fork()),

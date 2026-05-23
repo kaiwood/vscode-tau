@@ -12,7 +12,7 @@ export const webviewCustomUiThemes = ['default', 'modern', 'crt', 'amber', 'matr
 export const webviewLanes = ['chat', 'sessions', 'tree'] as const satisfies readonly WebviewLane[];
 export const webviewChatFaces = ['main', 'settings'] as const satisfies readonly WebviewChatFace[];
 export const webviewSettingsSections = ['providers', 'models', 'runtime', 'appearance', 'advanced'] as const satisfies readonly WebviewSettingsSection[];
-export const webviewSessionItemCommands = ['rename', 'fork', 'clone', 'compact', 'export', 'delete'] as const satisfies readonly WebviewSessionItemCommand[];
+export const webviewSessionItemCommands = ['rename', 'showChanges', 'fork', 'clone', 'compact', 'export', 'delete'] as const satisfies readonly WebviewSessionItemCommand[];
 
 export function parseWebviewStreamingBehavior(value: unknown): WebviewStreamingBehavior | undefined {
   return includesValue(webviewStreamingBehaviors, value) ? value : undefined;

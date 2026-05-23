@@ -7,7 +7,7 @@ import type {
 } from './webviewProtocol/types';
 import { StatePublisher } from './controller/statePublisher';
 import type { PiClient } from './pi/clientTypes';
-import type { PiChatControllerOptions } from './controller/types';
+import type { TauChatControllerOptions } from './controller/types';
 import type {
   PiPromptStreamingBehavior,
   PiEvent
@@ -32,8 +32,8 @@ import { SettingsViewController } from './settings/settingsViewController';
 import { NavigationController } from './navigation/navigationController';
 import { getPiStartupCwdState, type PiStartupCwdState } from './workspace/cwdSafety';
 
-export type { PiChatControllerOptions } from './controller/types';
-export type { PiChatContextUsage, PiChatModelMeta, PiChatSessionMetaSnapshot } from './metadata/sessionMetadata';
+export type { TauChatControllerOptions } from './controller/types';
+export type { TauChatContextUsage, TauChatModelMeta, TauChatSessionMetaSnapshot } from './metadata/sessionMetadata';
 
 export type { PiPromptContextAttachment, PiPromptContextInput } from './prompt/types';
 
@@ -55,7 +55,7 @@ type ChatMessageSyncPlan = {
   postedSync: PostedChatSync;
 };
 
-export class PiChatController {
+export class TauChatController {
   private readonly promptContext = new PromptContextStore();
   private readonly sessionMetadata: SessionMetadataState;
   private readonly sessionMetadataRefresh: SessionMetadataRefreshController;
@@ -79,7 +79,7 @@ export class PiChatController {
   private workspaceWaitingNoticeAdded = false;
   private workspaceWarningNoticeAdded = false;
 
-  public constructor(private readonly options: PiChatControllerOptions) {
+  public constructor(private readonly options: TauChatControllerOptions) {
     this.sessionDiffController = new SessionDiffController({
       initialSessionFile: options.initialSessionFile,
       getSessionGeneration: () => this.session.generation,
@@ -786,7 +786,7 @@ export class PiChatController {
     });
   }
 
-  private restoreReadyScriptArming(snapshot: ReturnType<PiChatController['armReadyScriptForUserPrompt']>): void {
+  private restoreReadyScriptArming(snapshot: ReturnType<TauChatController['armReadyScriptForUserPrompt']>): void {
     this.readyScriptState.restore(snapshot);
   }
 

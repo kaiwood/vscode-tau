@@ -129,6 +129,10 @@ suite('Chat webview helpers', () => {
       { type: 'sessionItemCommand', sessionPath: '/sessions/old.jsonl', command: 'compact' }
     );
     assert.deepStrictEqual(
+      parseWebviewMessage({ type: 'sessionItemCommand', sessionPath: '/sessions/old.jsonl', command: 'showChanges' }),
+      { type: 'sessionItemCommand', sessionPath: '/sessions/old.jsonl', command: 'showChanges' }
+    );
+    assert.deepStrictEqual(
       parseWebviewMessage({ type: 'setSessionItemName', sessionPath: '/sessions/old.jsonl', name: 'Old work' }),
       { type: 'setSessionItemName', sessionPath: '/sessions/old.jsonl', name: 'Old work' }
     );
@@ -215,7 +219,6 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'selectSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'deleteSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'sessionItemCommand', sessionPath: '', command: 'compact' }), { type: 'unknown' });
-    assert.deepStrictEqual(parseWebviewMessage({ type: 'sessionItemCommand', sessionPath: '/sessions/old.jsonl', command: 'showChanges' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'sessionItemCommand', sessionPath: '/sessions/old.jsonl', command: 'bogus' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSessionItemName', sessionPath: '', name: 'Old work' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSessionItemName', sessionPath: '/sessions/old.jsonl', name: 42 }), { type: 'unknown' });
@@ -276,7 +279,7 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('class="settings-surface tau-chat-surface__face tau-chat-surface__settings"'));
     assert.ok(!html.includes('translate3d(200%, 0, 0)'));
     assert.ok(!html.includes('translate3d(-200%, 0, 0)'));
-    assert.ok(!html.includes('pi-view--tree-enter'));
+    assert.ok(!html.includes('tau-view--tree-enter'));
     assert.ok(!html.includes('@keyframes tau-session-tree-enter'));
     assert.ok(!html.includes('--tau-tree-enter-transition-duration'));
     assert.ok(!html.includes('pi-view--lane-tree'));
@@ -299,30 +302,30 @@ suite('Chat webview helpers', () => {
         `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https: vscode-resource:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">`
       )
     );
-    assert.ok(html.includes('    .pi-view {'));
+    assert.ok(html.includes('    .tau-view {'));
     assert.ok(html.includes('      display: grid;'));
     assert.ok(!html.includes('vscode-resource://highlight.js'));
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://markdown-it.js"></script>'));
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://dompurify.js"></script>'));
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://chat.js"></script>'));
-    assert.ok(html.includes('class="pi-toolbar__sessions"'));
-    assert.ok(html.includes('class="pi-toolbar__tree"'));
-    assert.ok(!html.includes('class="pi-toolbar__new-session"'));
-    assert.ok(!html.includes('class="pi-toolbar__settings"'));
-    assert.ok(!html.includes('class="pi-toolbar__menu-wrap"'));
-    assert.ok(html.includes('class="pi-help-overlay"'));
-    assert.ok(html.includes('<h3 id="chat-help-heading" class="pi-help-overlay__section-title">Chat View</h3>'));
-    assert.ok(html.includes('<h3 id="session-help-heading" class="pi-help-overlay__section-title">Session List</h3>'));
+    assert.ok(html.includes('class="tau-toolbar__sessions"'));
+    assert.ok(html.includes('class="tau-toolbar__tree"'));
+    assert.ok(!html.includes('class="tau-toolbar__new-session"'));
+    assert.ok(!html.includes('class="tau-toolbar__settings"'));
+    assert.ok(!html.includes('class="tau-toolbar__menu-wrap"'));
+    assert.ok(html.includes('class="tau-help-overlay"'));
+    assert.ok(html.includes('<h3 id="chat-help-heading" class="tau-help-overlay__section-title">Chat View</h3>'));
+    assert.ok(html.includes('<h3 id="session-help-heading" class="tau-help-overlay__section-title">Session List</h3>'));
     assert.ok(html.includes('<th scope="col">Key</th><th scope="col">Function</th>'));
     assert.ok(html.includes('<span class="tau-icon-action-tooltip">Show tree</span>'));
-    assert.ok(!html.includes('class="pi-toolbar__edit"'));
-    assert.ok(html.includes('class="pi-toolbar__title-input"'));
+    assert.ok(!html.includes('class="tau-toolbar__edit"'));
+    assert.ok(html.includes('class="tau-toolbar__title-input"'));
     assert.ok(!html.includes('data-session-command="rename"'));
     assert.ok(!html.includes('data-session-command="showChanges"'));
     assert.ok(!html.includes('data-session-command="fork"'));
     assert.ok(!html.includes('data-session-command="clone"'));
     assert.ok(!html.includes('data-session-command="delete"'));
-    assert.ok(!html.includes('pi-toolbar__session-menu'));
+    assert.ok(!html.includes('tau-toolbar__session-menu'));
     assert.ok(html.includes('class="messages" aria-live="polite" aria-label="Tau conversation"'));
     assert.ok(html.includes('Don\'t show again'));
     assert.ok(html.includes('class="sessions" aria-label="Tau sessions" role="listbox" tabindex="-1" aria-hidden="true"'));
@@ -357,7 +360,7 @@ suite('Chat webview helpers', () => {
       domPurifyScriptUri: 'vscode-resource://dompurify.js',
       webviewScriptUri: 'vscode-resource://chat.js'
     }, { welcomeDismissed: true });
-    assert.ok(dismissedHtml.includes('<p class="empty-state">Ask Pi about this workspace.</p>'));
+    assert.ok(dismissedHtml.includes('<p class="empty-state">Ask Tau about this workspace.</p>'));
     assert.ok(!dismissedHtml.includes('Don\'t show again'));
   });
 

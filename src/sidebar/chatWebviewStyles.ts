@@ -58,7 +58,7 @@ const baseStyles = /* css */ `    :root {
       --tau-ansi-bright-white-fallback: #222222;
     }
 
-    .pi-view {
+    .tau-view {
       --tau-lane-transition-duration: 190ms;
       --tau-lane-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
@@ -78,7 +78,7 @@ const baseStyles = /* css */ `    :root {
 
 `;
 
-const toolbarStyles = /* css */ `    .pi-toolbar {
+const toolbarStyles = /* css */ `    .tau-toolbar {
       position: relative;
       grid-row: 1;
       grid-column: 1;
@@ -95,8 +95,8 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       border-bottom: 1px solid color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
     }
 
-    .pi-toolbar__sessions,
-    .pi-toolbar__tree {
+    .tau-toolbar__sessions,
+    .tau-toolbar__tree {
       position: relative;
       display: grid;
       place-items: center;
@@ -113,21 +113,21 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       overflow: visible;
     }
 
-    .pi-toolbar__sessions:hover,
-    .pi-toolbar__sessions:focus-visible,
-    .pi-toolbar__tree:hover,
-    .pi-toolbar__tree:focus-visible {
+    .tau-toolbar__sessions:hover,
+    .tau-toolbar__sessions:focus-visible,
+    .tau-toolbar__tree:hover,
+    .tau-toolbar__tree:focus-visible {
       color: var(--vscode-foreground);
       background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
       outline: none;
     }
 
-    .pi-toolbar__sessions svg,
-    .pi-toolbar__tree svg {
+    .tau-toolbar__sessions svg,
+    .tau-toolbar__tree svg {
       transition: transform 120ms ease;
     }
 
-    .pi-toolbar__title {
+    .tau-toolbar__title {
       position: relative;
       display: flex;
       align-items: center;
@@ -152,7 +152,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       white-space: nowrap;
     }
 
-    .pi-toolbar__title-text {
+    .tau-toolbar__title-text {
       display: block;
       flex: 0 1 auto;
       min-width: 0;
@@ -161,7 +161,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       white-space: nowrap;
     }
 
-    .pi-toolbar__timestamp {
+    .tau-toolbar__timestamp {
       display: block;
       flex: 0 0 auto;
       color: var(--vscode-descriptionForeground);
@@ -171,11 +171,11 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       white-space: nowrap;
     }
 
-    .pi-toolbar__timestamp[hidden] {
+    .tau-toolbar__timestamp[hidden] {
       display: none;
     }
 
-    .pi-toolbar__title-input {
+    .tau-toolbar__title-input {
       width: 100%;
       height: 24px;
       margin: 1px 0;
@@ -191,22 +191,22 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       outline: none;
     }
 
-    .pi-toolbar__title-input[hidden] {
+    .tau-toolbar__title-input[hidden] {
       display: none;
     }
 
-    .pi-toolbar__title--editing {
+    .tau-toolbar__title--editing {
       padding: 0;
       overflow: visible;
       contain: none;
     }
 
-    .pi-toolbar__title--editing .pi-toolbar__title-text {
+    .tau-toolbar__title--editing .tau-toolbar__title-text {
       display: none;
     }
 
 
-    .pi-help-overlay {
+    .tau-help-overlay {
       position: fixed;
       top: 38px;
       right: 10px;
@@ -222,17 +222,17 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       box-shadow: 0 8px 24px color-mix(in srgb, #000 34%, transparent);
     }
 
-    .pi-help-overlay[hidden] {
+    .tau-help-overlay[hidden] {
       display: none;
     }
 
-    .pi-help-overlay:focus,
-    .pi-help-overlay:focus-visible {
+    .tau-help-overlay:focus,
+    .tau-help-overlay:focus-visible {
       outline: 1px solid var(--vscode-focusBorder, transparent);
       outline-offset: -2px;
     }
 
-    .pi-help-overlay__header {
+    .tau-help-overlay__header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -240,7 +240,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       margin-bottom: 10px;
     }
 
-    .pi-help-overlay__eyebrow {
+    .tau-help-overlay__eyebrow {
       margin-bottom: 2px;
       color: var(--vscode-descriptionForeground);
       font-size: 10px;
@@ -250,7 +250,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       text-transform: uppercase;
     }
 
-    .pi-help-overlay__title {
+    .tau-help-overlay__title {
       margin: 0;
       color: var(--vscode-foreground);
       font-size: 14px;
@@ -258,7 +258,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       line-height: 1.25;
     }
 
-    .pi-help-overlay__close {
+    .tau-help-overlay__close {
       flex: 0 0 auto;
       width: 24px;
       height: 24px;
@@ -273,19 +273,19 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       line-height: 22px;
     }
 
-    .pi-help-overlay__close:hover,
-    .pi-help-overlay__close:focus-visible {
+    .tau-help-overlay__close:hover,
+    .tau-help-overlay__close:focus-visible {
       color: var(--vscode-foreground);
       background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
       outline: none;
     }
 
-    .pi-help-overlay__body {
+    .tau-help-overlay__body {
       display: grid;
       gap: 14px;
     }
 
-    .pi-help-overlay__section-title {
+    .tau-help-overlay__section-title {
       margin: 0 0 6px;
       color: var(--vscode-foreground);
       font-size: 12px;
@@ -293,22 +293,22 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       line-height: 1.3;
     }
 
-    .pi-help-overlay__table {
+    .tau-help-overlay__table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
       line-height: 1.35;
     }
 
-    .pi-help-overlay__table th,
-    .pi-help-overlay__table td {
+    .tau-help-overlay__table th,
+    .tau-help-overlay__table td {
       padding: 5px 6px;
       text-align: left;
       vertical-align: top;
       border-top: 1px solid color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
     }
 
-    .pi-help-overlay__table th {
+    .tau-help-overlay__table th {
       color: var(--vscode-descriptionForeground);
       font-size: 10px;
       font-weight: 700;
@@ -316,13 +316,13 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       text-transform: uppercase;
     }
 
-    .pi-help-overlay__table td:first-child {
+    .tau-help-overlay__table td:first-child {
       width: 42%;
       color: var(--vscode-foreground);
       white-space: nowrap;
     }
 
-    .pi-help-overlay__table kbd {
+    .tau-help-overlay__table kbd {
       display: inline-block;
       min-width: 1.35em;
       padding: 1px 4px;
@@ -338,7 +338,7 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       text-align: center;
     }
 
-    .pi-toolbar__help-popover {
+    .tau-toolbar__help-popover {
       position: fixed;
       top: 36px;
       right: 10px;
@@ -353,11 +353,11 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       box-shadow: 0 6px 18px color-mix(in srgb, #000 28%, transparent);
     }
 
-    .pi-toolbar__help-popover[hidden] {
+    .tau-toolbar__help-popover[hidden] {
       display: none;
     }
 
-    .pi-toolbar__help-title {
+    .tau-toolbar__help-title {
       margin: 0 0 2px;
       color: var(--vscode-foreground);
       font-size: 12px;
@@ -365,14 +365,14 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       line-height: 1.35;
     }
 
-    .pi-toolbar__help-note {
+    .tau-toolbar__help-note {
       margin-bottom: 8px;
       color: var(--vscode-descriptionForeground);
       font-size: 11px;
       line-height: 1.35;
     }
 
-    .pi-toolbar__help-list {
+    .tau-toolbar__help-list {
       display: grid;
       gap: 5px;
       margin: 0;
@@ -380,14 +380,14 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       line-height: 1.35;
     }
 
-    .pi-toolbar__help-list > div {
+    .tau-toolbar__help-list > div {
       display: grid;
       grid-template-columns: minmax(58px, auto) minmax(0, 1fr);
       gap: 10px;
       align-items: baseline;
     }
 
-    .pi-toolbar__help-list dt {
+    .tau-toolbar__help-list dt {
       min-width: 0;
       padding: 1px 5px;
       color: var(--vscode-foreground);
@@ -401,13 +401,13 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       white-space: nowrap;
     }
 
-    .pi-toolbar__help-list dd {
+    .tau-toolbar__help-list dd {
       min-width: 0;
       margin: 0;
       color: var(--vscode-descriptionForeground);
     }
 
-    .pi-toolbar__menu-item {
+    .tau-toolbar__menu-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -426,33 +426,33 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
       cursor: pointer;
     }
 
-    .pi-toolbar__menu-icon {
+    .tau-toolbar__menu-icon {
       flex: 0 0 auto;
       opacity: 0.78;
     }
 
-    .pi-toolbar__menu-item:hover:not(:disabled),
-    .pi-toolbar__menu-item:focus-visible,
-    .pi-toolbar__menu-item--hover:not(:disabled) {
+    .tau-toolbar__menu-item:hover:not(:disabled),
+    .tau-toolbar__menu-item:focus-visible,
+    .tau-toolbar__menu-item--hover:not(:disabled) {
       color: var(--vscode-foreground);
       background: rgba(127, 127, 127, 0.18);
       outline: none;
     }
 
-    .pi-toolbar__menu-item:hover:not(:disabled) .pi-toolbar__menu-icon,
-    .pi-toolbar__menu-item:focus-visible .pi-toolbar__menu-icon,
-    .pi-toolbar__menu-item--hover:not(:disabled) .pi-toolbar__menu-icon {
+    .tau-toolbar__menu-item:hover:not(:disabled) .tau-toolbar__menu-icon,
+    .tau-toolbar__menu-item:focus-visible .tau-toolbar__menu-icon,
+    .tau-toolbar__menu-item--hover:not(:disabled) .tau-toolbar__menu-icon {
       opacity: 1;
     }
 
-    .pi-toolbar__menu-item:disabled {
+    .tau-toolbar__menu-item:disabled {
       opacity: 0.45;
       cursor: default;
     }
 
 `;
 
-const toastStyles = /* css */ `    .pi-toast {
+const toastStyles = /* css */ `    .tau-toast {
       position: absolute;
       left: 12px;
       right: 12px;
@@ -479,7 +479,7 @@ const toastStyles = /* css */ `    .pi-toast {
       pointer-events: none;
     }
 
-    .pi-toast__icon {
+    .tau-toast__icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -491,23 +491,23 @@ const toastStyles = /* css */ `    .pi-toast {
       line-height: 1;
     }
 
-    .pi-toast--success .pi-toast__icon {
+    .tau-toast--success .tau-toast__icon {
       color: var(--vscode-testing-iconPassed, #3fb950);
     }
 
-    .pi-toast--warning .pi-toast__icon {
+    .tau-toast--warning .tau-toast__icon {
       color: var(--vscode-testing-iconQueued, #d29922);
     }
 
-    .pi-toast--error .pi-toast__icon {
+    .tau-toast--error .tau-toast__icon {
       color: var(--vscode-testing-iconFailed, #f85149);
     }
 
-    .pi-toast[hidden] {
+    .tau-toast[hidden] {
       display: none;
     }
 
-    .pi-toast--visible {
+    .tau-toast--visible {
       opacity: 1;
       transform: translateY(0);
     }
@@ -1651,8 +1651,8 @@ const messageStyles = /* css */ `    .message {
       pointer-events: none;
     }
 
-    .pi-toolbar__sessions .tau-icon-action-tooltip,
-    .pi-toolbar__tree .tau-icon-action-tooltip,
+    .tau-toolbar__sessions .tau-icon-action-tooltip,
+    .tau-toolbar__tree .tau-icon-action-tooltip,
     .sessions__menu-button .tau-icon-action-tooltip,
     .sessions__named-filter .tau-icon-action-tooltip {
       top: calc(100% + 5px);
@@ -1660,7 +1660,7 @@ const messageStyles = /* css */ `    .message {
       bottom: auto;
     }
 
-    .pi-toolbar__sessions .tau-icon-action-tooltip,
+    .tau-toolbar__sessions .tau-icon-action-tooltip,
     .composer__diff-summary .tau-icon-action-tooltip {
       right: auto;
       left: 0;
@@ -1672,10 +1672,10 @@ const messageStyles = /* css */ `    .message {
     .tau-code-block__action:focus-visible .tau-icon-action-tooltip,
     .activity__body-action:hover .tau-icon-action-tooltip,
     .activity__body-action:focus-visible .tau-icon-action-tooltip,
-    .pi-toolbar__sessions:hover .tau-icon-action-tooltip,
-    .pi-toolbar__sessions:focus-visible .tau-icon-action-tooltip,
-    .pi-toolbar__tree:hover .tau-icon-action-tooltip,
-    .pi-toolbar__tree:focus-visible .tau-icon-action-tooltip,
+    .tau-toolbar__sessions:hover .tau-icon-action-tooltip,
+    .tau-toolbar__sessions:focus-visible .tau-icon-action-tooltip,
+    .tau-toolbar__tree:hover .tau-icon-action-tooltip,
+    .tau-toolbar__tree:focus-visible .tau-icon-action-tooltip,
     .composer__submit:hover:not(:disabled) .tau-icon-action-tooltip,
     .composer__submit:focus-visible:not(:disabled) .tau-icon-action-tooltip,
     .composer__diff-summary:hover .tau-icon-action-tooltip,
@@ -1775,7 +1775,7 @@ const activityStyles = /* css */ `    .activity-list {
       border: 1.4px solid color-mix(in srgb, var(--vscode-descriptionForeground) 35%, transparent);
       border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
       border-radius: 999px;
-      animation: pi-spin 0.8s linear infinite;
+      animation: tau-spin 0.8s linear infinite;
     }
 
     .activity__description {
@@ -1903,11 +1903,11 @@ const activityStyles = /* css */ `    .activity-list {
       border: 1.5px solid color-mix(in srgb, var(--vscode-descriptionForeground) 35%, transparent);
       border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
       border-radius: 999px;
-      animation: pi-spin 0.8s linear infinite;
+      animation: tau-spin 0.8s linear infinite;
       will-change: transform;
     }
 
-    @keyframes pi-spin {
+    @keyframes tau-spin {
       to {
         transform: rotate(360deg);
       }

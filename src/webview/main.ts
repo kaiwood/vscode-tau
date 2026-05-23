@@ -326,12 +326,12 @@ function showToast(message: string, kind: 'success' | 'warning' | 'error' = 'suc
     clearTimeout(toastHideTimeout);
   }
 
-  toastElement.className = 'pi-toast pi-toast--' + kind;
+  toastElement.className = 'tau-toast tau-toast--' + kind;
   toastElement.replaceChildren(createToastIcon(kind), document.createTextNode(message));
   toastElement.hidden = false;
-  toastElement.classList.add('pi-toast--visible');
+  toastElement.classList.add('tau-toast--visible');
   toastHideTimeout = setTimeout(() => {
-    toastElement.classList.remove('pi-toast--visible');
+    toastElement.classList.remove('tau-toast--visible');
     toastElement.hidden = true;
     toastHideTimeout = undefined;
   }, 2500);
@@ -349,7 +349,7 @@ function applyCustomUiTheme(theme: WebviewState['customUiTheme']): void {
 
 function createToastIcon(kind: 'success' | 'warning' | 'error'): HTMLElement {
   const icon = document.createElement('span');
-  icon.className = 'pi-toast__icon';
+  icon.className = 'tau-toast__icon';
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = kind === 'warning' ? '⚠' : kind === 'error' ? '✕' : '✓';
   return icon;

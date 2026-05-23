@@ -313,35 +313,35 @@ ${chatWebviewStyles}
   </style>
 </head>
 <body${options.devRenderInstrumentation ? ' data-tau-dev-render-instrumentation="true"' : ''}>
-  <main class="pi-view tau-view--lane-chat">
-    <header class="pi-toolbar">
-      <button class="pi-toolbar__sessions" type="button" aria-label="Show sessions">
+  <main class="tau-view tau-view--lane-chat">
+    <header class="tau-toolbar">
+      <button class="tau-toolbar__sessions" type="button" aria-label="Show sessions">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="tau-icon-action-tooltip">Show sessions</span>
       </button>
-      <div class="pi-toolbar__title"><span class="pi-toolbar__title-text">Tau</span><span class="pi-toolbar__timestamp" hidden></span><input class="pi-toolbar__title-input" type="text" aria-label="Session name" spellcheck="false" hidden></div>
-      <button class="pi-toolbar__tree" type="button" aria-label="Show tree">
+      <div class="tau-toolbar__title"><span class="tau-toolbar__title-text">Tau</span><span class="tau-toolbar__timestamp" hidden></span><input class="tau-toolbar__title-input" type="text" aria-label="Session name" spellcheck="false" hidden></div>
+      <button class="tau-toolbar__tree" type="button" aria-label="Show tree">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M6.75 4.5L11.25 9L6.75 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="tau-icon-action-tooltip">Show tree</span>
       </button>
     </header>
-    <div class="pi-toast" role="status" aria-live="polite" hidden></div>
-    <section class="pi-help-overlay" role="dialog" aria-label="Tau help" tabindex="-1" hidden>
-      <header class="pi-help-overlay__header">
+    <div class="tau-toast" role="status" aria-live="polite" hidden></div>
+    <section class="tau-help-overlay" role="dialog" aria-label="Tau help" tabindex="-1" hidden>
+      <header class="tau-help-overlay__header">
         <div>
-          <div class="pi-help-overlay__eyebrow">Tau shortcuts</div>
-          <h2 class="pi-help-overlay__title">Help</h2>
+          <div class="tau-help-overlay__eyebrow">Tau shortcuts</div>
+          <h2 class="tau-help-overlay__title">Help</h2>
         </div>
-        <button class="pi-help-overlay__close" type="button" aria-label="Close help">×</button>
+        <button class="tau-help-overlay__close" type="button" aria-label="Close help">×</button>
       </header>
-      <div class="pi-help-overlay__body">
-        <section class="pi-help-overlay__section" aria-labelledby="chat-help-heading">
-          <h3 id="chat-help-heading" class="pi-help-overlay__section-title">Chat View</h3>
-          <table class="pi-help-overlay__table">
+      <div class="tau-help-overlay__body">
+        <section class="tau-help-overlay__section" aria-labelledby="chat-help-heading">
+          <h3 id="chat-help-heading" class="tau-help-overlay__section-title">Chat View</h3>
+          <table class="tau-help-overlay__table">
             <thead><tr><th scope="col">Key</th><th scope="col">Function</th></tr></thead>
             <tbody>
               <tr><td><kbd>Enter</kbd></td><td>Send message</td></tr>
@@ -358,9 +358,9 @@ ${chatWebviewStyles}
             </tbody>
           </table>
         </section>
-        <section class="pi-help-overlay__section" aria-labelledby="session-help-heading">
-          <h3 id="session-help-heading" class="pi-help-overlay__section-title">Session List</h3>
-          <table class="pi-help-overlay__table">
+        <section class="tau-help-overlay__section" aria-labelledby="session-help-heading">
+          <h3 id="session-help-heading" class="tau-help-overlay__section-title">Session List</h3>
+          <table class="tau-help-overlay__table">
             <thead><tr><th scope="col">Key</th><th scope="col">Function</th></tr></thead>
             <tbody>
               <tr><td><kbd>Enter</kbd></td><td>Open selected session</td></tr>
@@ -445,11 +445,11 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
       </button>
         </form>
       </div>
-      <section class="settings-surface tau-chat-surface__face tau-chat-surface__settings" aria-label="Pi engine settings" tabindex="-1" aria-hidden="true">
+      <section class="settings-surface tau-chat-surface__face tau-chat-surface__settings" aria-label="Tau settings" tabindex="-1" aria-hidden="true">
         <div class="settings-surface__chrome" aria-hidden="true"></div>
         <header class="settings-surface__header">
           <div>
-            <div class="settings-surface__eyebrow">Pi Engine Settings</div>
+            <div class="settings-surface__eyebrow">Tau settings</div>
             <h2 class="settings-surface__title">Settings</h2>
           </div>
           <button class="settings-surface__back" type="button" aria-label="Back to chat">Back</button>
@@ -470,12 +470,12 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
 
 function createInitialEmptyStateHtml(welcomeDismissed: boolean): string {
   if (welcomeDismissed) {
-    return '      <p class="empty-state">Ask Pi about this workspace.</p>';
+    return '      <p class="empty-state">Ask Tau about this workspace.</p>';
   }
 
   return /* html */ `      <div class="empty-state empty-state--welcome">
         <h2 class="empty-state__title">Welcome to Tau</h2>
-        <p>Ask Pi about this workspace, review code, plan changes, or make edits.</p>
+        <p>Ask Tau about this workspace, review code, plan changes, or make edits.</p>
         <p>Type / for commands, or add a file/selection as context from the editor.</p>
         <p class="empty-state__try-label">Try:</p>
         <ul class="empty-state__prompts">

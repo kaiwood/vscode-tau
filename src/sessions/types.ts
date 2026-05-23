@@ -55,8 +55,3 @@ export type RawEntry = Record<string, unknown> & {
   type?: string;
   resolvedLabel?: string;
 };
-
-export type TreeNode = {
-  entry: RawEntry;
-  children: TreeNode[];
-};

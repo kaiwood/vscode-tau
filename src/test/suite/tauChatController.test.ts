@@ -3,10 +3,10 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import {
-  PiChatController,
-  type PiChatControllerOptions,
-  type PiChatSessionMetaSnapshot
-} from '../../piChatController';
+  TauChatController,
+  type TauChatControllerOptions,
+  type TauChatSessionMetaSnapshot
+} from '../../tauChatController';
 import type { PiClient } from '../../pi/clientTypes';
 import type { WebviewSessionItem, WebviewStateMessage, WebviewTreeItem } from '../../webviewProtocol/types';
 import type { StatePublisherScheduler } from '../../controller/statePublisher';
@@ -20,7 +20,7 @@ import type {
   PiEvent
 } from '../../pi/types';
 
-suite('PiChatController', () => {
+suite('TauChatController', () => {
   test('webview ready starts one live metadata refresh and dedupes repeated ready messages', async () => {
     const stateDeferred = createDeferred<PiSessionState>();
     const statsDeferred = createDeferred<PiSessionStats>();
@@ -2074,7 +2074,7 @@ suite('PiChatController', () => {
       statsResult: statsDeferred.promise,
       modelsResult: modelsDeferred.promise
     });
-    const cachedSessionChanges: PiChatSessionMetaSnapshot[] = [];
+    const cachedSessionChanges: TauChatSessionMetaSnapshot[] = [];
     const harness = createControllerHarness([client], {
       onSessionMetaChange: (metadata) => cachedSessionChanges.push(metadata)
     });
@@ -2407,7 +2407,7 @@ suite('PiChatController', () => {
 });
 
 type ControllerHarness = {
-  controller: PiChatController;
+  controller: TauChatController;
   states: WebviewStateMessage[];
   notifications: { message: string; type: string }[];
   toasts: string[];
@@ -2418,11 +2418,11 @@ type ControllerHarness = {
 type ControllerHarnessOptions = {
   cwd?: string;
   getCwd?: () => string | undefined;
-  extensionUi?: PiChatControllerOptions['extensionUi'];
+  extensionUi?: TauChatControllerOptions['extensionUi'];
   stateScheduler?: StatePublisherScheduler;
-  initialSessionMeta?: PiChatSessionMetaSnapshot;
+  initialSessionMeta?: TauChatSessionMetaSnapshot;
   initialSessionFile?: string;
-  onSessionMetaChange?: (metadata: PiChatSessionMetaSnapshot) => void;
+  onSessionMetaChange?: (metadata: TauChatSessionMetaSnapshot) => void;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
   listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
   deleteSession?: (sessionPath: string, displayName: string) => Promise<boolean>;
@@ -2430,7 +2430,7 @@ type ControllerHarnessOptions = {
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
   getRejectEditWriteOutsideWorkspace?: () => boolean;
-  runReadyScript?: PiChatControllerOptions['runReadyScript'];
+  runReadyScript?: TauChatControllerOptions['runReadyScript'];
 };
 
 function createControllerHarness(
@@ -2444,7 +2444,7 @@ function createControllerHarness(
   const pendingClients = [...clients];
   let createCalls = 0;
 
-  const controllerOptions: PiChatControllerOptions = {
+  const controllerOptions: TauChatControllerOptions = {
     createClient: (clientOption) => {
       createCalls += 1;
       clientOptions.push(clientOption);
@@ -2477,7 +2477,7 @@ function createControllerHarness(
     runReadyScript: options.runReadyScript
   };
 
-  const controller = new PiChatController(controllerOptions);
+  const controller = new TauChatController(controllerOptions);
 
   return {
     controller,

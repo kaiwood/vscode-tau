@@ -290,7 +290,7 @@ export class MessageListController {
 
       if (text) {
         event.preventDefault();
-        this.options.postMessage({ type: 'copyText', text, successMessage: 'Copied Pi response.' });
+        this.options.postMessage({ type: 'copyText', text, successMessage: 'Copied response.' });
       }
 
       return;
@@ -550,7 +550,7 @@ function pruneDisconnectedMessageRenderState(): void {
 function createPlainEmptyStateElement(): HTMLElement {
   const empty = document.createElement('p');
   empty.className = 'empty-state';
-  empty.textContent = 'Ask Pi about this workspace.';
+  empty.textContent = 'Ask Tau about this workspace.';
   return empty;
 }
 
@@ -563,7 +563,7 @@ function createWelcomeStateElement(): HTMLElement {
   title.textContent = 'Welcome to Tau';
 
   const description = document.createElement('p');
-  description.textContent = 'Ask Pi about this workspace, review code, plan changes, or make edits.';
+  description.textContent = 'Ask Tau about this workspace, review code, plan changes, or make edits.';
 
   const commandHint = document.createElement('p');
   commandHint.textContent = 'Type / for commands, or add a file/selection as context from the editor.';

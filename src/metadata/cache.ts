@@ -1,14 +1,14 @@
 import type {
-  PiChatContextUsage,
-  PiChatModelMeta,
-  PiChatSessionMetaSnapshot,
+  TauChatContextUsage,
+  TauChatModelMeta,
+  TauChatSessionMetaSnapshot,
   SessionMetadataCacheStorage
 } from './types';
 
 const cachedSessionMetaStorageKey = 'tau.cachedSessionMeta';
 const legacyCachedModelMetaStorageKey = 'tau.cachedModelMeta';
 
-export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | undefined): PiChatSessionMetaSnapshot | undefined {
+export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | undefined): TauChatSessionMetaSnapshot | undefined {
   const value = storage?.get<unknown>(cachedSessionMetaStorageKey);
   const snapshot = parseCachedSessionMeta(value);
 
@@ -23,7 +23,7 @@ export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | und
 
 export function writeCachedSessionMeta(
   storage: SessionMetadataCacheStorage | undefined,
-  metadata: PiChatSessionMetaSnapshot
+  metadata: TauChatSessionMetaSnapshot
 ): void {
   if (!storage) {
     return;
@@ -34,7 +34,7 @@ export function writeCachedSessionMeta(
   void storage.update(legacyCachedModelMetaStorageKey, undefined)?.then(undefined, () => undefined);
 }
 
-function parseCachedSessionMeta(value: unknown): PiChatSessionMetaSnapshot | undefined {
+function parseCachedSessionMeta(value: unknown): TauChatSessionMetaSnapshot | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -42,7 +42,7 @@ function parseCachedSessionMeta(value: unknown): PiChatSessionMetaSnapshot | und
   const model = parseCachedModelMeta(value.model);
   const modelOptions = parseCachedModelOptions(value.modelOptions);
   const contextUsage = parseCachedContextUsage(value.contextUsage);
-  const snapshot: PiChatSessionMetaSnapshot = {};
+  const snapshot: TauChatSessionMetaSnapshot = {};
 
   if (model) {
     snapshot.model = model;
@@ -59,7 +59,7 @@ function parseCachedSessionMeta(value: unknown): PiChatSessionMetaSnapshot | und
   return hasCachedSessionMeta(snapshot) ? snapshot : undefined;
 }
 
-function parseCachedModelMeta(value: unknown): PiChatModelMeta | undefined {
+function parseCachedModelMeta(value: unknown): TauChatModelMeta | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -79,7 +79,7 @@ function parseCachedModelMeta(value: unknown): PiChatModelMeta | undefined {
   };
 }
 
-function parseCachedModelOptions(value: unknown): PiChatSessionMetaSnapshot['modelOptions'] | undefined {
+function parseCachedModelOptions(value: unknown): TauChatSessionMetaSnapshot['modelOptions'] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -107,7 +107,7 @@ function parseCachedModelOptions(value: unknown): PiChatSessionMetaSnapshot['mod
   return modelOptions.length > 0 ? modelOptions : undefined;
 }
 
-function parseCachedContextUsage(value: unknown): PiChatContextUsage | undefined {
+function parseCachedContextUsage(value: unknown): TauChatContextUsage | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -125,7 +125,7 @@ function parseCachedContextUsage(value: unknown): PiChatContextUsage | undefined
   };
 }
 
-function hasCachedSessionMeta(snapshot: PiChatSessionMetaSnapshot): boolean {
+function hasCachedSessionMeta(snapshot: TauChatSessionMetaSnapshot): boolean {
   return Boolean(
     snapshot.model
     || (snapshot.modelOptions && snapshot.modelOptions.length > 0)

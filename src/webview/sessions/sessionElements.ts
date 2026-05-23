@@ -239,12 +239,12 @@ function createSessionItemMenuButton(
 ): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'pi-toolbar__menu-item sessions__menu-item';
+  button.className = 'tau-toolbar__menu-item sessions__menu-item';
   button.setAttribute('role', 'menuitem');
   button.setAttribute('data-session-command', command);
   button.setAttribute('data-session-command-index', String(commandIndex));
   button.disabled = !options.canRunSessionItemCommand(options.session, command);
-  button.innerHTML = '<span class="pi-toolbar__menu-label">' + getSessionItemCommandLabel(command) + '</span>' + getSessionItemCommandIcon(command);
+  button.innerHTML = '<span class="tau-toolbar__menu-label">' + getSessionItemCommandLabel(command) + '</span>' + getSessionItemCommandIcon(command);
   button.addEventListener('pointerenter', () => options.onCommandActivate(commandIndex, button));
   button.addEventListener('pointerleave', () => options.onCommandHover(button, false));
   button.addEventListener('focus', () => options.onCommandActivate(commandIndex, button));

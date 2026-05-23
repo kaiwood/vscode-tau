@@ -5,7 +5,7 @@ import type {
   WebviewSessionItemCommand,
   WebviewTreeItem
 } from '../webviewProtocol/types';
-import type { PiChatControllerOptions } from '../controller/types';
+import type { TauChatControllerOptions } from '../controller/types';
 import type { PiClient } from '../pi/clientTypes';
 import { getErrorMessage } from '../controller/errors';
 import {
@@ -36,7 +36,7 @@ export type SessionViewState = {
 };
 
 type SessionViewControllerOptions = Pick<
-  PiChatControllerOptions,
+  TauChatControllerOptions,
   | 'createClient'
   | 'deleteSession'
   | 'extensionUi'

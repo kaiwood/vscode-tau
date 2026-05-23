@@ -750,7 +750,7 @@
     { name: "name", description: "Set or clear session name", source: "builtin", supported: true },
     { name: "session", description: "Show session info and stats", source: "builtin", supported: true },
     { name: "compact", description: "Manually compact context", source: "builtin", supported: true },
-    { name: "copy", description: "Copy last Pi response", source: "builtin", supported: true },
+    { name: "copy", description: "Copy last response", source: "builtin", supported: true },
     { name: "export", description: "Export session to HTML", source: "builtin", supported: true },
     { name: "new", description: "Start a new session", source: "builtin", supported: true },
     { name: "settings", description: "Terminal-only: use VS Code settings instead", source: "unsupported", supported: false },
@@ -2507,19 +2507,19 @@
   // src/webview/dom.ts
   function getWebviewDom() {
     return {
-      viewElement: queryRequired(".pi-view"),
-      toolbarTitleElement: queryRequired(".pi-toolbar__title"),
-      toolbarTitleTextElement: queryRequired(".pi-toolbar__title-text"),
-      toolbarTimestampElement: queryRequired(".pi-toolbar__timestamp"),
-      sessionNameInputElement: queryRequired(".pi-toolbar__title-input"),
-      sessionToggleButton: queryRequired(".pi-toolbar__sessions"),
-      treeToggleButton: queryRequired(".pi-toolbar__tree"),
-      helpOverlayElement: queryRequired(".pi-help-overlay"),
-      helpCloseButton: queryRequired(".pi-help-overlay__close"),
+      viewElement: queryRequired(".tau-view"),
+      toolbarTitleElement: queryRequired(".tau-toolbar__title"),
+      toolbarTitleTextElement: queryRequired(".tau-toolbar__title-text"),
+      toolbarTimestampElement: queryRequired(".tau-toolbar__timestamp"),
+      sessionNameInputElement: queryRequired(".tau-toolbar__title-input"),
+      sessionToggleButton: queryRequired(".tau-toolbar__sessions"),
+      treeToggleButton: queryRequired(".tau-toolbar__tree"),
+      helpOverlayElement: queryRequired(".tau-help-overlay"),
+      helpCloseButton: queryRequired(".tau-help-overlay__close"),
       settingsElement: queryRequired(".settings-surface"),
       settingsBodyElement: queryRequired(".settings-surface__body"),
       settingsBackButton: queryRequired(".settings-surface__back"),
-      toastElement: queryRequired(".pi-toast"),
+      toastElement: queryRequired(".tau-toast"),
       messagesElement: queryRequired(".messages"),
       sessionsElement: queryRequired(".sessions"),
       sessionTreeElement: queryRequired(".session-tree"),
@@ -2996,7 +2996,7 @@ ${after}`;
       return "You";
     }
     if (role === "assistant") {
-      return "Pi";
+      return "Tau";
     }
     return "System";
   }
@@ -3245,7 +3245,7 @@ ${after}`;
         const text = Number.isInteger(index) ? state2.messages[index]?.text : "";
         if (text) {
           event.preventDefault();
-          this.options.postMessage({ type: "copyText", text, successMessage: "Copied Pi response." });
+          this.options.postMessage({ type: "copyText", text, successMessage: "Copied response." });
         }
         return;
       }
@@ -3442,7 +3442,7 @@ ${after}`;
   function createPlainEmptyStateElement() {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "Ask Pi about this workspace.";
+    empty.textContent = "Ask Tau about this workspace.";
     return empty;
   }
   function createWelcomeStateElement() {
@@ -3452,7 +3452,7 @@ ${after}`;
     title.className = "empty-state__title";
     title.textContent = "Welcome to Tau";
     const description = document.createElement("p");
-    description.textContent = "Ask Pi about this workspace, review code, plan changes, or make edits.";
+    description.textContent = "Ask Tau about this workspace, review code, plan changes, or make edits.";
     const commandHint = document.createElement("p");
     commandHint.textContent = "Type / for commands, or add a file/selection as context from the editor.";
     const tryLabel = document.createElement("p");
@@ -3633,7 +3633,7 @@ ${after}`;
   var webviewCustomUiThemes = ["default", "modern", "crt", "amber", "matrix"];
   var webviewLanes = ["chat", "sessions", "tree"];
   var webviewSettingsSections = ["providers", "models", "runtime", "appearance", "advanced"];
-  var webviewSessionItemCommands = ["rename", "fork", "clone", "compact", "export", "delete"];
+  var webviewSessionItemCommands = ["rename", "showChanges", "fork", "clone", "compact", "export", "delete"];
   function parseWebviewCustomUiTheme(value, fallback = "default") {
     return includesValue(webviewCustomUiThemes, value) ? value : fallback;
   }
@@ -3653,12 +3653,13 @@ ${after}`;
   // src/webview/sessions/sessionItemCommands.ts
   var sessionItemMenuCommands = webviewSessionItemCommands;
   var sessionItemCommandIcons = {
-    rename: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.1 11.9L5.45 11.6L11.15 5.9C11.55 5.5 11.55 4.85 11.15 4.45L10.9 4.2C10.5 3.8 9.85 3.8 9.45 4.2L3.75 9.9L3.45 11.25C3.37 11.65 3.7 11.98 4.1 11.9Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.85 4.8L10.55 6.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>',
-    fork: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><path d="M5.5 4.25V8.5C5.5 10.16 6.84 11.5 8.5 11.5H10.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 4.25V14.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M10.25 8.5L13.25 11.5L10.25 14.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="4.25" r="1.55" fill="currentColor"/><circle cx="5.5" cy="14.75" r="1.55" fill="currentColor"/></svg>',
-    clone: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><rect x="4.25" y="6.25" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.35"/><path d="M7.25 4.25H13.25C14.08 4.25 14.75 4.92 14.75 5.75V11.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    compact: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 3.5H3.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5H12.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5H3.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 12.5H12.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3 5.3L7.05 7.05M10.7 5.3L8.95 7.05M5.3 10.7L7.05 8.95M10.7 10.7L8.95 8.95" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
-    export: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3.5V10" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M5.6 5.9L8 3.5L10.4 5.9" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9.5V11.6C4 12.1 4.4 12.5 4.9 12.5H11.1C11.6 12.5 12 12.1 12 11.6V9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
-    delete: '<svg class="pi-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M6 2h4l1 1h3v1H2V3h3l1-1Zm-2 3h8l-.6 9.2A2 2 0 0 1 9.4 16H6.6a2 2 0 0 1-2-1.8L4 5Zm2 1v8h1V6H6Zm3 0v8h1V6H9Z"/></svg>'
+    rename: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.1 11.9L5.45 11.6L11.15 5.9C11.55 5.5 11.55 4.85 11.15 4.45L10.9 4.2C10.5 3.8 9.85 3.8 9.45 4.2L3.75 9.9L3.45 11.25C3.37 11.65 3.7 11.98 4.1 11.9Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.85 4.8L10.55 6.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>',
+    showChanges: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 4.5H12.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 8H9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 11.5H7.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M11.1 9.1V13.1M9.1 11.1H13.1" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
+    fork: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><path d="M5.5 4.25V8.5C5.5 10.16 6.84 11.5 8.5 11.5H10.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 4.25V14.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M10.25 8.5L13.25 11.5L10.25 14.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="4.25" r="1.55" fill="currentColor"/><circle cx="5.5" cy="14.75" r="1.55" fill="currentColor"/></svg>',
+    clone: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><rect x="4.25" y="6.25" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.35"/><path d="M7.25 4.25H13.25C14.08 4.25 14.75 4.92 14.75 5.75V11.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    compact: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 3.5H3.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5H12.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5H3.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 12.5H12.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3 5.3L7.05 7.05M10.7 5.3L8.95 7.05M5.3 10.7L7.05 8.95M10.7 10.7L8.95 8.95" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    export: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3.5V10" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M5.6 5.9L8 3.5L10.4 5.9" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9.5V11.6C4 12.1 4.4 12.5 4.9 12.5H11.1C11.6 12.5 12 12.1 12 11.6V9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
+    delete: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M6 2h4l1 1h3v1H2V3h3l1-1Zm-2 3h8l-.6 9.2A2 2 0 0 1 9.4 16H6.6a2 2 0 0 1-2-1.8L4 5Zm2 1v8h1V6H6Zm3 0v8h1V6H9Z"/></svg>'
   };
   function parseSessionItemCommand(command) {
     return parseWebviewSessionItemCommand(command);
@@ -3667,6 +3668,8 @@ ${after}`;
     switch (command) {
       case "rename":
         return "Rename session";
+      case "showChanges":
+        return "Show changes";
       case "fork":
         return "Fork session";
       case "clone":
@@ -3848,12 +3851,12 @@ ${after}`;
   function createSessionItemMenuButton(command, commandIndex, options) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "pi-toolbar__menu-item sessions__menu-item";
+    button.className = "tau-toolbar__menu-item sessions__menu-item";
     button.setAttribute("role", "menuitem");
     button.setAttribute("data-session-command", command);
     button.setAttribute("data-session-command-index", String(commandIndex));
     button.disabled = !options.canRunSessionItemCommand(options.session, command);
-    button.innerHTML = '<span class="pi-toolbar__menu-label">' + getSessionItemCommandLabel(command) + "</span>" + getSessionItemCommandIcon(command);
+    button.innerHTML = '<span class="tau-toolbar__menu-label">' + getSessionItemCommandLabel(command) + "</span>" + getSessionItemCommandIcon(command);
     button.addEventListener("pointerenter", () => options.onCommandActivate(commandIndex, button));
     button.addEventListener("pointerleave", () => options.onCommandHover(button, false));
     button.addEventListener("focus", () => options.onCommandActivate(commandIndex, button));
@@ -4464,17 +4467,17 @@ ${after}`;
       this.options.toolbarTimestampElement.textContent = toolbarTimestamp;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !toolbarTimestamp;
       this.options.toolbarTitleElement.title = toolbarTitleTooltip;
-      this.options.toolbarTitleElement.classList.toggle("pi-toolbar__title--editing", this.sessionNameEditing);
+      this.options.toolbarTitleElement.classList.toggle("tau-toolbar__title--editing", this.sessionNameEditing);
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       const sessionToggleLabel = isSessionLane ? "Back to chat" : "Show sessions";
       this.options.sessionToggleButton.setAttribute("aria-label", sessionToggleLabel);
       setTooltipText2(this.options.sessionToggleButton, sessionToggleLabel);
-      this.options.sessionToggleButton.classList.toggle("pi-toolbar__sessions--back", isSessionLane);
+      this.options.sessionToggleButton.classList.toggle("tau-toolbar__sessions--back", isSessionLane);
       const treeToggleLabel = isSessionLane ? "Back to chat" : "Show tree";
       this.options.treeToggleButton.setAttribute("aria-label", treeToggleLabel);
       setTooltipText2(this.options.treeToggleButton, treeToggleLabel);
-      this.options.treeToggleButton.classList.toggle("pi-toolbar__tree--back", isSessionLane);
+      this.options.treeToggleButton.classList.toggle("tau-toolbar__tree--back", isSessionLane);
     }
     cancelSessionNameEdit(options = {}) {
       if (!this.sessionNameEditing) {
@@ -4530,7 +4533,7 @@ ${after}`;
       this.syncSessionNameEditor();
     }
     syncSessionNameEditor() {
-      this.options.toolbarTitleElement.classList.toggle("pi-toolbar__title--editing", this.sessionNameEditing);
+      this.options.toolbarTitleElement.classList.toggle("tau-toolbar__title--editing", this.sessionNameEditing);
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
@@ -5445,7 +5448,7 @@ ${after}`;
       return Math.max(0, Math.min(index, count - 1));
     }
     setSessionMenuItemHover(item, hovered) {
-      item.classList.toggle("pi-toolbar__menu-item--hover", hovered);
+      item.classList.toggle("tau-toolbar__menu-item--hover", hovered);
     }
     getCurrentSessionName() {
       const state2 = this.options.getState();
@@ -6178,12 +6181,12 @@ ${after}`;
     if (toastHideTimeout) {
       clearTimeout(toastHideTimeout);
     }
-    toastElement.className = "pi-toast pi-toast--" + kind;
+    toastElement.className = "tau-toast tau-toast--" + kind;
     toastElement.replaceChildren(createToastIcon(kind), document.createTextNode(message));
     toastElement.hidden = false;
-    toastElement.classList.add("pi-toast--visible");
+    toastElement.classList.add("tau-toast--visible");
     toastHideTimeout = setTimeout(() => {
-      toastElement.classList.remove("pi-toast--visible");
+      toastElement.classList.remove("tau-toast--visible");
       toastElement.hidden = true;
       toastHideTimeout = void 0;
     }, 2500);
@@ -6198,7 +6201,7 @@ ${after}`;
   }
   function createToastIcon(kind) {
     const icon = document.createElement("span");
-    icon.className = "pi-toast__icon";
+    icon.className = "tau-toast__icon";
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = kind === "warning" ? "\u26A0" : kind === "error" ? "\u2715" : "\u2713";
     return icon;

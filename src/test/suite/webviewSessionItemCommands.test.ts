@@ -8,7 +8,7 @@ import {
 
 suite('Webview session item commands', () => {
   test('orders session item menu commands', () => {
-    assert.deepStrictEqual(sessionItemMenuCommands, ['rename', 'fork', 'clone', 'compact', 'export', 'delete']);
+    assert.deepStrictEqual(sessionItemMenuCommands, ['rename', 'showChanges', 'fork', 'clone', 'compact', 'export', 'delete']);
   });
 
   test('parses only supported session item commands', () => {
@@ -18,7 +18,7 @@ suite('Webview session item commands', () => {
       assert.ok(getSessionItemCommandIcon(command).includes('<svg'));
     }
 
-    assert.strictEqual(parseSessionItemCommand('showChanges'), undefined);
+    assert.strictEqual(parseSessionItemCommand('showChanges'), 'showChanges');
     assert.strictEqual(parseSessionItemCommand('unknown'), undefined);
     assert.strictEqual(parseSessionItemCommand(null), undefined);
   });

@@ -3,7 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { promises as fs } from 'node:fs';
 import * as vscode from 'vscode';
-import { PiChatViewProvider, type PiClient } from '../../piChatViewProvider';
+import { TauChatViewProvider, type PiClient } from '../../tauChatViewProvider';
 import { initialWebviewState, parseWebviewStateMessage } from '../../webview/state';
 import type { WebviewStateMessage } from '../../webviewProtocol/types';
 import type {
@@ -18,7 +18,7 @@ type ProviderWithDeleteSession = {
   deleteSession(sessionPath: string, displayName: string): Promise<boolean>;
 };
 
-suite('PiChatViewProvider', () => {
+suite('TauChatViewProvider', () => {
   test('posts cached legacy model metadata and persists refreshed session metadata', async () => {
     const workspaceState = new FakeMemento({
       'tau.cachedModelMeta': {
@@ -37,7 +37,7 @@ suite('PiChatViewProvider', () => {
       models: [{ provider: 'openai', id: 'live-model', name: 'Live Model', reasoning: true }],
       stats: { contextUsage: { tokens: 60, contextWindow: 100, percent: 60 } }
     });
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       () => client,
       workspaceState,
@@ -101,7 +101,7 @@ suite('PiChatViewProvider', () => {
         },
         messages: []
       });
-      const provider = new PiChatViewProvider(
+      const provider = new TauChatViewProvider(
         vscode.Uri.file('/extension'),
         (options) => {
           clientOptions.push(options);
@@ -132,7 +132,7 @@ suite('PiChatViewProvider', () => {
         thinkingLevel: 'off'
       }
     });
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       (options) => {
         clientOptions.push(options);
@@ -164,7 +164,7 @@ suite('PiChatViewProvider', () => {
       },
       messages: [{ role: 'user', content: 'Restored prompt' }]
     });
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       (options) => {
         clientOptions.push(options);
@@ -191,7 +191,7 @@ suite('PiChatViewProvider', () => {
 
   test('persists dismissed welcome state globally and posts updated state', async () => {
     const globalState = new FakeMemento();
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       () => {
         throw new Error('Unexpected Pi client creation');
@@ -216,7 +216,7 @@ suite('PiChatViewProvider', () => {
 
   test('uses plain initial empty state after welcome is dismissed', () => {
     const globalState = new FakeMemento({ 'tau.welcomeDismissed': true });
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       () => {
         throw new Error('Unexpected Pi client creation');
@@ -229,13 +229,13 @@ suite('PiChatViewProvider', () => {
     provider.resolveWebviewView(view.asWebviewView());
 
     assert.doesNotMatch(view.webview.html, /Don't show again/);
-    assert.match(view.webview.html, /Ask Pi about this workspace\./);
+    assert.match(view.webview.html, /Ask Tau about this workspace\./);
     assert.strictEqual(lastPostedState(view).welcomeDismissed, true);
     provider.dispose();
   });
 
   test('posts help toggle messages to the webview', async () => {
-    const provider = new PiChatViewProvider(
+    const provider = new TauChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({ state: {} }),
       undefined,
@@ -261,7 +261,7 @@ suite('PiChatViewProvider', () => {
     const sessionFile = path.join(tempDir, 'session.jsonl');
     const configuration = vscode.workspace.getConfiguration('tau');
     const previousValue = configuration.inspect<boolean>('confirmSessionDeletion')?.globalValue;
-    const provider = new PiChatViewProvider(vscode.Uri.file('/extension'), () => {
+    const provider = new TauChatViewProvider(vscode.Uri.file('/extension'), () => {
       throw new Error('Unexpected Pi client creation');
     });
 
@@ -281,7 +281,7 @@ suite('PiChatViewProvider', () => {
   });
 
   test('clears webview-specific disposables when views are replaced, disposed, or provider is disposed', () => {
-    const provider = new PiChatViewProvider(vscode.Uri.file('/extension'), () => {
+    const provider = new TauChatViewProvider(vscode.Uri.file('/extension'), () => {
       throw new Error('Unexpected Pi client creation');
     });
 

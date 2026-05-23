@@ -25,7 +25,7 @@ import { readCachedSessionMeta, writeCachedSessionMeta } from './metadata/cache'
 import { readSessionJsonlHeaderCwdSync } from './pi/sessionJsonl';
 import { getPiStartupCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './workspace/cwdSafety';
 
-export const chatViewType = 'tau.chatView';
+export const tauChatViewType = 'tau.chatView';
 export type { PiClient } from './pi/clientTypes';
 
 const currentSessionFileStorageKey = 'tau.currentSessionFile';
@@ -53,7 +53,7 @@ function createConfiguredPiClient(
   });
 }
 
-export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private webviewView: vscode.WebviewView | undefined;
   private pendingInputFocus = false;
   private pendingModelPickerOpen = false;
@@ -278,7 +278,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${chatViewType}.focus`);
+      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
     }
 
     this.postInputFocusSoon();
@@ -362,7 +362,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${chatViewType}.focus`);
+      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
     }
 
     this.refreshLiveMetadata();
@@ -374,7 +374,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${chatViewType}.focus`);
+      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
     }
 
     this.pendingHelpToggle = true;
@@ -694,7 +694,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${chatViewType}.focus`);
+      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
     }
 
     this.refreshLiveMetadata();

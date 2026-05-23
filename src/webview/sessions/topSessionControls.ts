@@ -89,19 +89,19 @@ export class TopSessionControls {
     this.options.toolbarTimestampElement.textContent = toolbarTimestamp;
     this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !toolbarTimestamp;
     this.options.toolbarTitleElement.title = toolbarTitleTooltip;
-    this.options.toolbarTitleElement.classList.toggle('pi-toolbar__title--editing', this.sessionNameEditing);
+    this.options.toolbarTitleElement.classList.toggle('tau-toolbar__title--editing', this.sessionNameEditing);
     this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
 
     const sessionToggleLabel = isSessionLane ? 'Back to chat' : 'Show sessions';
     this.options.sessionToggleButton.setAttribute('aria-label', sessionToggleLabel);
     setTooltipText(this.options.sessionToggleButton, sessionToggleLabel);
-    this.options.sessionToggleButton.classList.toggle('pi-toolbar__sessions--back', isSessionLane);
+    this.options.sessionToggleButton.classList.toggle('tau-toolbar__sessions--back', isSessionLane);
 
     const treeToggleLabel = isSessionLane ? 'Back to chat' : 'Show tree';
     this.options.treeToggleButton.setAttribute('aria-label', treeToggleLabel);
     setTooltipText(this.options.treeToggleButton, treeToggleLabel);
-    this.options.treeToggleButton.classList.toggle('pi-toolbar__tree--back', isSessionLane);
+    this.options.treeToggleButton.classList.toggle('tau-toolbar__tree--back', isSessionLane);
   }
 
   public cancelSessionNameEdit(options: { focusPrompt?: boolean } = {}): void {
@@ -170,7 +170,7 @@ export class TopSessionControls {
   }
 
   private syncSessionNameEditor(): void {
-    this.options.toolbarTitleElement.classList.toggle('pi-toolbar__title--editing', this.sessionNameEditing);
+    this.options.toolbarTitleElement.classList.toggle('tau-toolbar__title--editing', this.sessionNameEditing);
     this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
     this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;

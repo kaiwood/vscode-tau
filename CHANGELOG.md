@@ -5,7 +5,7 @@ All notable changes to Tau will be documented in this file.
 ## Unreleased
 
 - Aligned user-facing naming so Tau refers to the product/UI and Pi refers to the backend engine/runtime.
-- Consolidated shared webview protocol parsing and removed the stale `showChanges` session item command.
+- Exposed the session-list `showChanges` command in the webview menu and removed the stale file-backed session tree entrypoint.
 - Pruned stale webview render state during long chat sessions to reduce sidebar memory growth.
 - Tightened remote image blocking so disabling `tau.allowRemoteImages` also removes HTTPS image sources from the webview CSP.
 - Reduced Pi custom UI render churn by coalescing repeated updates to frame-paced rendering.
@@ -17,7 +17,7 @@ All notable changes to Tau will be documented in this file.
 - Added a native Tau view toolbar help action with a combined chat/session shortcut table.
 - Removed the chat toolbar session commands menu and the session-list New session button.
 - Added a native Tau view toolbar gear for toggling the internal settings pane.
-- Added the initial internal Pi engine settings surface shell in the sidebar with front/back navigation.
+- Added the initial internal Tau settings surface shell in the sidebar with front/back navigation.
 - Fixed session tree/sidebar lane animation by separating the session list and session tree into left/right panes.
 - Allowed Tau to start without an open workspace by using the user home directory, unless `tau.rejectEditWriteOutsideWorkspace` is enabled.
 - Fixed chat autoscroll so delayed rendering does not stop output following, and preserved chat scroll when returning from session list/tree.

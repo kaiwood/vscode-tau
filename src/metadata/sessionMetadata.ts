@@ -1,22 +1,22 @@
 import type { WebviewModelOption, WebviewSlashCommand } from '../webviewProtocol/types';
 import type { PiCommand, PiMessagesResult, PiModel, PiSessionState, PiSessionStats } from '../pi/types';
 import type {
-  PiChatContextUsage,
-  PiChatModelMeta,
-  PiChatSessionMetaSnapshot,
+  TauChatContextUsage,
+  TauChatModelMeta,
+  TauChatSessionMetaSnapshot,
   SessionMetadataWebviewState
 } from './types';
 
 export type {
-  PiChatContextUsage,
-  PiChatModelMeta,
-  PiChatSessionMetaSnapshot,
+  TauChatContextUsage,
+  TauChatModelMeta,
+  TauChatSessionMetaSnapshot,
   SessionMetadataWebviewState
 } from './types';
 
 export type SessionMetadataStateOptions = {
-  initialSessionMeta?: PiChatSessionMetaSnapshot;
-  onChange?: (metadata: PiChatSessionMetaSnapshot) => void;
+  initialSessionMeta?: TauChatSessionMetaSnapshot;
+  onChange?: (metadata: TauChatSessionMetaSnapshot) => void;
   postState?: () => void;
 };
 
@@ -429,7 +429,7 @@ export class SessionMetadataState {
     this.slashCommandsRefreshing = false;
   }
 
-  private applyModelMeta(modelMeta: PiChatModelMeta): boolean {
+  private applyModelMeta(modelMeta: TauChatModelMeta): boolean {
     if (
       modelMeta.label === this.modelLabel
       && modelMeta.provider === this.modelProvider
@@ -445,7 +445,7 @@ export class SessionMetadataState {
     return true;
   }
 
-  private setModelMetaFields(modelMeta: PiChatModelMeta): void {
+  private setModelMetaFields(modelMeta: TauChatModelMeta): void {
     this.modelLabel = modelMeta.label;
     this.modelProvider = modelMeta.provider;
     this.modelId = modelMeta.id;
@@ -453,7 +453,7 @@ export class SessionMetadataState {
     this.thinkingLevel = modelMeta.thinkingLevel;
   }
 
-  private applyContextUsage(contextUsage: PiChatContextUsage): boolean {
+  private applyContextUsage(contextUsage: TauChatContextUsage): boolean {
     if (
       contextUsage.label === this.contextUsageLabel
       && contextUsage.title === this.contextUsageTitle
@@ -488,7 +488,7 @@ export class SessionMetadataState {
     return true;
   }
 
-  private setFields(snapshot: PiChatSessionMetaSnapshot): void {
+  private setFields(snapshot: TauChatSessionMetaSnapshot): void {
     if (snapshot.model) {
       this.setModelMetaFields(snapshot.model);
     }
@@ -508,7 +508,7 @@ export class SessionMetadataState {
     this.options.onChange?.(this.getSnapshot());
   }
 
-  private getSnapshot(): PiChatSessionMetaSnapshot {
+  private getSnapshot(): TauChatSessionMetaSnapshot {
     return {
       model: this.modelId
         ? {
@@ -531,7 +531,7 @@ export class SessionMetadataState {
   }
 }
 
-export function formatContextUsage(stats: PiSessionStats): PiChatContextUsage {
+export function formatContextUsage(stats: PiSessionStats): TauChatContextUsage {
   const usage = stats.contextUsage;
 
   if (!usage || typeof usage.contextWindow !== 'number') {
@@ -580,7 +580,7 @@ function getContextUsageLevel(percent: number): string {
   return 'low';
 }
 
-function getModelMeta(state: PiSessionState): PiChatModelMeta {
+function getModelMeta(state: PiSessionState): TauChatModelMeta {
   const model = state.model;
   const id = typeof model?.id === 'string' ? model.id : '';
   const provider = typeof model?.provider === 'string' ? model.provider : '';

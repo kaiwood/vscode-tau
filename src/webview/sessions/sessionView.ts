@@ -1158,7 +1158,7 @@ export class SessionViewController {
   }
 
   private setSessionMenuItemHover(item: HTMLButtonElement, hovered: boolean): void {
-    item.classList.toggle('pi-toolbar__menu-item--hover', hovered);
+    item.classList.toggle('tau-toolbar__menu-item--hover', hovered);
   }
 
   private getCurrentSessionName(): string {

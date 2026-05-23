@@ -14,7 +14,7 @@ const localSlashCommandDefinitions: LocalSlashCommandDefinition[] = [
   { name: 'name', description: 'Set or clear session name', source: 'builtin', supported: true },
   { name: 'session', description: 'Show session info and stats', source: 'builtin', supported: true },
   { name: 'compact', description: 'Manually compact context', source: 'builtin', supported: true },
-  { name: 'copy', description: 'Copy last Pi response', source: 'builtin', supported: true },
+  { name: 'copy', description: 'Copy last response', source: 'builtin', supported: true },
   { name: 'export', description: 'Export session to HTML', source: 'builtin', supported: true },
   { name: 'new', description: 'Start a new session', source: 'builtin', supported: true },
   { name: 'settings', description: 'Terminal-only: use VS Code settings instead', source: 'unsupported', supported: false },

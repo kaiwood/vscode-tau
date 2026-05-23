@@ -1,6 +1,5 @@
 import { extractPiMessageText } from '../pi/messageContent';
-import { parseSessionJsonlFileRecords } from '../pi/sessionJsonl';
-import type { PiSessionTreeItem, RawEntry, TreeNode } from './types';
+import type { PiSessionTreeItem, RawEntry } from './types';
 export type { PiSessionTreeItem } from './types';
 
 export type FlattenableSessionTreeNode = {
@@ -9,85 +8,6 @@ export type FlattenableSessionTreeNode = {
   label?: string;
   labelTimestamp?: string;
 };
-
-export async function listPiSessionTree(sessionFile: string | undefined): Promise<PiSessionTreeItem[]> {
-  if (!sessionFile) {
-    return [];
-  }
-
-  return flattenEntries(await parseTreeEntries(sessionFile));
-}
-
-async function parseTreeEntries(sessionFile: string): Promise<RawEntry[]> {
-  const entries: RawEntry[] = [];
-  const labels = new Map<string, string>();
-
-  for await (const parsed of parseSessionJsonlFileRecords(sessionFile)) {
-    if (!isRecord(parsed) || typeof parsed.type !== 'string') {
-      continue;
-    }
-
-    if (parsed.type === 'label') {
-      const targetId = typeof parsed.targetId === 'string' ? parsed.targetId : '';
-      const label = typeof parsed.label === 'string' ? parsed.label.trim() : '';
-
-      if (targetId && label) {
-        labels.set(targetId, label);
-      } else if (targetId) {
-        labels.delete(targetId);
-      }
-
-      continue;
-    }
-
-    if (parsed.type === 'session' || typeof parsed.id !== 'string') {
-      continue;
-    }
-
-    if (parsed.type === 'model_change' || parsed.type === 'thinking_level_change') {
-      continue;
-    }
-
-    entries.push(parsed as RawEntry);
-  }
-
-  return entries.map((entry) => {
-    const label = labels.get(entry.id ?? '');
-    return label ? { ...entry, resolvedLabel: label } : entry;
-  });
-}
-
-function flattenEntries(entries: RawEntry[]): PiSessionTreeItem[] {
-  const nodesById = new Map<string, TreeNode>();
-
-  for (const entry of entries) {
-    if (entry.id) {
-      nodesById.set(entry.id, { entry, children: [] });
-    }
-  }
-
-  const roots: TreeNode[] = [];
-
-  for (const entry of entries) {
-    const node = entry.id ? nodesById.get(entry.id) : undefined;
-
-    if (!node) {
-      continue;
-    }
-
-    const parentId = typeof entry.parentId === 'string' ? entry.parentId : undefined;
-    const parent = parentId ? nodesById.get(parentId) : undefined;
-
-    if (parent) {
-      parent.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  const currentEntryId = entries.length > 0 ? entries[entries.length - 1].id : undefined;
-  return flattenPiSessionTree(roots, currentEntryId);
-}
 
 export function flattenPiSessionTree(
   roots: FlattenableSessionTreeNode[],

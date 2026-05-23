@@ -174,7 +174,7 @@ export class LocalSlashCommandController {
     }
   }
 
-  public async copyTextFromWebview(text: string, successMessage = 'Copied Pi response.'): Promise<void> {
+  public async copyTextFromWebview(text: string, successMessage = 'Copied response.'): Promise<void> {
     await this.copyTextToClipboard(text, successMessage, { successToast: true });
   }
 
@@ -236,7 +236,7 @@ export class LocalSlashCommandController {
 
     if (!selected) {
       const labels = matches.map(formatModelOptionLabel);
-      const picked = await this.options.extensionUi?.select?.('Select Pi model', labels);
+      const picked = await this.options.extensionUi?.select?.('Select model', labels);
 
       if (!picked) {
         return;
@@ -307,7 +307,7 @@ export class LocalSlashCommandController {
       return;
     }
 
-    await this.copyTextToClipboard(text, 'Copied last Pi response.');
+    await this.copyTextToClipboard(text, 'Copied last response.');
   }
 
   private async copyTextToClipboard(text: string, successMessage: string, options: { successToast?: boolean } = {}): Promise<void> {
