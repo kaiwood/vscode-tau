@@ -1530,7 +1530,7 @@ const composerStyles = /* css */ `    .composer {
       overflow: visible;
       background: var(--vscode-input-background);
       border: 1px solid var(--vscode-input-border, transparent);
-      border-radius: 21px;
+      border-radius: 14px;
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
       opacity: 1;
       transform: translateY(0);
