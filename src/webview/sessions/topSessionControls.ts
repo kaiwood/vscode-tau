@@ -124,7 +124,7 @@ export class TopSessionControls {
     return false;
   }
 
-  private startSessionNameEdit(event?: MouseEvent): void {
+  public startSessionNameEdit(event?: MouseEvent): void {
     const state = this.options.getState();
     event?.preventDefault();
     event?.stopPropagation();

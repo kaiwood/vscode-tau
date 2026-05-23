@@ -4,6 +4,7 @@ All notable changes to Tau will be documented in this file.
 
 ## Unreleased
 
+- Added native Tau view toolbar session actions for toggling sessions, renaming, compacting, exporting, and moving the current session to Trash, and removed less-used actions from that menu.
 - Added a native Tau view toolbar help action with a combined chat/session shortcut table.
 - Removed the chat toolbar session commands menu and the session-list New session button.
 - Added a native Tau view toolbar gear for toggling the internal settings pane.

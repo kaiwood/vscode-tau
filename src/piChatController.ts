@@ -390,6 +390,16 @@ export class PiChatController {
     this.sessionView.toggleTree();
   }
 
+  public showChat(): void {
+    this.settingsView.hideSettings({ post: false });
+    this.sessionView.showChat({ clearSessionsError: true, clearTreeError: true });
+    this.postState();
+  }
+
+  public async deleteCurrentSession(): Promise<void> {
+    await this.sessionView.deleteCurrentSession();
+  }
+
   public toggleSettings(): void {
     if (!this.settingsView.isSettingsVisible) {
       this.sessionView.showChat({ clearSessionsError: true, clearTreeError: true });

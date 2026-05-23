@@ -39,7 +39,7 @@
       },
       {
         "command": "tau.resume",
-        "title": "Resume Session",
+        "title": "Toggle Session List",
         "category": "Tau"
       },
       {
@@ -68,13 +68,23 @@
         "category": "Tau"
       },
       {
+        "command": "tau.renameSession",
+        "title": "Rename Session",
+        "category": "Tau"
+      },
+      {
         "command": "tau.compactSession",
         "title": "Compact Session",
         "category": "Tau"
       },
       {
         "command": "tau.exportSession",
-        "title": "Export Session as HTML",
+        "title": "Export as HTML",
+        "category": "Tau"
+      },
+      {
+        "command": "tau.moveSessionToTrash",
+        "title": "Move to Trash",
         "category": "Tau"
       },
       {
@@ -177,24 +187,24 @@
           "group": "tau@2"
         },
         {
-          "command": "tau.openSessionDiff",
+          "command": "tau.renameSession",
           "when": "view == tau.chatView",
           "group": "tau@3"
         },
         {
-          "command": "tau.showSessionTree",
+          "command": "tau.compactSession",
           "when": "view == tau.chatView && !tau.busy",
-          "group": "tau@10"
+          "group": "tau@4"
         },
         {
-          "command": "tau.openModelPicker",
+          "command": "tau.exportSession",
           "when": "view == tau.chatView && !tau.busy",
-          "group": "tau@20"
+          "group": "tau@5"
         },
         {
-          "command": "tau.copyLastResponse",
-          "when": "view == tau.chatView",
-          "group": "tau@30"
+          "command": "tau.moveSessionToTrash",
+          "when": "view == tau.chatView && !tau.busy",
+          "group": "tau@6"
         },
         {
           "command": "tau.toggleSettings",

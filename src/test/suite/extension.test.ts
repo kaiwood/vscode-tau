@@ -30,8 +30,10 @@ suite('Tau extension', () => {
     assert.ok(commands.includes('tau.showSessionTree'));
     assert.ok(commands.includes('tau.toggleSessionList'));
     assert.ok(commands.includes('tau.openSessionDiff'));
+    assert.ok(commands.includes('tau.renameSession'));
     assert.ok(commands.includes('tau.compactSession'));
     assert.ok(commands.includes('tau.exportSession'));
+    assert.ok(commands.includes('tau.moveSessionToTrash'));
     assert.ok(commands.includes('tau.reloadPi'));
     assert.ok(commands.includes('tau.copyLastResponse'));
     assert.ok(commands.includes('tau.openModelPicker'));

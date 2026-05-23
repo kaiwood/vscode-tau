@@ -4327,6 +4327,9 @@ ${after}`;
       }
       return (state2.viewMode === "sessions" || state2.viewMode === "tree") && this.handleSessionListKeydown(event);
     }
+    startCurrentSessionNameEdit() {
+      this.topControls.startSessionNameEdit();
+    }
     syncForRender(isListView) {
       const state2 = this.options.getState();
       if (state2.viewMode !== "sessions") {
@@ -5676,6 +5679,10 @@ ${after}`;
     }
     if (event.data?.type === "toggleHelpOverlay") {
       toggleHelpOverlay();
+      return;
+    }
+    if (event.data?.type === "startSessionNameEdit") {
+      sessionsController.startCurrentSessionNameEdit();
       return;
     }
     if (event.data?.type === "toast") {

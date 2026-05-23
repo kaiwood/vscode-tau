@@ -150,6 +150,10 @@ export class SessionViewController {
     return (state.viewMode === 'sessions' || state.viewMode === 'tree') && this.handleSessionListKeydown(event);
   }
 
+  public startCurrentSessionNameEdit(): void {
+    this.topControls.startSessionNameEdit();
+  }
+
   public syncForRender(isListView: boolean): void {
     const state = this.options.getState();
 

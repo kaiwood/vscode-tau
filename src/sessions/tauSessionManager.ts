@@ -125,6 +125,14 @@ export class TauSessionManager {
     this.active().controller.toggleSessionTree();
   }
 
+  public showChat(): void {
+    this.active().controller.showChat();
+  }
+
+  public async moveCurrentSessionToTrash(): Promise<void> {
+    await this.active().controller.deleteCurrentSession();
+  }
+
   public toggleSettings(): void {
     this.active().controller.toggleSettings();
   }

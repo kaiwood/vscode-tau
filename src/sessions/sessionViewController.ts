@@ -368,6 +368,19 @@ export class SessionViewController {
   }
 
   public async deleteSession(sessionPath: string): Promise<void> {
+    await this.deleteSessionPath(sessionPath, { removeFallbackOnly: true });
+  }
+
+  public async deleteCurrentSession(): Promise<void> {
+    if (!this.sessionFile) {
+      this.options.showNotification('No persisted session is available to move to Trash yet.', 'info');
+      return;
+    }
+
+    await this.deleteSessionPath(this.sessionFile, { removeFallbackOnly: false });
+  }
+
+  private async deleteSessionPath(sessionPath: string, options: { removeFallbackOnly: boolean }): Promise<void> {
     const trimmedPath = sessionPath.trim();
 
     if (!trimmedPath) {
@@ -383,7 +396,7 @@ export class SessionViewController {
       return;
     }
 
-    if (this.fallbackSessionPaths.has(normalizedPath)) {
+    if (options.removeFallbackOnly && this.fallbackSessionPaths.has(normalizedPath)) {
       this.removeFallbackSession(normalizedPath, isCurrentSession);
       return;
     }

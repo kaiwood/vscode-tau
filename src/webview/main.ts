@@ -190,6 +190,11 @@ window.addEventListener('message', (event) => {
     return;
   }
 
+  if (event.data?.type === 'startSessionNameEdit') {
+    sessionsController.startCurrentSessionNameEdit();
+    return;
+  }
+
   if (event.data?.type === 'toast') {
     showToast(
       typeof event.data.message === 'string' ? event.data.message : 'Done.',

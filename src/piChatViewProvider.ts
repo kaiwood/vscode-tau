@@ -58,6 +58,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private pendingModelPickerOpen = false;
   private pendingStreamingBehaviorToggle = false;
   private pendingHelpToggle = false;
+  private pendingSessionNameEditStart = false;
   private webviewReady = false;
   private readonly pendingToastMessages: Array<{ message: string; kind: 'success' | 'warning' | 'error' }> = [];
   private readonly controller: TauSessionManager;
@@ -266,8 +267,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   public async resume(): Promise<void> {
-    await this.controller.runLocalSlashCommand('resume');
-    await this.focus();
+    await this.toggleSessionList();
   }
 
   public async fork(): Promise<void> {
@@ -294,6 +294,13 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     await this.controller.handleWebviewMessage({ type: 'showCurrentChanges' });
   }
 
+  public async renameSession(): Promise<void> {
+    this.controller.showChat();
+    await this.revealView();
+    this.pendingSessionNameEditStart = true;
+    this.postSessionNameEditStartSoon();
+  }
+
   public async compactSession(): Promise<void> {
     await this.controller.runLocalSlashCommand('compact');
     await this.focus();
@@ -302,6 +309,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   public async exportSession(): Promise<void> {
     await this.controller.runLocalSlashCommand('export');
     await this.focus();
+  }
+
+  public async moveSessionToTrash(): Promise<void> {
+    await this.controller.moveCurrentSessionToTrash();
   }
 
   public async reloadPi(): Promise<void> {
@@ -453,6 +464,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       this.postModelPickerOpenSoon();
       this.postStreamingBehaviorToggleSoon();
       this.postHelpToggleSoon();
+      this.postSessionNameEditStartSoon();
       this.postPendingToasts();
       return;
     }
@@ -615,6 +627,18 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     setTimeout(() => this.postInputFocus(), 0);
   }
 
+  private async revealView(): Promise<void> {
+    if (this.webviewView?.visible) {
+      this.webviewView.show(false);
+    } else {
+      await vscode.commands.executeCommand(`${chatViewType}.focus`);
+    }
+
+    this.refreshLiveMetadata();
+    this.controller.refreshSessionDiffStats();
+    this.startContextUsagePolling();
+  }
+
   private postModelPickerOpen(): void {
     if (!this.pendingModelPickerOpen || !this.webviewView || !this.webviewReady) {
       return;
@@ -651,7 +675,24 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private postHelpToggleSoon(): void {
-    setTimeout(() => this.postHelpToggle(), 0);
+    queueMicrotask(() => this.postHelpToggle());
+  }
+
+  private postSessionNameEditStart(): void {
+    if (!this.pendingSessionNameEditStart || !this.webviewView || !this.webviewReady) {
+      return;
+    }
+
+    this.pendingSessionNameEditStart = false;
+    void this.webviewView.webview.postMessage({ type: 'startSessionNameEdit' });
+  }
+
+  private postSessionNameEditStartSoon(): void {
+    if (!this.pendingSessionNameEditStart) {
+      return;
+    }
+
+    setTimeout(() => this.postSessionNameEditStart(), 0);
   }
 
   private postPendingToasts(): void {

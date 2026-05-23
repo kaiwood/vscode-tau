@@ -825,6 +825,26 @@ suite('PiChatController', () => {
     harness.controller.dispose();
   });
 
+  test('native trash command deletes the current session directly', async () => {
+    const deleted: Array<{ path: string; name: string }> = [];
+    const harness = createControllerHarness([new FakePiClient()], {
+      initialSessionFile: '/sessions/current.jsonl',
+      deleteSession: async (path, name) => {
+        deleted.push({ path, name });
+        return true;
+      }
+    });
+
+    await harness.controller.deleteCurrentSession();
+    await flushPromises();
+
+    assert.deepStrictEqual(deleted, [{ path: '/sessions/current.jsonl', name: 'current.jsonl' }]);
+    assert.deepStrictEqual(harness.toasts, ['Session moved to Trash.']);
+    assert.strictEqual(lastState(harness).viewMode, 'sessions');
+    assert.strictEqual(lastState(harness).currentSessionFile, '');
+    harness.controller.dispose();
+  });
+
   test('session switcher blocks deleting a running session', async () => {
     const deleted: string[] = [];
     const harness = createControllerHarness([new FakePiClient()], {
@@ -1699,6 +1719,25 @@ suite('PiChatController', () => {
     harness.controller.toggleSessionList();
 
     assert.strictEqual(listCalls, 1);
+    assert.strictEqual(lastState(harness).viewMode, undefined);
+    harness.controller.dispose();
+  });
+
+  test('show chat returns from session lanes and settings', async () => {
+    const harness = createControllerHarness([new FakePiClient()]);
+
+    harness.controller.toggleSessionList();
+    await flushPromises();
+    assert.strictEqual(lastState(harness).viewMode, 'sessions');
+
+    harness.controller.showChat();
+    assert.strictEqual(lastState(harness).viewMode, undefined);
+
+    harness.controller.toggleSettings();
+    assert.strictEqual(lastState(harness).surfaceSide, 'settings');
+
+    harness.controller.showChat();
+    assert.strictEqual(lastState(harness).surfaceSide, undefined);
     assert.strictEqual(lastState(harness).viewMode, undefined);
     harness.controller.dispose();
   });
