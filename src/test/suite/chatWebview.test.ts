@@ -269,6 +269,8 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('<script nonce="' + nonce + '" src="vscode-resource://chat.js"></script>'));
     assert.ok(html.includes('class="pi-toolbar__sessions"'));
     assert.ok(html.includes('class="pi-toolbar__tree"'));
+    assert.ok(html.includes('class="pi-toolbar__new-session"'));
+    assert.ok(html.includes('<span class="tau-icon-action-tooltip">New session</span>'));
     assert.ok(html.includes('<span class="tau-icon-action-tooltip">Show tree</span>'));
     assert.ok(!html.includes('class="pi-toolbar__edit"'));
     assert.ok(html.includes('class="pi-toolbar__title-input"'));

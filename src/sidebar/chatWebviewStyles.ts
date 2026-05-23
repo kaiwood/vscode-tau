@@ -92,7 +92,8 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
     }
 
     .pi-toolbar__sessions,
-    .pi-toolbar__tree {
+    .pi-toolbar__tree,
+    .pi-toolbar__new-session {
       position: relative;
       display: grid;
       place-items: center;
@@ -112,14 +113,17 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
     .pi-toolbar__sessions:hover,
     .pi-toolbar__sessions:focus-visible,
     .pi-toolbar__tree:hover,
-    .pi-toolbar__tree:focus-visible {
+    .pi-toolbar__tree:focus-visible,
+    .pi-toolbar__new-session:hover,
+    .pi-toolbar__new-session:focus-visible {
       color: var(--vscode-foreground);
       background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
       outline: none;
     }
 
     .pi-toolbar__sessions svg,
-    .pi-toolbar__tree svg {
+    .pi-toolbar__tree svg,
+    .pi-toolbar__new-session svg {
       transition: transform 120ms ease;
     }
 
@@ -237,7 +241,8 @@ const toolbarStyles = /* css */ `    .pi-toolbar {
     }
 
     .pi-toolbar__menu-wrap[hidden],
-    .pi-toolbar__help-wrap[hidden] {
+    .pi-toolbar__help-wrap[hidden],
+    .pi-toolbar__new-session[hidden] {
       display: none;
     }
 
@@ -1258,6 +1263,7 @@ const messageStyles = /* css */ `    .message {
 
     .pi-toolbar__sessions .tau-icon-action-tooltip,
     .pi-toolbar__tree .tau-icon-action-tooltip,
+    .pi-toolbar__new-session .tau-icon-action-tooltip,
     .pi-toolbar__menu-button .tau-icon-action-tooltip,
     .pi-toolbar__help-button .tau-icon-action-tooltip,
     .sessions__delete-button .tau-icon-action-tooltip,
@@ -1284,6 +1290,8 @@ const messageStyles = /* css */ `    .message {
     .pi-toolbar__sessions:focus-visible .tau-icon-action-tooltip,
     .pi-toolbar__tree:hover .tau-icon-action-tooltip,
     .pi-toolbar__tree:focus-visible .tau-icon-action-tooltip,
+    .pi-toolbar__new-session:hover .tau-icon-action-tooltip,
+    .pi-toolbar__new-session:focus-visible .tau-icon-action-tooltip,
     .pi-toolbar__menu-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
     .pi-toolbar__menu-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
     .pi-toolbar__help-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,

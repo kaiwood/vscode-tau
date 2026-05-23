@@ -33,6 +33,7 @@ export type SessionViewControllerOptions = {
   sessionHelpWrapElement: HTMLElement;
   sessionHelpButton: HTMLButtonElement;
   sessionHelpPopoverElement: HTMLElement;
+  sessionNewButton: HTMLButtonElement;
   focusPromptInput: () => void;
   closeSlashMenu: () => void;
   closeModelMenu: () => void;
@@ -80,6 +81,7 @@ export class SessionViewController {
       sessionHelpWrapElement: options.sessionHelpWrapElement,
       sessionHelpButton: options.sessionHelpButton,
       sessionHelpPopoverElement: options.sessionHelpPopoverElement,
+      sessionNewButton: options.sessionNewButton,
       focusPromptInput: options.focusPromptInput,
       closeSlashMenu: options.closeSlashMenu,
       closeModelMenu: options.closeModelMenu,

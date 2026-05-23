@@ -19,6 +19,7 @@ type TopSessionControlsOptions = {
   sessionHelpWrapElement: HTMLElement;
   sessionHelpButton: HTMLButtonElement;
   sessionHelpPopoverElement: HTMLElement;
+  sessionNewButton: HTMLButtonElement;
   focusPromptInput: () => void;
   closeSlashMenu: () => void;
   closeModelMenu: () => void;
@@ -46,6 +47,7 @@ export class TopSessionControls {
     this.options.treeToggleButton.addEventListener('click', () => this.toggleTreeView());
     this.options.toolbarTitleElement.addEventListener('dblclick', (event) => this.startSessionNameEdit(event));
     this.options.sessionMenuButton.addEventListener('click', (event) => this.toggleSessionCommandMenu(event));
+    this.options.sessionNewButton.addEventListener('click', (event) => this.startNewSession(event));
     this.options.sessionHelpButton.addEventListener('click', (event) => this.toggleSessionHelpPopover(event));
 
     for (const item of this.options.sessionMenuItemElements) {
@@ -64,6 +66,13 @@ export class TopSessionControls {
 
   public handleGlobalKeydown(event: KeyboardEvent): boolean {
     if (this.handleSessionCommandMenuKeydown(event)) {
+      return true;
+    }
+
+    if (event.target === this.options.sessionNewButton && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.startNewSession();
       return true;
     }
 
@@ -129,6 +138,7 @@ export class TopSessionControls {
     this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
     this.options.sessionMenuWrapElement.hidden = isListView;
+    this.options.sessionNewButton.hidden = state.viewMode !== 'sessions';
     this.options.sessionHelpWrapElement.hidden = state.viewMode !== 'sessions';
     this.options.sessionMenuButton.disabled = this.sessionNameEditing;
     this.syncSessionCommandMenuItems();
@@ -281,6 +291,21 @@ export class TopSessionControls {
     this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
     this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
     this.options.sessionMenuButton.disabled = this.sessionNameEditing;
+  }
+
+  private startNewSession(event?: MouseEvent): void {
+    const state = this.options.getState();
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (state.viewMode !== 'sessions') {
+      return;
+    }
+
+    this.closeSessionCommandMenu();
+    this.closeSessionHelpPopover();
+    this.options.postMessage({ type: 'newSession' });
+    this.options.focusPromptInput();
   }
 
   private toggleSessionCommandMenu(event?: MouseEvent): void {

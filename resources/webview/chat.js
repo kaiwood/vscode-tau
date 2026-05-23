@@ -2094,6 +2094,7 @@
       sessionHelpWrapElement: queryRequired(".pi-toolbar__session-help-wrap"),
       sessionHelpButton: queryRequired(".pi-toolbar__session-help-button"),
       sessionHelpPopoverElement: queryRequired(".pi-toolbar__session-help-popover"),
+      sessionNewButton: queryRequired(".pi-toolbar__new-session"),
       toastElement: queryRequired(".pi-toast"),
       messagesElement: queryRequired(".messages"),
       sessionsElement: queryRequired(".sessions"),
@@ -4022,6 +4023,7 @@ ${after}`;
       this.options.treeToggleButton.addEventListener("click", () => this.toggleTreeView());
       this.options.toolbarTitleElement.addEventListener("dblclick", (event) => this.startSessionNameEdit(event));
       this.options.sessionMenuButton.addEventListener("click", (event) => this.toggleSessionCommandMenu(event));
+      this.options.sessionNewButton.addEventListener("click", (event) => this.startNewSession(event));
       this.options.sessionHelpButton.addEventListener("click", (event) => this.toggleSessionHelpPopover(event));
       for (const item of this.options.sessionMenuItemElements) {
         item.addEventListener("click", () => this.runSessionMenuCommand(item.getAttribute("data-session-command")));
@@ -4037,6 +4039,12 @@ ${after}`;
     }
     handleGlobalKeydown(event) {
       if (this.handleSessionCommandMenuKeydown(event)) {
+        return true;
+      }
+      if (event.target === this.options.sessionNewButton && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.startNewSession();
         return true;
       }
       if ((event.target === this.options.sessionToggleButton || event.target === this.options.treeToggleButton || event.target === this.options.sessionHelpButton) && (event.key === "Enter" || event.key === " ")) {
@@ -4090,6 +4098,7 @@ ${after}`;
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       this.options.sessionMenuWrapElement.hidden = isListView;
+      this.options.sessionNewButton.hidden = state2.viewMode !== "sessions";
       this.options.sessionHelpWrapElement.hidden = state2.viewMode !== "sessions";
       this.options.sessionMenuButton.disabled = this.sessionNameEditing;
       this.syncSessionCommandMenuItems();
@@ -4211,6 +4220,18 @@ ${after}`;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       this.options.sessionMenuButton.disabled = this.sessionNameEditing;
+    }
+    startNewSession(event) {
+      const state2 = this.options.getState();
+      event?.preventDefault();
+      event?.stopPropagation();
+      if (state2.viewMode !== "sessions") {
+        return;
+      }
+      this.closeSessionCommandMenu();
+      this.closeSessionHelpPopover();
+      this.options.postMessage({ type: "newSession" });
+      this.options.focusPromptInput();
     }
     toggleSessionCommandMenu(event) {
       event?.preventDefault();
@@ -4461,6 +4482,7 @@ ${after}`;
         sessionHelpWrapElement: options.sessionHelpWrapElement,
         sessionHelpButton: options.sessionHelpButton,
         sessionHelpPopoverElement: options.sessionHelpPopoverElement,
+        sessionNewButton: options.sessionNewButton,
         focusPromptInput: options.focusPromptInput,
         closeSlashMenu: options.closeSlashMenu,
         closeModelMenu: options.closeModelMenu,
@@ -5467,6 +5489,7 @@ ${after}`;
     sessionHelpWrapElement,
     sessionHelpButton,
     sessionHelpPopoverElement,
+    sessionNewButton,
     toastElement,
     messagesElement,
     sessionsElement,
@@ -5575,6 +5598,7 @@ ${after}`;
     sessionHelpWrapElement,
     sessionHelpButton,
     sessionHelpPopoverElement,
+    sessionNewButton,
     focusPromptInput,
     closeSlashMenu: () => composerController.closeSlashMenu(),
     closeModelMenu: () => composerController.closeModelMenu(),

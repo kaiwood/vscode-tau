@@ -359,6 +359,13 @@ ${chatWebviewStyles}
           </dl>
         </div>
       </div>
+      <button class="pi-toolbar__new-session" type="button" aria-label="New session" hidden>
+        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 19 19" fill="none">
+          <path d="M4.25 5.25C4.25 4.42 4.92 3.75 5.75 3.75H11.9C12.73 3.75 13.4 4.42 13.4 5.25V9.8C13.4 10.63 12.73 11.3 11.9 11.3H8.2L5.25 14.05V11.3C4.7 11.3 4.25 10.85 4.25 10.3V5.25Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
+          <path d="M14.6 12.2L15.15 13.35L16.3 13.9L15.15 14.45L14.6 15.6L14.05 14.45L12.9 13.9L14.05 13.35L14.6 12.2Z" fill="currentColor"/>
+        </svg>
+        <span class="tau-icon-action-tooltip">New session</span>
+      </button>
       <div class="pi-toolbar__help-wrap pi-toolbar__session-help-wrap" hidden>
         <button class="pi-toolbar__help-button pi-toolbar__session-help-button" type="button" aria-label="Session list shortcuts" aria-haspopup="dialog" aria-expanded="false" aria-controls="session-shortcuts">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
