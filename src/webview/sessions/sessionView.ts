@@ -357,6 +357,19 @@ export class SessionViewController {
     if (state.viewMode === 'tree' && this.treeController.handleClick(target, event)) {
       return;
     }
+
+    const sessionDeleteButton = target?.closest('.sessions__delete-button');
+
+    if (sessionDeleteButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const item = sessionDeleteButton.closest('.sessions__item');
+      const index = Number(item?.getAttribute('data-index'));
+      this.closeSessionItemMenus();
+      this.deleteSessionIndex(index);
+      return;
+    }
+
     const sessionMenuButton = target?.closest('.sessions__menu-button');
 
     if (sessionMenuButton) {

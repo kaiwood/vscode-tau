@@ -64,7 +64,7 @@ export function createSessionItemElement(options: CreateSessionItemElementOption
     item.append(cwd);
   }
 
-  item.append(createSessionItemMenuElement(options));
+  item.append(createSessionItemActionsElement(options));
 
   return item;
 }
@@ -201,6 +201,24 @@ function createSessionListNameInput(options: CreateSessionItemElementOptions): H
   input.addEventListener('click', (event) => event.stopPropagation());
   input.addEventListener('blur', options.onNameInputBlur);
   return input;
+}
+
+function createSessionItemActionsElement(options: CreateSessionItemElementOptions): HTMLElement {
+  const actions = document.createElement('span');
+  actions.className = 'sessions__actions';
+  actions.append(createSessionItemDeleteButton(options));
+  actions.append(createSessionItemMenuElement(options));
+  return actions;
+}
+
+function createSessionItemDeleteButton(options: CreateSessionItemElementOptions): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'sessions__delete-button';
+  button.setAttribute('aria-label', 'Move session to trash');
+  button.disabled = !options.canRunSessionItemCommand(options.session, 'delete');
+  button.innerHTML = getSessionItemCommandIcon('delete') + '<span class="tau-icon-action-tooltip">Move session to trash</span>';
+  return button;
 }
 
 function createSessionItemMenuElement(options: CreateSessionItemElementOptions): HTMLElement {

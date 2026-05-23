@@ -3299,7 +3299,7 @@ ${after}`;
       cwd.textContent = shortenPath(session.cwd);
       item.append(cwd);
     }
-    item.append(createSessionItemMenuElement(options));
+    item.append(createSessionItemActionsElement(options));
     return item;
   }
   function createTreeItemElement(treeItem, index, options) {
@@ -3403,6 +3403,22 @@ ${after}`;
     input.addEventListener("click", (event) => event.stopPropagation());
     input.addEventListener("blur", options.onNameInputBlur);
     return input;
+  }
+  function createSessionItemActionsElement(options) {
+    const actions = document.createElement("span");
+    actions.className = "sessions__actions";
+    actions.append(createSessionItemDeleteButton(options));
+    actions.append(createSessionItemMenuElement(options));
+    return actions;
+  }
+  function createSessionItemDeleteButton(options) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sessions__delete-button";
+    button.setAttribute("aria-label", "Move session to trash");
+    button.disabled = !options.canRunSessionItemCommand(options.session, "delete");
+    button.innerHTML = getSessionItemCommandIcon("delete") + '<span class="tau-icon-action-tooltip">Move session to trash</span>';
+    return button;
   }
   function createSessionItemMenuElement(options) {
     const wrap = document.createElement("span");
@@ -4680,6 +4696,16 @@ ${after}`;
       const state2 = this.options.getState();
       const target = eventTargetElement3(event);
       if (state2.viewMode === "tree" && this.treeController.handleClick(target, event)) {
+        return;
+      }
+      const sessionDeleteButton = target?.closest(".sessions__delete-button");
+      if (sessionDeleteButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        const item2 = sessionDeleteButton.closest(".sessions__item");
+        const index2 = Number(item2?.getAttribute("data-index"));
+        this.closeSessionItemMenus();
+        this.deleteSessionIndex(index2);
         return;
       }
       const sessionMenuButton2 = target?.closest(".sessions__menu-button");
