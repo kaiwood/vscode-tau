@@ -1,6 +1,10 @@
 import type { ExtensionUi } from '../extensionUi/types';
 import type { PiClient } from '../pi/clientTypes';
 import type {
+  PiAuthActionResult,
+  PiAuthProvider,
+  PiAuthProvidersResult,
+  PiAuthSource,
   PiAvailableCommands,
   PiAvailableModels,
   PiCloneResult,
@@ -12,6 +16,7 @@ import type {
   PiMessagesResult,
   PiModel,
   PiNavigateTreeResult,
+  PiOAuthLoginCallbacks,
   PiPromptStreamingBehavior,
   PiClientOptions,
   PiSessionState,
@@ -27,6 +32,7 @@ import { flattenPiSessionTree, type FlattenableSessionTreeNode } from '../sessio
 import { loadPiSdk, type PiSdkLoader, type PiSdkModule } from './piSdkLoader';
 import { assertPiStartupCwd } from '../workspace/cwdSafety';
 import { createWorkspaceMutationGuardTools } from './workspaceMutationGuard';
+import { isBuiltInApiKeyProvider, isBuiltInOAuthProvider } from '../auth/builtinProviderMetadata';
 
 const sdkDisposedMessage = 'Pi SDK client disposed.';
 const sessionDirEnvVar = 'PI_CODING_AGENT_SESSION_DIR';
@@ -193,6 +199,132 @@ export class PiSdkClient implements PiClient {
     }
 
     return { commands };
+  }
+
+  public async getAuthProviders(): Promise<PiAuthProvidersResult> {
+    const { session } = await this.ensureRuntime();
+    const { authStorage } = session.modelRegistry;
+    authStorage.reload();
+
+    const oauthProviders = authStorage
+      .getOAuthProviders()
+      .filter((provider) => isBuiltInOAuthProvider(provider.id));
+    const providers: PiAuthProvider[] = oauthProviders.map((provider) => this.createAuthProvider({
+      id: provider.id,
+      name: provider.name,
+      authType: 'oauth',
+      usesCallbackServer: provider.usesCallbackServer
+    }));
+
+    const seenApiKeyProviders = new Set<string>();
+    for (const model of session.modelRegistry.getAll()) {
+      const providerId = typeof model.provider === 'string' ? model.provider : '';
+      if (!providerId || seenApiKeyProviders.has(providerId) || !isBuiltInApiKeyProvider(providerId)) {
+        continue;
+      }
+
+      seenApiKeyProviders.add(providerId);
+      providers.push(this.createAuthProvider({
+        id: providerId,
+        name: session.modelRegistry.getProviderDisplayName(providerId),
+        authType: 'api_key'
+      }));
+    }
+
+    providers.sort((left, right) => left.name.localeCompare(right.name) || left.authType.localeCompare(right.authType));
+    return { providers };
+  }
+
+  public async loginWithApiKey(providerId: string, apiKey: string): Promise<PiAuthActionResult> {
+    const { session } = await this.ensureRuntime();
+
+    if (!isBuiltInApiKeyProvider(providerId)) {
+      throw new Error(`API-key login is not supported for provider: ${providerId}`);
+    }
+
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) {
+      throw new Error('API key cannot be empty.');
+    }
+
+    session.modelRegistry.authStorage.set(providerId, { type: 'api_key', key: trimmedKey });
+    session.modelRegistry.refresh();
+    return {
+      providerId,
+      message: `Saved API key for ${session.modelRegistry.getProviderDisplayName(providerId)}.`
+    };
+  }
+
+  public async loginWithOAuth(providerId: string, callbacks: PiOAuthLoginCallbacks): Promise<PiAuthActionResult> {
+    const { session } = await this.ensureRuntime();
+    const provider = session.modelRegistry.authStorage
+      .getOAuthProviders()
+      .find((candidate) => candidate.id === providerId && isBuiltInOAuthProvider(candidate.id));
+
+    if (!provider) {
+      throw new Error(`Subscription login is not supported for provider: ${providerId}`);
+    }
+
+    await session.modelRegistry.authStorage.login(providerId, callbacks);
+    session.modelRegistry.refresh();
+    return {
+      providerId,
+      message: `Logged in to ${provider.name}.`
+    };
+  }
+
+  public async logoutAuthProvider(providerId: string): Promise<PiAuthActionResult> {
+    const { session } = await this.ensureRuntime();
+    const credential = session.modelRegistry.authStorage.get(providerId);
+
+    if (!credential) {
+      throw new Error('No stored credentials to remove. Environment variables and models.json config are unchanged.');
+    }
+
+    const providerName = session.modelRegistry.getProviderDisplayName(providerId);
+    session.modelRegistry.authStorage.logout(providerId);
+    session.modelRegistry.refresh();
+    return {
+      providerId,
+      message: credential.type === 'oauth'
+        ? `Logged out of ${providerName}.`
+        : `Removed stored API key for ${providerName}. Environment variables and models.json config are unchanged.`
+    };
+  }
+
+  private createAuthProvider(input: {
+    id: string;
+    name: string;
+    authType: 'oauth' | 'api_key';
+    usesCallbackServer?: boolean;
+  }): PiAuthProvider {
+    const runtime = this.runtime;
+    if (!runtime) {
+      throw new Error('Pi SDK runtime is not available.');
+    }
+
+    const { authStorage } = runtime.session.modelRegistry;
+    const status = runtime.session.modelRegistry.getProviderAuthStatus(input.id);
+    const credential = authStorage.get(input.id);
+    const source = isPiAuthSource(status.source) ? status.source : undefined;
+    const storedCredentialMatches = credential?.type === input.authType;
+    const configured = input.authType === 'oauth'
+      ? storedCredentialMatches
+      : credential?.type === 'oauth'
+        ? false
+        : Boolean(status.configured);
+
+    return {
+      id: input.id,
+      name: input.name,
+      authType: input.authType,
+      configured,
+      ...(source && configured ? { source } : {}),
+      ...(typeof status.label === 'string' && configured ? { label: status.label } : {}),
+      ...(storedCredentialMatches ? { storedCredentialType: credential.type } : {}),
+      canLogout: storedCredentialMatches,
+      ...(input.usesCallbackServer !== undefined ? { usesCallbackServer: input.usesCallbackServer } : {})
+    };
   }
 
   public async setModel(provider: string, modelId: string): Promise<PiModel> {
@@ -634,6 +766,15 @@ function callOptionalSettingGetter<T>(settingsManager: SettingsManager, methodNa
   const candidate = settingsManager as unknown as Record<string, unknown>;
   const method = candidate[methodName];
   return typeof method === 'function' ? method.call(settingsManager) as T : undefined;
+}
+
+function isPiAuthSource(value: unknown): value is PiAuthSource {
+  return value === 'stored'
+    || value === 'runtime'
+    || value === 'environment'
+    || value === 'fallback'
+    || value === 'models_json_key'
+    || value === 'models_json_command';
 }
 
 function getErrorMessage(error: unknown): string {

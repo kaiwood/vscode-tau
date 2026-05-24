@@ -762,8 +762,8 @@
     { name: "fork", description: "Fork from a previous user message", source: "builtin", supported: true },
     { name: "clone", description: "Duplicate the current session", source: "builtin", supported: true },
     { name: "tree", description: "Navigate session tree", source: "builtin", supported: true },
-    { name: "login", description: "Terminal-only: run pi in a terminal to authenticate", source: "unsupported", supported: false },
-    { name: "logout", description: "Terminal-only: run pi in a terminal to manage auth", source: "unsupported", supported: false },
+    { name: "login", description: "Configure provider authentication", source: "builtin", supported: true },
+    { name: "logout", description: "Remove stored provider authentication", source: "builtin", supported: true },
     { name: "resume", description: "Resume a different session", source: "builtin", supported: true },
     { name: "reload", description: "Reload keybindings, extensions, skills, prompts, and themes", source: "builtin", supported: true },
     { name: "quit", description: "Not supported here", source: "unsupported", supported: false }
@@ -3663,6 +3663,13 @@ ${after}`;
       description: "Tau-owned presentation controls for the sidebar and Pi extension UI."
     },
     {
+      id: "login",
+      label: "Login",
+      eyebrow: "Pi auth",
+      title: "Login",
+      description: "Configure built-in Pi provider authentication. Credentials are stored in Pi auth.json."
+    },
+    {
       id: "runtime",
       label: "Runtime",
       eyebrow: "Pi engine",
@@ -5790,7 +5797,13 @@ ${after}`;
     attachEventListeners() {
       this.options.settingsBackButton.addEventListener("click", () => this.hideSettings({ focusPrompt: true }));
       this.options.settingsElement.addEventListener("click", (event) => {
-        const button = event.target instanceof Element ? event.target.closest("[data-settings-section]") : null;
+        const target = event.target instanceof Element ? event.target : null;
+        const authButton = target?.closest("[data-auth-action]");
+        if (authButton) {
+          this.handleAuthAction(authButton);
+          return;
+        }
+        const button = target?.closest("[data-settings-section]") ?? null;
         if (!button) {
           return;
         }
@@ -5839,6 +5852,40 @@ ${after}`;
     }
     selectSection(section) {
       this.options.postMessage({ type: "setSettingsSection", section });
+    }
+    handleAuthAction(button) {
+      const action = button.dataset.authAction;
+      if (action === "refresh") {
+        this.options.postMessage({ type: "authRefresh" });
+        return;
+      }
+      if (action === "cancel") {
+        this.options.postMessage({ type: "authCancel" });
+        return;
+      }
+      if (action === "loginSelected") {
+        const authType = button.dataset.authType;
+        const select = authType ? this.options.settingsBodyElement.querySelector(`[data-auth-select="${authType}"]`) : void 0;
+        const providerId2 = select?.value;
+        if (providerId2 && (authType === "oauth" || authType === "api_key")) {
+          this.options.postMessage({ type: "authLogin", providerId: providerId2, authType });
+        }
+        return;
+      }
+      const providerId = button.dataset.authProviderId;
+      if (!providerId) {
+        return;
+      }
+      if (action === "login") {
+        const authType = button.dataset.authType;
+        this.options.postMessage({
+          type: "authLogin",
+          providerId,
+          ...authType === "oauth" || authType === "api_key" ? { authType } : {}
+        });
+      } else if (action === "logout") {
+        this.options.postMessage({ type: "authLogout", providerId });
+      }
     }
     handleSettingsKeydown(event) {
       if (!(event.target instanceof HTMLElement) || !event.target.matches("[data-settings-section]")) {
@@ -5912,8 +5959,12 @@ ${after}`;
       panel.append(intro);
       const cards = document.createElement("div");
       cards.className = "settings-surface__cards";
-      for (const definition of getSettingsForSection(section.id)) {
-        cards.append(this.createSettingCard(definition, state2));
+      if (section.id === "login") {
+        this.appendAuthCards(cards, state2);
+      } else {
+        for (const definition of getSettingsForSection(section.id)) {
+          cards.append(this.createSettingCard(definition, state2));
+        }
       }
       panel.append(cards);
       this.options.settingsBodyElement.replaceChildren(nav, panel);
@@ -5922,6 +5973,147 @@ ${after}`;
       if (state2.chatFace === "settings") {
         requestAnimationFrame(() => this.focusSectionButton(sectionId));
       }
+    }
+    appendAuthCards(cards, state2) {
+      const toolbar = document.createElement("div");
+      toolbar.className = "settings-surface__auth-toolbar";
+      const refreshButton = this.createAuthButton("Refresh", "refresh", void 0, Boolean(state2.auth.refreshing || state2.auth.busyProviderId));
+      toolbar.append(refreshButton);
+      if (state2.auth.busyProviderId) {
+        toolbar.append(this.createAuthButton("Cancel", "cancel", void 0, false));
+      }
+      cards.append(toolbar);
+      if (state2.auth.progress) {
+        cards.append(this.createAuthProgressCard(state2));
+      }
+      if (state2.auth.error) {
+        const errorCard = document.createElement("article");
+        errorCard.className = "settings-surface__card settings-surface__card--danger";
+        errorCard.append(createTextElement("h4", "settings-surface__card-title", "Login error"));
+        errorCard.append(createTextElement("p", "settings-surface__card-error", state2.auth.error));
+        cards.append(errorCard);
+      }
+      const providers = state2.auth.providers;
+      if (providers.length === 0) {
+        const emptyCard = document.createElement("article");
+        emptyCard.className = "settings-surface__card";
+        emptyCard.append(createTextElement("h4", "settings-surface__card-title", state2.auth.refreshing ? "Loading providers\u2026" : "No providers loaded"));
+        emptyCard.append(createTextElement("p", "settings-surface__card-body", "Refresh to load built-in Pi authentication providers."));
+        cards.append(emptyCard);
+        return;
+      }
+      cards.append(this.createAuthLoginCard("oauth", providers.filter((provider) => provider.authType === "oauth"), state2));
+      cards.append(this.createAuthLoginCard("api_key", providers.filter((provider) => provider.authType === "api_key"), state2));
+      const activeProviders = providers.filter((provider) => provider.canLogout);
+      const separator = document.createElement("div");
+      separator.className = "settings-surface__auth-separator";
+      separator.setAttribute("role", "separator");
+      cards.append(separator);
+      const activeGroup = document.createElement("div");
+      activeGroup.className = "settings-surface__auth-group";
+      activeGroup.append(createTextElement("div", "settings-surface__section-eyebrow", "Active providers"));
+      if (activeProviders.length === 0) {
+        const emptyActiveCard = document.createElement("article");
+        emptyActiveCard.className = "settings-surface__card";
+        emptyActiveCard.append(createTextElement("h4", "settings-surface__card-title", "No active stored logins"));
+        emptyActiveCard.append(createTextElement("p", "settings-surface__card-body", "Environment variables and models.json credentials may still be active outside Tau logout."));
+        activeGroup.append(emptyActiveCard);
+      } else {
+        for (const provider of activeProviders) {
+          activeGroup.append(this.createActiveAuthProviderCard(provider, state2));
+        }
+      }
+      cards.append(activeGroup);
+    }
+    createAuthLoginCard(authType, providers, state2) {
+      const card = document.createElement("article");
+      card.className = "settings-surface__card";
+      const title = authType === "oauth" ? "OAuth login" : "API key login";
+      card.append(createTextElement("h4", "settings-surface__card-title", title));
+      card.append(createTextElement(
+        "p",
+        "settings-surface__card-body",
+        authType === "oauth" ? "Choose a subscription provider and complete OAuth in your browser." : "Choose a provider and store an API key in Pi auth.json."
+      ));
+      const select = document.createElement("select");
+      select.className = "settings-surface__select";
+      select.dataset.authSelect = authType;
+      select.disabled = providers.length === 0 || Boolean(state2.auth.busyProviderId || state2.busy);
+      if (providers.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = authType === "oauth" ? "No OAuth providers available" : "No API key providers available";
+        select.append(option);
+      } else {
+        for (const provider of providers) {
+          const option = document.createElement("option");
+          option.value = provider.id;
+          option.textContent = provider.configured ? `${provider.name} (${getAuthStatusLabel(provider)})` : provider.name;
+          select.append(option);
+        }
+      }
+      const actionRow = document.createElement("div");
+      actionRow.className = "settings-surface__auth-actions";
+      const loginButton = this.createAuthButton("Login / Replace", "loginSelected", void 0, providers.length === 0 || Boolean(state2.auth.busyProviderId || state2.busy));
+      loginButton.dataset.authType = authType;
+      actionRow.append(loginButton);
+      const control = document.createElement("div");
+      control.className = "settings-surface__control";
+      control.append(select, actionRow);
+      card.append(control);
+      return card;
+    }
+    createAuthProgressCard(state2) {
+      const progress = state2.auth.progress;
+      const card = document.createElement("article");
+      card.className = "settings-surface__card";
+      card.append(createTextElement("h4", "settings-surface__card-title", "Authentication in progress"));
+      if (!progress) {
+        return card;
+      }
+      card.append(createTextElement("p", "settings-surface__card-body", progress.message));
+      if (progress.userCode) {
+        const code = document.createElement("code");
+        code.className = "settings-surface__auth-code";
+        code.textContent = progress.userCode;
+        card.append(code);
+      }
+      if (progress.url || progress.verificationUri) {
+        card.append(createTextElement("p", "settings-surface__card-helper", progress.url ?? progress.verificationUri ?? ""));
+      }
+      return card;
+    }
+    createActiveAuthProviderCard(provider, state2) {
+      const card = document.createElement("article");
+      card.className = "settings-surface__card";
+      const titleRow = document.createElement("div");
+      titleRow.className = "settings-surface__card-title-row";
+      titleRow.append(createTextElement("h4", "settings-surface__card-title", provider.name));
+      titleRow.append(createTextElement("span", "settings-surface__card-status settings-surface__card-status--pi", getAuthStatusLabel(provider)));
+      const actionRow = document.createElement("div");
+      actionRow.className = "settings-surface__auth-actions";
+      actionRow.append(this.createAuthButton("Logout", "logout", provider.id, Boolean(state2.auth.busyProviderId || state2.busy)));
+      card.append(
+        titleRow,
+        createTextElement("p", "settings-surface__card-body", provider.authType === "oauth" ? "Stored OAuth subscription credentials." : "Stored API key credentials."),
+        actionRow
+      );
+      if (provider.label || provider.source) {
+        card.append(createTextElement("p", "settings-surface__card-helper", provider.label ?? `Configured via ${provider.source}`));
+      }
+      return card;
+    }
+    createAuthButton(label, action, providerId, disabled) {
+      const button = document.createElement("button");
+      button.className = "settings-surface__button";
+      button.type = "button";
+      button.textContent = label;
+      button.dataset.authAction = action;
+      button.disabled = disabled;
+      if (providerId) {
+        button.dataset.authProviderId = providerId;
+      }
+      return button;
     }
     createSettingCard(definition, state2) {
       const value = getSettingValue(definition, state2);
@@ -6025,6 +6217,18 @@ ${after}`;
       this.options.settingsBodyElement.querySelector(`[data-settings-section="${section}"]`)?.focus({ preventScroll: true });
     }
   };
+  function getAuthStatusLabel(provider) {
+    if (provider.canLogout && provider.storedCredentialType === "oauth") {
+      return "Logged in";
+    }
+    if (provider.canLogout && provider.storedCredentialType === "api_key") {
+      return "Stored key";
+    }
+    if (provider.configured) {
+      return provider.source === "environment" ? "Env" : "Configured";
+    }
+    return "Not set";
+  }
   function getSettingValue(definition, state2) {
     return state2.settings.values[definition.id] ?? definition.defaultValue;
   }
@@ -6050,7 +6254,8 @@ ${after}`;
   function createSettingsSignature(sectionId, state2) {
     const values = getSettingsForSection(sectionId).map((definition) => [definition.id, state2.settings.values[definition.id]]);
     const modelOptions = sectionId === "runtime" ? state2.modelOptions.map((model) => `${model.provider}/${model.id}:${model.name}`).join("|") : "";
-    return JSON.stringify([sectionId, values, modelOptions, state2.busy, state2.settings.errors]);
+    const auth = sectionId === "login" ? state2.auth : void 0;
+    return JSON.stringify([sectionId, values, modelOptions, auth, state2.busy, state2.settings.errors]);
   }
   function createTextElement(tagName, className, text) {
     const element = document.createElement(tagName);
@@ -6088,6 +6293,7 @@ ${after}`;
     chatFace: "main",
     settingsSection: "appearance",
     settings: { values: {} },
+    auth: { providers: [] },
     sessions: [],
     sessionsRefreshing: false,
     sessionsError: "",
@@ -6128,6 +6334,7 @@ ${after}`;
       chatFace: parseChatFace(record.chatFace, parseWebviewLane(record.lane, "chat")),
       settingsSection: parseWebviewSettingsSection(record.settingsSection, "appearance"),
       settings: parseSettingsState(record.settings),
+      auth: parseAuthState(record.auth),
       sessions: Array.isArray(record.sessions) ? record.sessions : [],
       sessionsRefreshing: Boolean(record.sessionsRefreshing),
       sessionsError: typeof record.sessionsError === "string" ? record.sessionsError : "",
@@ -6138,6 +6345,38 @@ ${after}`;
       treeError: typeof record.treeError === "string" ? record.treeError : "",
       sessionLoading: Boolean(record.sessionLoading)
     };
+  }
+  function parseAuthState(value) {
+    if (!isRecord3(value)) {
+      return { providers: [] };
+    }
+    return {
+      providers: Array.isArray(value.providers) ? value.providers.filter(isAuthProvider).map(sanitizeAuthProvider) : [],
+      ...value.refreshing === true ? { refreshing: true } : {},
+      ...typeof value.busyProviderId === "string" && value.busyProviderId ? { busyProviderId: value.busyProviderId } : {},
+      ...value.busyAction === "login" || value.busyAction === "logout" ? { busyAction: value.busyAction } : {},
+      ...isAuthProgress(value.progress) ? { progress: value.progress } : {},
+      ...typeof value.error === "string" && value.error ? { error: value.error } : {}
+    };
+  }
+  function isAuthProvider(value) {
+    return isRecord3(value) && typeof value.id === "string" && typeof value.name === "string" && (value.authType === "oauth" || value.authType === "api_key") && typeof value.configured === "boolean" && typeof value.canLogout === "boolean";
+  }
+  function sanitizeAuthProvider(provider) {
+    return {
+      id: provider.id,
+      name: provider.name,
+      authType: provider.authType,
+      configured: provider.configured,
+      canLogout: provider.canLogout,
+      ...typeof provider.source === "string" ? { source: provider.source } : {},
+      ...typeof provider.label === "string" ? { label: provider.label } : {},
+      ...provider.storedCredentialType === "oauth" || provider.storedCredentialType === "api_key" ? { storedCredentialType: provider.storedCredentialType } : {},
+      ...typeof provider.usesCallbackServer === "boolean" ? { usesCallbackServer: provider.usesCallbackServer } : {}
+    };
+  }
+  function isAuthProgress(value) {
+    return isRecord3(value) && typeof value.message === "string" && (!("providerId" in value) || typeof value.providerId === "string") && (!("url" in value) || typeof value.url === "string") && (!("userCode" in value) || typeof value.userCode === "string") && (!("verificationUri" in value) || typeof value.verificationUri === "string");
   }
   function parseSettingsState(value) {
     if (!isRecord3(value)) {

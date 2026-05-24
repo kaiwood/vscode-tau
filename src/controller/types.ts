@@ -16,6 +16,8 @@ export type TauChatControllerOptions = {
   showNotification: (message: string, notifyType: string) => void;
   showToast?: (message: string, kind?: 'success' | 'warning' | 'error') => void;
   extensionUi?: ExtensionUi;
+  inputSecret?: (title: string, placeholder?: string, prompt?: string) => PromiseLike<string | undefined> | Promise<string | undefined>;
+  openExternalUrl?: (url: string) => PromiseLike<boolean> | Promise<boolean>;
   getCwd?: () => string | undefined;
   getOutputColors?: () => boolean;
   getAnimationsEnabled?: () => boolean;

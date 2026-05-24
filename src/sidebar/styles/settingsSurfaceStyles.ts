@@ -312,6 +312,65 @@ export const settingsSurfaceStyles = /* css */ `    .settings-surface {
       opacity: 0.58;
     }
 
+    .settings-surface__auth-toolbar,
+    .settings-surface__auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .settings-surface__auth-toolbar {
+      margin-top: 0;
+    }
+
+    .settings-surface__auth-group {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .settings-surface__auth-separator {
+      height: 1px;
+      margin: 4px 0;
+      background: color-mix(in srgb, var(--vscode-foreground) 14%, transparent);
+    }
+
+    .settings-surface__button {
+      min-height: 26px;
+      padding: 3px 9px;
+      color: var(--vscode-button-foreground);
+      background: var(--vscode-button-background);
+      border: 1px solid var(--vscode-button-border, transparent);
+      border-radius: 7px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .settings-surface__button:hover,
+    .settings-surface__button:focus-visible {
+      background: var(--vscode-button-hoverBackground);
+      border-color: var(--vscode-focusBorder, var(--vscode-button-border, transparent));
+      outline: none;
+    }
+
+    .settings-surface__button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .settings-surface__auth-code {
+      display: inline-block;
+      margin-top: 9px;
+      padding: 5px 7px;
+      color: var(--vscode-textCodeBlock-foreground, var(--vscode-foreground));
+      background: var(--vscode-textCodeBlock-background, color-mix(in srgb, var(--vscode-foreground) 8%, transparent));
+      border-radius: 6px;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+
     .settings-surface__readonly-list {
       display: flex;
       flex-wrap: wrap;

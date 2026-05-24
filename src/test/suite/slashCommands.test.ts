@@ -16,6 +16,8 @@ suite('Slash commands', () => {
     assert.ok(names.includes('model'));
     assert.ok(names.includes('settings'));
     assert.ok(names.includes('tree'));
+    assert.ok(names.includes('login'));
+    assert.ok(names.includes('logout'));
     assert.deepStrictEqual(localSlashCommandNames, names);
     assert.deepStrictEqual(hiddenLocalSlashCommandNames, []);
 
@@ -29,6 +31,8 @@ suite('Slash commands', () => {
     assert.ok(menuNames.includes('model'));
     assert.ok(!menuNames.includes('settings'));
     assert.ok(menuNames.includes('tree'));
+    assert.ok(menuNames.includes('login'));
+    assert.ok(menuNames.includes('logout'));
 
     for (const command of localSlashMenuCommands) {
       assert.strictEqual(isBuiltinSlashCommand(command.name), true);
@@ -40,6 +44,8 @@ suite('Slash commands', () => {
     assert.strictEqual(isSupportedBuiltinSlashCommand('model'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('resume'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('tree'), true);
+    assert.strictEqual(isSupportedBuiltinSlashCommand('login'), true);
+    assert.strictEqual(isSupportedBuiltinSlashCommand('logout'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('settings'), false);
     assert.strictEqual(isSupportedBuiltinSlashCommand('unknown'), false);
     assert.strictEqual(isBuiltinSlashCommand('unknown'), false);

@@ -1,4 +1,5 @@
 import type {
+  WebviewAuthState,
   WebviewChatFace,
   WebviewCustomUiTheme,
   WebviewLane,
@@ -20,6 +21,7 @@ export type Lane = WebviewLane;
 export type ChatFace = WebviewChatFace;
 export type SettingsSection = WebviewSettingsSection;
 export type SettingsState = WebviewSettingsState;
+export type AuthState = WebviewAuthState;
 export type SessionItemCommand = WebviewSessionItemCommand;
 
 export type WebviewApi = {
@@ -97,6 +99,7 @@ export type WebviewState = {
   chatFace: ChatFace;
   settingsSection: SettingsSection;
   settings: SettingsState;
+  auth: AuthState;
   sessions: SessionItem[];
   sessionsRefreshing: boolean;
   sessionsError: string;

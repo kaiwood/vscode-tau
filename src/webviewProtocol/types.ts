@@ -15,6 +15,39 @@ export type WebviewPromptContextAttachment = {
 
 export type WebviewSessionItemCommand = 'rename' | 'showChanges' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
 
+export type WebviewAuthAction = 'login' | 'logout' | 'refresh' | 'cancel';
+
+export type WebviewAuthType = 'oauth' | 'api_key';
+
+export type WebviewAuthProvider = {
+  id: string;
+  name: string;
+  authType: WebviewAuthType;
+  configured: boolean;
+  source?: string;
+  label?: string;
+  storedCredentialType?: WebviewAuthType;
+  canLogout: boolean;
+  usesCallbackServer?: boolean;
+};
+
+export type WebviewAuthProgress = {
+  providerId?: string;
+  message: string;
+  url?: string;
+  userCode?: string;
+  verificationUri?: string;
+};
+
+export type WebviewAuthState = {
+  providers: WebviewAuthProvider[];
+  refreshing?: boolean;
+  busyProviderId?: string;
+  busyAction?: Extract<WebviewAuthAction, 'login' | 'logout'>;
+  progress?: WebviewAuthProgress;
+  error?: string;
+};
+
 export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'focusChanged'; focused: boolean }
@@ -24,6 +57,10 @@ export type WebviewMessage =
   | { type: 'hideChatFace' }
   | { type: 'setSettingsSection'; section: WebviewSettingsSection }
   | { type: 'updateSetting'; settingId: SettingId; value: SettingValue }
+  | { type: 'authLogin'; providerId: string; authType?: WebviewAuthType }
+  | { type: 'authLogout'; providerId: string }
+  | { type: 'authRefresh' }
+  | { type: 'authCancel' }
   | { type: 'refreshSessions' }
   | { type: 'showCurrentChanges' }
   | { type: 'dismissWelcome' }
@@ -165,6 +202,7 @@ export type WebviewStateMessage = Omit<ChatState, 'messages'> & {
   chatFace?: WebviewChatFace;
   settingsSection?: WebviewSettingsSection;
   settings?: WebviewSettingsState;
+  auth?: WebviewAuthState;
 };
 
 export type CreateWebviewStateMessageOptions = {
@@ -211,6 +249,7 @@ export type CreateWebviewStateMessageOptions = {
     sessionLoading?: boolean;
   };
   settingsView?: WebviewSettingsViewState;
+  auth?: WebviewAuthState;
 };
 
 export type WebviewScriptUris = {

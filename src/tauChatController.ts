@@ -1,6 +1,8 @@
 import { ChatSession, type ChatSnapshotMessage, type ChatSnapshotState } from './chat/chatSession';
 import { createWebviewStateMessage } from './sidebar/chatWebview';
 import type {
+  WebviewAuthProvider,
+  WebviewAuthState,
   WebviewMessage,
   WebviewMessagePatch,
   WebviewStateMessage
@@ -9,6 +11,7 @@ import { StatePublisher } from './controller/statePublisher';
 import type { PiClient } from './pi/clientTypes';
 import type { TauChatControllerOptions } from './controller/types';
 import type {
+  PiOAuthLoginCallbacks,
   PiPromptStreamingBehavior,
   PiEvent
 } from './pi/types';
@@ -79,6 +82,8 @@ export class TauChatController {
   private lastPostedChatSync: PostedChatSync | undefined;
   private workspaceWaitingNoticeAdded = false;
   private workspaceWarningNoticeAdded = false;
+  private authState: WebviewAuthState = { providers: [] };
+  private authAbortController: AbortController | undefined;
 
   public constructor(private readonly options: TauChatControllerOptions) {
     this.sessionDiffController = new SessionDiffController({
@@ -198,6 +203,7 @@ export class TauChatController {
         this.clientManager.setNextSessionFile(sessionFile);
         this.disposeClient();
       },
+      showLoginSettings: (mode) => this.showLoginSettings(mode),
       startNewSession: () => this.startNewSession()
     });
 
@@ -228,6 +234,7 @@ export class TauChatController {
         this.postState();
         void this.refreshSessionDiffStats();
         void this.refreshSessionMeta({ startClient: true });
+        void this.refreshAuthProviders({ startClient: true });
         void this.sessionView.refreshSessions();
         return;
       case 'newSession':
@@ -255,9 +262,24 @@ export class TauChatController {
         return;
       case 'setSettingsSection':
         this.settingsView.setActiveSection(message.section);
+        if (message.section === 'login') {
+          void this.refreshAuthProviders({ startClient: true });
+        }
         return;
       case 'updateSetting':
         await this.updateSetting(message.settingId, message.value);
+        return;
+      case 'authLogin':
+        await this.loginAuthProvider(message.providerId, message.authType);
+        return;
+      case 'authLogout':
+        await this.logoutAuthProvider(message.providerId);
+        return;
+      case 'authRefresh':
+        await this.refreshAuthProviders({ startClient: true, force: true });
+        return;
+      case 'authCancel':
+        this.cancelAuthFlow();
         return;
       case 'refreshSessions':
         await this.sessionView.refreshSessions();
@@ -529,7 +551,8 @@ export class TauChatController {
       workspaceDiffStats: this.sessionDiffController.getStats(),
       navigation: this.navigation.getWebviewState(),
       sessionView: this.sessionView.getWebviewState(this.sessionHistory.isLoading),
-      settingsView: this.settingsView.getWebviewState()
+      settingsView: this.settingsView.getWebviewState(),
+      ...(hasAuthStatePayload(this.authState) ? { auth: this.authState } : {})
     });
 
     if (chatSync) {
@@ -543,6 +566,287 @@ export class TauChatController {
       ...piSettings,
       ...(this.options.getTauSettingValues?.() ?? {})
     };
+  }
+
+  private showLoginSettings(_mode: 'login' | 'logout'): void {
+    this.sessionView.showChat({ clearSessionsError: true, clearTreeError: true, post: false });
+    this.settingsView.showSettings();
+    this.settingsView.setActiveSection('login');
+    void this.refreshAuthProviders({ startClient: true, force: true });
+  }
+
+  private async refreshAuthProviders(options: { startClient?: boolean; force?: boolean } = {}): Promise<void> {
+    if (this.authState.refreshing && !options.force) {
+      return;
+    }
+
+    if (!options.startClient && !this.getExistingClient()) {
+      return;
+    }
+
+    const client = options.startClient
+      ? this.getPiStartupCwdState().status === 'ready'
+        ? this.getClient()
+        : undefined
+      : this.getExistingClient();
+    if (!client?.getAuthProviders) {
+      return;
+    }
+
+    this.authState = { ...this.authState, refreshing: true, error: undefined };
+    this.postState();
+
+    try {
+      const result = await client.getAuthProviders();
+      this.authState = {
+        providers: result.providers,
+        ...(this.authState.busyProviderId ? { busyProviderId: this.authState.busyProviderId } : {}),
+        ...(this.authState.busyAction ? { busyAction: this.authState.busyAction } : {}),
+        ...(this.authState.progress ? { progress: this.authState.progress } : {})
+      };
+    } catch (error) {
+      this.authState = {
+        ...this.authState,
+        refreshing: false,
+        error: getErrorMessage(error)
+      };
+      this.options.showNotification(getErrorMessage(error), 'warning');
+      this.postState();
+      return;
+    }
+
+    this.postState();
+  }
+
+  private async loginAuthProvider(providerId: string, authType?: WebviewAuthProvider['authType']): Promise<void> {
+    if (this.authState.busyProviderId || this.session.isBusy) {
+      return;
+    }
+
+    const provider = await this.resolveAuthProvider(providerId, authType);
+    if (!provider) {
+      return;
+    }
+
+    if (provider.authType === 'api_key') {
+      await this.loginAuthProviderWithApiKey(provider);
+    } else {
+      await this.loginAuthProviderWithOAuth(provider);
+    }
+  }
+
+  private async resolveAuthProvider(providerId: string, authType?: WebviewAuthProvider['authType']): Promise<WebviewAuthProvider | undefined> {
+    const matchesProvider = (candidate: WebviewAuthProvider) => (
+      candidate.id === providerId && (!authType || candidate.authType === authType)
+    );
+    let provider = this.authState.providers.find(matchesProvider);
+
+    if (!provider) {
+      await this.refreshAuthProviders({ startClient: true, force: true });
+      provider = this.authState.providers.find(matchesProvider);
+    }
+
+    if (!provider) {
+      const message = `Authentication provider not found: ${providerId}`;
+      this.authState = { ...this.authState, error: message };
+      this.options.showNotification(message, 'warning');
+      this.postState();
+      return undefined;
+    }
+
+    return provider;
+  }
+
+  private async loginAuthProviderWithApiKey(provider: WebviewAuthProvider): Promise<void> {
+    const apiKey = await this.options.inputSecret?.(
+      `API key for ${provider.name}`,
+      'Paste API key',
+      'The key is stored in Pi auth.json and is not sent to the Tau webview.'
+    );
+
+    if (!apiKey) {
+      return;
+    }
+
+    const client = this.getClient();
+    if (!client.loginWithApiKey) {
+      this.options.showNotification('Pi auth is not available in this session.', 'warning');
+      return;
+    }
+
+    this.authState = {
+      ...this.authState,
+      busyProviderId: provider.id,
+      busyAction: 'login',
+      progress: { providerId: provider.id, message: `Saving API key for ${provider.name}…` },
+      error: undefined
+    };
+    this.postState();
+
+    try {
+      const result = await client.loginWithApiKey(provider.id, apiKey);
+      this.options.showToast?.(result.message, 'success');
+      this.authState = { providers: this.authState.providers };
+      await this.afterAuthChanged();
+    } catch (error) {
+      this.authState = { ...this.authState, busyProviderId: undefined, busyAction: undefined, progress: undefined, error: getErrorMessage(error) };
+      this.options.showNotification(getErrorMessage(error), 'warning');
+      this.postState();
+    }
+  }
+
+  private async loginAuthProviderWithOAuth(provider: WebviewAuthProvider): Promise<void> {
+    const client = this.getClient();
+    if (!client.loginWithOAuth) {
+      this.options.showNotification('Pi OAuth login is not available in this session.', 'warning');
+      return;
+    }
+
+    const abortController = new AbortController();
+    this.authAbortController = abortController;
+    this.authState = {
+      ...this.authState,
+      busyProviderId: provider.id,
+      busyAction: 'login',
+      progress: { providerId: provider.id, message: `Starting login for ${provider.name}…` },
+      error: undefined
+    };
+    this.postState();
+
+    const callbacks: PiOAuthLoginCallbacks = {
+      onAuth: (info) => {
+        this.authState = {
+          ...this.authState,
+          progress: {
+            providerId: provider.id,
+            message: info.instructions ?? `Complete login for ${provider.name} in your browser. If the callback does not complete, use the manual prompt.`,
+            url: info.url
+          }
+        };
+        this.postState();
+        void this.options.openExternalUrl?.(info.url);
+      },
+      onDeviceCode: (info) => {
+        this.authState = {
+          ...this.authState,
+          progress: {
+            providerId: provider.id,
+            message: `Enter this code at ${info.verificationUri}. Waiting for authentication…`,
+            userCode: info.userCode,
+            verificationUri: info.verificationUri
+          }
+        };
+        this.postState();
+        void this.options.openExternalUrl?.(info.verificationUri);
+      },
+      onPrompt: async (prompt) => {
+        const value = await this.options.inputSecret?.(prompt.message, prompt.placeholder, 'OAuth input is kept out of Tau webview state.');
+        if (value === undefined || (!prompt.allowEmpty && !value.trim())) {
+          throw new Error('Login cancelled');
+        }
+        return value;
+      },
+      onProgress: (message) => {
+        this.authState = { ...this.authState, progress: { providerId: provider.id, message } };
+        this.postState();
+      },
+      onManualCodeInput: async () => {
+        const value = await this.options.inputSecret?.(
+          `Manual code for ${provider.name}`,
+          provider.usesCallbackServer ? 'Paste redirect URL or authorization code' : 'Paste authorization code',
+          'Use this if browser callback did not complete automatically.'
+        );
+        if (!value?.trim()) {
+          throw new Error('Login cancelled');
+        }
+        return value;
+      },
+      onSelect: async (prompt) => {
+        const labels = prompt.options.map((option) => option.label);
+        const picked = await this.options.extensionUi?.select?.(prompt.message, labels);
+        return picked ? prompt.options[labels.indexOf(picked)]?.id : undefined;
+      },
+      signal: abortController.signal
+    };
+
+    try {
+      const result = await client.loginWithOAuth(provider.id, callbacks);
+      this.options.showToast?.(result.message, 'success');
+      if (this.authAbortController === abortController) {
+        this.authAbortController = undefined;
+      }
+      this.authState = { providers: this.authState.providers };
+      await this.afterAuthChanged();
+    } catch (error) {
+      const message = getErrorMessage(error);
+      const cancelled = message === 'Login cancelled' || abortController.signal.aborted;
+      if (this.authAbortController === abortController) {
+        this.authAbortController = undefined;
+      }
+      this.authState = {
+        ...this.authState,
+        busyProviderId: undefined,
+        busyAction: undefined,
+        progress: undefined,
+        error: cancelled ? undefined : message
+      };
+      if (!cancelled) {
+        this.options.showNotification(message, 'warning');
+      }
+      this.postState();
+    }
+  }
+
+  private async logoutAuthProvider(providerId: string): Promise<void> {
+    if (this.authState.busyProviderId) {
+      return;
+    }
+
+    const client = this.getClient();
+    if (!client.logoutAuthProvider) {
+      this.options.showNotification('Pi auth logout is not available in this session.', 'warning');
+      return;
+    }
+
+    this.authState = {
+      ...this.authState,
+      busyProviderId: providerId,
+      busyAction: 'logout',
+      progress: { providerId, message: 'Removing stored credentials…' },
+      error: undefined
+    };
+    this.postState();
+
+    try {
+      const result = await client.logoutAuthProvider(providerId);
+      this.options.showToast?.(result.message, 'success');
+      this.authState = { providers: this.authState.providers };
+      await this.afterAuthChanged();
+    } catch (error) {
+      this.authState = { ...this.authState, busyProviderId: undefined, busyAction: undefined, progress: undefined, error: getErrorMessage(error) };
+      this.options.showNotification(getErrorMessage(error), 'warning');
+      this.postState();
+    }
+  }
+
+  private cancelAuthFlow(): void {
+    this.authAbortController?.abort();
+    this.authAbortController = undefined;
+    this.authState = {
+      ...this.authState,
+      busyProviderId: undefined,
+      busyAction: undefined,
+      progress: undefined,
+      error: undefined
+    };
+    this.postState();
+  }
+
+  private async afterAuthChanged(): Promise<void> {
+    await this.refreshAuthProviders({ startClient: true, force: true });
+    await this.refreshSessionMeta({ startClient: true, force: true });
+    await this.refreshSlashCommands({ startClient: true, force: true });
+    this.postState();
   }
 
   private async updateSetting(settingId: SettingId, value: SettingValue): Promise<void> {
@@ -954,6 +1258,15 @@ export class TauChatController {
     this.sessionHistory.setLoading(false);
     this.postState();
   }
+}
+
+function hasAuthStatePayload(state: WebviewAuthState): boolean {
+  return state.providers.length > 0
+    || Boolean(state.refreshing)
+    || Boolean(state.busyProviderId)
+    || Boolean(state.busyAction)
+    || Boolean(state.progress)
+    || Boolean(state.error);
 }
 
 function createPostedChatSync(generation: number, messages: ChatSnapshotMessage[]): PostedChatSync {

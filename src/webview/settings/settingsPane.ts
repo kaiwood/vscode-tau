@@ -21,9 +21,15 @@ export class SettingsPaneController {
     this.options.settingsBackButton.addEventListener('click', () => this.hideSettings({ focusPrompt: true }));
 
     this.options.settingsElement.addEventListener('click', (event) => {
-      const button = event.target instanceof Element
-        ? event.target.closest<HTMLButtonElement>('[data-settings-section]')
-        : null;
+      const target = event.target instanceof Element ? event.target : null;
+      const authButton = target?.closest<HTMLButtonElement>('[data-auth-action]');
+
+      if (authButton) {
+        this.handleAuthAction(authButton);
+        return;
+      }
+
+      const button = target?.closest<HTMLButtonElement>('[data-settings-section]') ?? null;
 
       if (!button) {
         return;
@@ -87,6 +93,48 @@ export class SettingsPaneController {
 
   private selectSection(section: SettingsSection): void {
     this.options.postMessage({ type: 'setSettingsSection', section });
+  }
+
+  private handleAuthAction(button: HTMLButtonElement): void {
+    const action = button.dataset.authAction;
+
+    if (action === 'refresh') {
+      this.options.postMessage({ type: 'authRefresh' });
+      return;
+    }
+
+    if (action === 'cancel') {
+      this.options.postMessage({ type: 'authCancel' });
+      return;
+    }
+
+    if (action === 'loginSelected') {
+      const authType = button.dataset.authType;
+      const select = authType
+        ? this.options.settingsBodyElement.querySelector<HTMLSelectElement>(`[data-auth-select="${authType}"]`)
+        : undefined;
+      const providerId = select?.value;
+      if (providerId && (authType === 'oauth' || authType === 'api_key')) {
+        this.options.postMessage({ type: 'authLogin', providerId, authType });
+      }
+      return;
+    }
+
+    const providerId = button.dataset.authProviderId;
+    if (!providerId) {
+      return;
+    }
+
+    if (action === 'login') {
+      const authType = button.dataset.authType;
+      this.options.postMessage({
+        type: 'authLogin',
+        providerId,
+        ...(authType === 'oauth' || authType === 'api_key' ? { authType } : {})
+      });
+    } else if (action === 'logout') {
+      this.options.postMessage({ type: 'authLogout', providerId });
+    }
   }
 
   private handleSettingsKeydown(event: KeyboardEvent): void {
@@ -180,8 +228,12 @@ export class SettingsPaneController {
     const cards = document.createElement('div');
     cards.className = 'settings-surface__cards';
 
-    for (const definition of getSettingsForSection(section.id)) {
-      cards.append(this.createSettingCard(definition, state));
+    if (section.id === 'login') {
+      this.appendAuthCards(cards, state);
+    } else {
+      for (const definition of getSettingsForSection(section.id)) {
+        cards.append(this.createSettingCard(definition, state));
+      }
     }
 
     panel.append(cards);
@@ -192,6 +244,182 @@ export class SettingsPaneController {
     if (state.chatFace === 'settings') {
       requestAnimationFrame(() => this.focusSectionButton(sectionId));
     }
+  }
+
+  private appendAuthCards(cards: HTMLElement, state: WebviewState): void {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'settings-surface__auth-toolbar';
+    const refreshButton = this.createAuthButton('Refresh', 'refresh', undefined, Boolean(state.auth.refreshing || state.auth.busyProviderId));
+    toolbar.append(refreshButton);
+
+    if (state.auth.busyProviderId) {
+      toolbar.append(this.createAuthButton('Cancel', 'cancel', undefined, false));
+    }
+
+    cards.append(toolbar);
+
+    if (state.auth.progress) {
+      cards.append(this.createAuthProgressCard(state));
+    }
+
+    if (state.auth.error) {
+      const errorCard = document.createElement('article');
+      errorCard.className = 'settings-surface__card settings-surface__card--danger';
+      errorCard.append(createTextElement('h4', 'settings-surface__card-title', 'Login error'));
+      errorCard.append(createTextElement('p', 'settings-surface__card-error', state.auth.error));
+      cards.append(errorCard);
+    }
+
+    const providers = state.auth.providers;
+    if (providers.length === 0) {
+      const emptyCard = document.createElement('article');
+      emptyCard.className = 'settings-surface__card';
+      emptyCard.append(createTextElement('h4', 'settings-surface__card-title', state.auth.refreshing ? 'Loading providers…' : 'No providers loaded'));
+      emptyCard.append(createTextElement('p', 'settings-surface__card-body', 'Refresh to load built-in Pi authentication providers.'));
+      cards.append(emptyCard);
+      return;
+    }
+
+    cards.append(this.createAuthLoginCard('oauth', providers.filter((provider) => provider.authType === 'oauth'), state));
+    cards.append(this.createAuthLoginCard('api_key', providers.filter((provider) => provider.authType === 'api_key'), state));
+
+    const activeProviders = providers.filter((provider) => provider.canLogout);
+    const separator = document.createElement('div');
+    separator.className = 'settings-surface__auth-separator';
+    separator.setAttribute('role', 'separator');
+    cards.append(separator);
+
+    const activeGroup = document.createElement('div');
+    activeGroup.className = 'settings-surface__auth-group';
+    activeGroup.append(createTextElement('div', 'settings-surface__section-eyebrow', 'Active providers'));
+
+    if (activeProviders.length === 0) {
+      const emptyActiveCard = document.createElement('article');
+      emptyActiveCard.className = 'settings-surface__card';
+      emptyActiveCard.append(createTextElement('h4', 'settings-surface__card-title', 'No active stored logins'));
+      emptyActiveCard.append(createTextElement('p', 'settings-surface__card-body', 'Environment variables and models.json credentials may still be active outside Tau logout.'));
+      activeGroup.append(emptyActiveCard);
+    } else {
+      for (const provider of activeProviders) {
+        activeGroup.append(this.createActiveAuthProviderCard(provider, state));
+      }
+    }
+
+    cards.append(activeGroup);
+  }
+
+  private createAuthLoginCard(authType: 'oauth' | 'api_key', providers: WebviewState['auth']['providers'], state: WebviewState): HTMLElement {
+    const card = document.createElement('article');
+    card.className = 'settings-surface__card';
+
+    const title = authType === 'oauth' ? 'OAuth login' : 'API key login';
+    card.append(createTextElement('h4', 'settings-surface__card-title', title));
+    card.append(createTextElement(
+      'p',
+      'settings-surface__card-body',
+      authType === 'oauth'
+        ? 'Choose a subscription provider and complete OAuth in your browser.'
+        : 'Choose a provider and store an API key in Pi auth.json.'
+    ));
+
+    const select = document.createElement('select');
+    select.className = 'settings-surface__select';
+    select.dataset.authSelect = authType;
+    select.disabled = providers.length === 0 || Boolean(state.auth.busyProviderId || state.busy);
+
+    if (providers.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = authType === 'oauth' ? 'No OAuth providers available' : 'No API key providers available';
+      select.append(option);
+    } else {
+      for (const provider of providers) {
+        const option = document.createElement('option');
+        option.value = provider.id;
+        option.textContent = provider.configured ? `${provider.name} (${getAuthStatusLabel(provider)})` : provider.name;
+        select.append(option);
+      }
+    }
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'settings-surface__auth-actions';
+    const loginButton = this.createAuthButton('Login / Replace', 'loginSelected', undefined, providers.length === 0 || Boolean(state.auth.busyProviderId || state.busy));
+    loginButton.dataset.authType = authType;
+    actionRow.append(loginButton);
+
+    const control = document.createElement('div');
+    control.className = 'settings-surface__control';
+    control.append(select, actionRow);
+    card.append(control);
+
+    return card;
+  }
+
+  private createAuthProgressCard(state: WebviewState): HTMLElement {
+    const progress = state.auth.progress;
+    const card = document.createElement('article');
+    card.className = 'settings-surface__card';
+    card.append(createTextElement('h4', 'settings-surface__card-title', 'Authentication in progress'));
+
+    if (!progress) {
+      return card;
+    }
+
+    card.append(createTextElement('p', 'settings-surface__card-body', progress.message));
+
+    if (progress.userCode) {
+      const code = document.createElement('code');
+      code.className = 'settings-surface__auth-code';
+      code.textContent = progress.userCode;
+      card.append(code);
+    }
+
+    if (progress.url || progress.verificationUri) {
+      card.append(createTextElement('p', 'settings-surface__card-helper', progress.url ?? progress.verificationUri ?? ''));
+    }
+
+    return card;
+  }
+
+  private createActiveAuthProviderCard(provider: WebviewState['auth']['providers'][number], state: WebviewState): HTMLElement {
+    const card = document.createElement('article');
+    card.className = 'settings-surface__card';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'settings-surface__card-title-row';
+    titleRow.append(createTextElement('h4', 'settings-surface__card-title', provider.name));
+    titleRow.append(createTextElement('span', 'settings-surface__card-status settings-surface__card-status--pi', getAuthStatusLabel(provider)));
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'settings-surface__auth-actions';
+    actionRow.append(this.createAuthButton('Logout', 'logout', provider.id, Boolean(state.auth.busyProviderId || state.busy)));
+
+    card.append(
+      titleRow,
+      createTextElement('p', 'settings-surface__card-body', provider.authType === 'oauth' ? 'Stored OAuth subscription credentials.' : 'Stored API key credentials.'),
+      actionRow
+    );
+
+    if (provider.label || provider.source) {
+      card.append(createTextElement('p', 'settings-surface__card-helper', provider.label ?? `Configured via ${provider.source}`));
+    }
+
+    return card;
+  }
+
+  private createAuthButton(label: string, action: string, providerId: string | undefined, disabled: boolean): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.className = 'settings-surface__button';
+    button.type = 'button';
+    button.textContent = label;
+    button.dataset.authAction = action;
+    button.disabled = disabled;
+
+    if (providerId) {
+      button.dataset.authProviderId = providerId;
+    }
+
+    return button;
   }
 
   private createSettingCard(definition: SettingDefinition, state: WebviewState): HTMLElement {
@@ -320,6 +548,22 @@ export class SettingsPaneController {
   }
 }
 
+function getAuthStatusLabel(provider: WebviewState['auth']['providers'][number]): string {
+  if (provider.canLogout && provider.storedCredentialType === 'oauth') {
+    return 'Logged in';
+  }
+
+  if (provider.canLogout && provider.storedCredentialType === 'api_key') {
+    return 'Stored key';
+  }
+
+  if (provider.configured) {
+    return provider.source === 'environment' ? 'Env' : 'Configured';
+  }
+
+  return 'Not set';
+}
+
 function getSettingValue(definition: SettingDefinition, state: WebviewState): SettingValue {
   return state.settings.values[definition.id] ?? definition.defaultValue;
 }
@@ -355,7 +599,8 @@ function createSettingsSignature(sectionId: SettingsSection, state: WebviewState
   const modelOptions = sectionId === 'runtime'
     ? state.modelOptions.map((model) => `${model.provider}/${model.id}:${model.name}`).join('|')
     : '';
-  return JSON.stringify([sectionId, values, modelOptions, state.busy, state.settings.errors]);
+  const auth = sectionId === 'login' ? state.auth : undefined;
+  return JSON.stringify([sectionId, values, modelOptions, auth, state.busy, state.settings.errors]);
 }
 
 function createTextElement(tagName: string, className: string, text: string): HTMLElement {

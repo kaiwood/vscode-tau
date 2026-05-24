@@ -115,6 +115,11 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSettingsSection', section: 'runtime' }), { type: 'setSettingsSection', section: 'runtime' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'updateSetting', settingId: 'tau.outputColors', value: false }), { type: 'updateSetting', settingId: 'tau.outputColors', value: false });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'updateSetting', settingId: 'defaultThinkingLevel', value: 'high' }), { type: 'updateSetting', settingId: 'defaultThinkingLevel', value: 'high' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogin', providerId: 'anthropic' }), { type: 'authLogin', providerId: 'anthropic' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogin', providerId: 'anthropic', authType: 'oauth' }), { type: 'authLogin', providerId: 'anthropic', authType: 'oauth' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogout', providerId: 'anthropic' }), { type: 'authLogout', providerId: 'anthropic' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authRefresh' }), { type: 'authRefresh' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authCancel' }), { type: 'authCancel' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSessions' }), { type: 'refreshSessions' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'showCurrentChanges' }), { type: 'showCurrentChanges' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'dismissWelcome' }), { type: 'dismissWelcome' });
@@ -217,6 +222,8 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({}), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'focusChanged', focused: 'yes' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSettingsSection', section: 'bogus' }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogin', providerId: '' }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogout', providerId: 42 }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'submit', text: 42 }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'selectSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'deleteSession', sessionPath: '' }), { type: 'unknown' });

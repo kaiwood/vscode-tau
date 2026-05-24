@@ -26,8 +26,8 @@ const localSlashCommandDefinitions: LocalSlashCommandDefinition[] = [
   { name: 'fork', description: 'Fork from a previous user message', source: 'builtin', supported: true },
   { name: 'clone', description: 'Duplicate the current session', source: 'builtin', supported: true },
   { name: 'tree', description: 'Navigate session tree', source: 'builtin', supported: true },
-  { name: 'login', description: 'Terminal-only: run pi in a terminal to authenticate', source: 'unsupported', supported: false },
-  { name: 'logout', description: 'Terminal-only: run pi in a terminal to manage auth', source: 'unsupported', supported: false },
+  { name: 'login', description: 'Configure provider authentication', source: 'builtin', supported: true },
+  { name: 'logout', description: 'Remove stored provider authentication', source: 'builtin', supported: true },
   { name: 'resume', description: 'Resume a different session', source: 'builtin', supported: true },
   { name: 'reload', description: 'Reload keybindings, extensions, skills, prompts, and themes', source: 'builtin', supported: true },
   { name: 'quit', description: 'Not supported here', source: 'unsupported', supported: false }

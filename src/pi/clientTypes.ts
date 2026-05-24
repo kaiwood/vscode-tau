@@ -1,10 +1,13 @@
 import type { PiSettingId, SettingValue } from '../settings/settingsRegistry';
 import type { WebviewTreeItem } from '../webviewProtocol/types';
 import type {
+  PiAuthActionResult,
+  PiAuthProvidersResult,
   PiAvailableCommands,
   PiAvailableModels,
   PiClientOptions,
   PiCloneResult,
+  PiOAuthLoginCallbacks,
   PiCompactResult,
   PiEvent,
   PiExportHtmlResult,
@@ -31,6 +34,10 @@ export type PiClient = {
   getSessionStats(): Promise<PiSessionStats>;
   getAvailableModels(): Promise<PiAvailableModels>;
   getCommands(): Promise<PiAvailableCommands>;
+  getAuthProviders?(): Promise<PiAuthProvidersResult>;
+  loginWithApiKey?(providerId: string, apiKey: string): Promise<PiAuthActionResult>;
+  loginWithOAuth?(providerId: string, callbacks: PiOAuthLoginCallbacks): Promise<PiAuthActionResult>;
+  logoutAuthProvider?(providerId: string): Promise<PiAuthActionResult>;
   setModel(provider: string, modelId: string): Promise<PiModel>;
   setThinkingLevel(level: string): Promise<void>;
   updateRuntimeSetting?(settingId: PiSettingId, value: SettingValue): Promise<{ applied: 'live' | 'reload'; message?: string }>;

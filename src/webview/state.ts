@@ -31,6 +31,7 @@ export const initialWebviewState: WebviewState = {
   chatFace: 'main',
   settingsSection: 'appearance',
   settings: { values: {} },
+  auth: { providers: [] },
   sessions: [],
   sessionsRefreshing: false,
   sessionsError: '',
@@ -73,6 +74,7 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     chatFace: parseChatFace(record.chatFace, parseWebviewLane(record.lane, 'chat')),
     settingsSection: parseWebviewSettingsSection(record.settingsSection, 'appearance'),
     settings: parseSettingsState(record.settings),
+    auth: parseAuthState(record.auth),
     sessions: Array.isArray(record.sessions) ? record.sessions : [],
     sessionsRefreshing: Boolean(record.sessionsRefreshing),
     sessionsError: typeof record.sessionsError === 'string' ? record.sessionsError : '',
@@ -83,6 +85,53 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     treeError: typeof record.treeError === 'string' ? record.treeError : '',
     sessionLoading: Boolean(record.sessionLoading)
   };
+}
+
+function parseAuthState(value: unknown): WebviewState['auth'] {
+  if (!isRecord(value)) {
+    return { providers: [] };
+  }
+
+  return {
+    providers: Array.isArray(value.providers) ? value.providers.filter(isAuthProvider).map(sanitizeAuthProvider) : [],
+    ...(value.refreshing === true ? { refreshing: true } : {}),
+    ...(typeof value.busyProviderId === 'string' && value.busyProviderId ? { busyProviderId: value.busyProviderId } : {}),
+    ...(value.busyAction === 'login' || value.busyAction === 'logout' ? { busyAction: value.busyAction } : {}),
+    ...(isAuthProgress(value.progress) ? { progress: value.progress } : {}),
+    ...(typeof value.error === 'string' && value.error ? { error: value.error } : {})
+  };
+}
+
+function isAuthProvider(value: unknown): value is WebviewState['auth']['providers'][number] {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.name === 'string'
+    && (value.authType === 'oauth' || value.authType === 'api_key')
+    && typeof value.configured === 'boolean'
+    && typeof value.canLogout === 'boolean';
+}
+
+function sanitizeAuthProvider(provider: WebviewState['auth']['providers'][number]): WebviewState['auth']['providers'][number] {
+  return {
+    id: provider.id,
+    name: provider.name,
+    authType: provider.authType,
+    configured: provider.configured,
+    canLogout: provider.canLogout,
+    ...(typeof provider.source === 'string' ? { source: provider.source } : {}),
+    ...(typeof provider.label === 'string' ? { label: provider.label } : {}),
+    ...(provider.storedCredentialType === 'oauth' || provider.storedCredentialType === 'api_key' ? { storedCredentialType: provider.storedCredentialType } : {}),
+    ...(typeof provider.usesCallbackServer === 'boolean' ? { usesCallbackServer: provider.usesCallbackServer } : {})
+  };
+}
+
+function isAuthProgress(value: unknown): value is NonNullable<WebviewState['auth']['progress']> {
+  return isRecord(value)
+    && typeof value.message === 'string'
+    && (!('providerId' in value) || typeof value.providerId === 'string')
+    && (!('url' in value) || typeof value.url === 'string')
+    && (!('userCode' in value) || typeof value.userCode === 'string')
+    && (!('verificationUri' in value) || typeof value.verificationUri === 'string');
 }
 
 function parseSettingsState(value: unknown): WebviewState['settings'] {

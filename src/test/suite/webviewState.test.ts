@@ -12,6 +12,7 @@ suite('Webview state helpers', () => {
     assert.strictEqual(initialWebviewState.customUiTheme, 'default');
     assert.strictEqual(initialWebviewState.allowRemoteImages, true);
     assert.strictEqual(initialWebviewState.welcomeDismissed, false);
+    assert.deepStrictEqual(initialWebviewState.auth, { providers: [] });
     assert.deepStrictEqual(initialWebviewState.sessions, []);
   });
 
@@ -41,6 +42,18 @@ suite('Webview state helpers', () => {
       lane: 'sessions',
       chatFace: 'settings',
       settingsSection: 'runtime',
+      auth: {
+        providers: [{
+          id: 'anthropic',
+          name: 'Anthropic',
+          authType: 'oauth',
+          configured: true,
+          canLogout: true,
+          storedCredentialType: 'oauth',
+          secret: 'not-kept'
+        }],
+        progress: { message: 'Waiting', userCode: 'ABCD-EFGH' }
+      },
       sessions: [{ path: '/session.jsonl' }],
       sessionsRefreshing: true,
       sessionsError: 'failed',
@@ -61,6 +74,15 @@ suite('Webview state helpers', () => {
     assert.strictEqual(parsed.customUiTheme, 'modern');
     assert.strictEqual(parsed.allowRemoteImages, false);
     assert.strictEqual(parsed.welcomeDismissed, true);
+    assert.deepStrictEqual(parsed.auth.providers[0], {
+      id: 'anthropic',
+      name: 'Anthropic',
+      authType: 'oauth',
+      configured: true,
+      canLogout: true,
+      storedCredentialType: 'oauth'
+    });
+    assert.strictEqual(parsed.auth.progress?.userCode, 'ABCD-EFGH');
     assert.strictEqual(parsed.sessions[0]?.path, '/session.jsonl');
     assert.strictEqual(parsed.treeItems[0]?.entryId, 'entry-1');
     assert.strictEqual(parsed.sessionLoading, true);

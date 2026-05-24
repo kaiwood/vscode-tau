@@ -123,6 +123,14 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
       },
       showNotification: (message, notifyType) => this.showNotification(message, notifyType),
       showToast: (message, kind) => this.showToast(message, kind),
+      inputSecret: (title, placeholder, prompt) => vscode.window.showInputBox({
+        title,
+        placeHolder: placeholder,
+        prompt,
+        password: true,
+        ignoreFocusOut: true
+      }),
+      openExternalUrl: (url) => vscode.env.openExternal(vscode.Uri.parse(url)),
       writeClipboard: (text) => vscode.env.clipboard.writeText(text),
       extensionUi,
       customUi: {

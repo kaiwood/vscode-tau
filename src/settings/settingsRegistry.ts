@@ -22,7 +22,7 @@ export type PiSettingId =
   | 'enabledModels'
   | 'enableSkillCommands';
 
-export type TauSettingsSection = 'appearance' | 'runtime' | 'workspaceSafety' | 'advanced';
+export type TauSettingsSection = 'appearance' | 'login' | 'runtime' | 'workspaceSafety' | 'advanced';
 export type SettingsOwner = 'tau' | 'pi';
 export type SettingControl = 'toggle' | 'select' | 'text' | 'readonlyList';
 export type SettingValue = boolean | string | string[];
@@ -84,6 +84,13 @@ export const settingsSections = [
     eyebrow: 'Tau host',
     title: 'Appearance',
     description: 'Tau-owned presentation controls for the sidebar and Pi extension UI.'
+  },
+  {
+    id: 'login',
+    label: 'Login',
+    eyebrow: 'Pi auth',
+    title: 'Login',
+    description: 'Configure built-in Pi provider authentication. Credentials are stored in Pi auth.json.'
   },
   {
     id: 'runtime',

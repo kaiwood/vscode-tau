@@ -31,6 +31,7 @@ export type LocalSlashCommandControllerOptions = {
   adoptReplacedSession: (options?: { fallbackSessionFile?: string; refreshSessions?: boolean }) => Promise<void>;
   setComposerText: (text: string) => void;
   restartClientForReload: (sessionFile: string | undefined) => void;
+  showLoginSettings: (mode: 'login' | 'logout') => void;
   startNewSession: () => void;
 };
 
@@ -71,6 +72,12 @@ export class LocalSlashCommandController {
           return;
         case 'tree':
           this.options.sessionView.showTree();
+          return;
+        case 'login':
+          this.options.showLoginSettings('login');
+          return;
+        case 'logout':
+          this.options.showLoginSettings('logout');
           return;
         case 'resume':
           this.options.sessionView.showSessions();

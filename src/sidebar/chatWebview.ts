@@ -61,6 +61,24 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
         ? { type: 'unknown' }
         : { type: 'updateSetting', settingId: value.settingId, value: settingValue };
     }
+    case 'authLogin': {
+      if (typeof value.providerId !== 'string' || !value.providerId) {
+        return { type: 'unknown' };
+      }
+
+      const authType = value.authType === 'oauth' || value.authType === 'api_key' ? value.authType : undefined;
+      return authType
+        ? { type: 'authLogin', providerId: value.providerId, authType }
+        : { type: 'authLogin', providerId: value.providerId };
+    }
+    case 'authLogout':
+      return typeof value.providerId === 'string' && value.providerId
+        ? { type: 'authLogout', providerId: value.providerId }
+        : { type: 'unknown' };
+    case 'authRefresh':
+      return { type: 'authRefresh' };
+    case 'authCancel':
+      return { type: 'authCancel' };
     case 'refreshSessions':
       return { type: 'refreshSessions' };
     case 'showCurrentChanges':
@@ -223,6 +241,7 @@ export function createWebviewStateMessage({
   navigation,
   sessionView,
   settingsView,
+  auth,
   includeMessages = true,
   messagePatch
 }: CreateWebviewStateMessageOptions): WebviewStateMessage {
@@ -292,6 +311,17 @@ export function createWebviewStateMessage({
       values: { ...settingsView.settings.values },
       ...(settingsView.settings.pending ? { pending: settingsView.settings.pending.slice() } : {}),
       ...(settingsView.settings.errors ? { errors: { ...settingsView.settings.errors } } : {})
+    };
+  }
+
+  if (auth) {
+    message.auth = {
+      providers: auth.providers.map((provider) => ({ ...provider })),
+      ...(auth.refreshing ? { refreshing: true } : {}),
+      ...(auth.busyProviderId ? { busyProviderId: auth.busyProviderId } : {}),
+      ...(auth.busyAction ? { busyAction: auth.busyAction } : {}),
+      ...(auth.progress ? { progress: { ...auth.progress } } : {}),
+      ...(auth.error ? { error: auth.error } : {})
     };
   }
 

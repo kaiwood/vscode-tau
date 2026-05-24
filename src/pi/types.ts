@@ -125,6 +125,64 @@ export type PiAvailableCommands = {
   commands?: PiCommand[];
 };
 
+export type PiAuthType = 'oauth' | 'api_key';
+
+export type PiAuthSource = 'stored' | 'runtime' | 'environment' | 'fallback' | 'models_json_key' | 'models_json_command';
+
+export type PiAuthProvider = {
+  id: string;
+  name: string;
+  authType: PiAuthType;
+  configured: boolean;
+  source?: PiAuthSource;
+  label?: string;
+  storedCredentialType?: PiAuthType;
+  canLogout: boolean;
+  usesCallbackServer?: boolean;
+};
+
+export type PiAuthProvidersResult = {
+  providers: PiAuthProvider[];
+};
+
+export type PiOAuthAuthInfo = {
+  url: string;
+  instructions?: string;
+};
+
+export type PiOAuthDeviceCodeInfo = {
+  userCode: string;
+  verificationUri: string;
+  intervalSeconds?: number;
+  expiresInSeconds?: number;
+};
+
+export type PiOAuthPrompt = {
+  message: string;
+  placeholder?: string;
+  allowEmpty?: boolean;
+};
+
+export type PiOAuthSelectPrompt = {
+  message: string;
+  options: Array<{ id: string; label: string }>;
+};
+
+export type PiOAuthLoginCallbacks = {
+  onAuth(info: PiOAuthAuthInfo): void;
+  onDeviceCode(info: PiOAuthDeviceCodeInfo): void;
+  onPrompt(prompt: PiOAuthPrompt): Promise<string>;
+  onProgress?(message: string): void;
+  onManualCodeInput?(): Promise<string>;
+  onSelect(prompt: PiOAuthSelectPrompt): Promise<string | undefined>;
+  signal?: AbortSignal;
+};
+
+export type PiAuthActionResult = {
+  providerId: string;
+  message: string;
+};
+
 export type PiSessionStats = {
   sessionFile?: string;
   sessionId?: string;

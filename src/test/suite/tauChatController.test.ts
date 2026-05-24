@@ -1374,6 +1374,19 @@ suite('TauChatController', () => {
     harness.controller.dispose();
   });
 
+  test('login slash command opens Settings Login without prompting Pi', async () => {
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client]);
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/login' });
+    await flushPromises();
+
+    assert.strictEqual(lastState(harness).chatFace, 'settings');
+    assert.strictEqual(lastState(harness).settingsSection, 'login');
+    assert.deepStrictEqual(client.prompts, []);
+    harness.controller.dispose();
+  });
+
   test('supported built-in slash commands route to Pi commands', async () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);
