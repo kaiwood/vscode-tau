@@ -46,6 +46,40 @@ export function getAnsiLineBackground(value: string, outputColors: boolean): str
   return hasVisibleText(value.slice(index)) ? effectiveBackground(style) : undefined;
 }
 
+export function getAnsiFullWidgetBackground(lines: readonly string[], outputColors: boolean): string | undefined {
+  if (!outputColors) {
+    return undefined;
+  }
+
+  let widgetBackground: string | undefined;
+  let hasVisibleLine = false;
+
+  for (const line of lines) {
+    const lineBackground = getUniformAnsiLineBackground(line);
+
+    if (!lineBackground.hasVisibleText) {
+      continue;
+    }
+
+    if (!lineBackground.background) {
+      return undefined;
+    }
+
+    hasVisibleLine = true;
+
+    if (widgetBackground === undefined) {
+      widgetBackground = lineBackground.background;
+      continue;
+    }
+
+    if (widgetBackground !== lineBackground.background) {
+      return undefined;
+    }
+  }
+
+  return hasVisibleLine ? widgetBackground : undefined;
+}
+
 export function renderAnsiTextInto(element: HTMLElement, value: string, outputColors: boolean, options: AnsiRenderOptions = {}): void {
   element.replaceChildren();
 
@@ -86,6 +120,66 @@ function appendAnsiText(element: HTMLElement, value: string, style: AnsiStyle, o
   span.textContent = value;
   applyAnsiStyle(span, style, options);
   element.append(span);
+}
+
+function getUniformAnsiLineBackground(value: string): { hasVisibleText: boolean; background: string | undefined } {
+  const csiPattern = /\x1b\[([0-?]*)([ -/]*)?([@-~])/g;
+  let style: AnsiStyle = {};
+  let index = 0;
+  let match: RegExpExecArray | null;
+  let lineBackground: string | undefined;
+  let hasVisible = false;
+
+  while ((match = csiPattern.exec(value)) !== null) {
+    const segmentBackground = visibleSegmentBackground(value.slice(index, match.index), style);
+
+    if (segmentBackground.visible) {
+      hasVisible = true;
+
+      if (!segmentBackground.background) {
+        return { hasVisibleText: true, background: undefined };
+      }
+
+      if (lineBackground === undefined) {
+        lineBackground = segmentBackground.background;
+      } else if (lineBackground !== segmentBackground.background) {
+        return { hasVisibleText: true, background: undefined };
+      }
+    }
+
+    if (match[3] === 'm') {
+      style = applyAnsiSgr(match[1], style);
+    }
+
+    index = match.index + match[0].length;
+  }
+
+  const trailingBackground = visibleSegmentBackground(value.slice(index), style);
+
+  if (trailingBackground.visible) {
+    hasVisible = true;
+
+    if (!trailingBackground.background) {
+      return { hasVisibleText: true, background: undefined };
+    }
+
+    if (lineBackground === undefined) {
+      lineBackground = trailingBackground.background;
+    } else if (lineBackground !== trailingBackground.background) {
+      return { hasVisibleText: true, background: undefined };
+    }
+  }
+
+  return { hasVisibleText: hasVisible, background: lineBackground };
+}
+
+function visibleSegmentBackground(value: string, style: AnsiStyle): { visible: boolean; background: string | undefined } {
+  const background = effectiveBackground(style);
+
+  return {
+    visible: background ? hasVisibleText(value) : hasNonWhitespaceText(value),
+    background
+  };
 }
 
 function applyAnsiSgr(parameters: string, current: AnsiStyle): AnsiStyle {
@@ -233,6 +327,10 @@ function effectiveBackground(style: AnsiStyle): string | undefined {
 
 function hasVisibleText(value: string): boolean {
   return stripAnsiSequences(value).length > 0;
+}
+
+function hasNonWhitespaceText(value: string): boolean {
+  return stripAnsiSequences(value).trim().length > 0;
 }
 
 function isEmptyAnsiStyle(style: AnsiStyle): boolean {

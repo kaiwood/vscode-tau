@@ -263,6 +263,31 @@
     }
     return hasVisibleText(value.slice(index)) ? effectiveBackground(style) : void 0;
   }
+  function getAnsiFullWidgetBackground(lines, outputColors) {
+    if (!outputColors) {
+      return void 0;
+    }
+    let widgetBackground;
+    let hasVisibleLine = false;
+    for (const line of lines) {
+      const lineBackground = getUniformAnsiLineBackground(line);
+      if (!lineBackground.hasVisibleText) {
+        continue;
+      }
+      if (!lineBackground.background) {
+        return void 0;
+      }
+      hasVisibleLine = true;
+      if (widgetBackground === void 0) {
+        widgetBackground = lineBackground.background;
+        continue;
+      }
+      if (widgetBackground !== lineBackground.background) {
+        return void 0;
+      }
+    }
+    return hasVisibleLine ? widgetBackground : void 0;
+  }
   function renderAnsiTextInto(element, value, outputColors, options = {}) {
     element.replaceChildren();
     if (!outputColors) {
@@ -294,6 +319,52 @@
     span.textContent = value;
     applyAnsiStyle(span, style, options);
     element.append(span);
+  }
+  function getUniformAnsiLineBackground(value) {
+    const csiPattern = /\x1b\[([0-?]*)([ -/]*)?([@-~])/g;
+    let style = {};
+    let index = 0;
+    let match;
+    let lineBackground;
+    let hasVisible = false;
+    while ((match = csiPattern.exec(value)) !== null) {
+      const segmentBackground = visibleSegmentBackground(value.slice(index, match.index), style);
+      if (segmentBackground.visible) {
+        hasVisible = true;
+        if (!segmentBackground.background) {
+          return { hasVisibleText: true, background: void 0 };
+        }
+        if (lineBackground === void 0) {
+          lineBackground = segmentBackground.background;
+        } else if (lineBackground !== segmentBackground.background) {
+          return { hasVisibleText: true, background: void 0 };
+        }
+      }
+      if (match[3] === "m") {
+        style = applyAnsiSgr(match[1], style);
+      }
+      index = match.index + match[0].length;
+    }
+    const trailingBackground = visibleSegmentBackground(value.slice(index), style);
+    if (trailingBackground.visible) {
+      hasVisible = true;
+      if (!trailingBackground.background) {
+        return { hasVisibleText: true, background: void 0 };
+      }
+      if (lineBackground === void 0) {
+        lineBackground = trailingBackground.background;
+      } else if (lineBackground !== trailingBackground.background) {
+        return { hasVisibleText: true, background: void 0 };
+      }
+    }
+    return { hasVisibleText: hasVisible, background: lineBackground };
+  }
+  function visibleSegmentBackground(value, style) {
+    const background = effectiveBackground(style);
+    return {
+      visible: background ? hasVisibleText(value) : hasNonWhitespaceText(value),
+      background
+    };
   }
   function applyAnsiSgr(parameters, current) {
     const codes = parseAnsiCodes(parameters);
@@ -411,6 +482,9 @@
   }
   function hasVisibleText(value) {
     return stripAnsiSequences(value).length > 0;
+  }
+  function hasNonWhitespaceText(value) {
+    return stripAnsiSequences(value).trim().length > 0;
   }
   function isEmptyAnsiStyle(style) {
     return !style.foreground && !style.background && !style.bold && !style.dim && !style.italic && !style.underline && !style.inverse && !style.strikethrough;
@@ -7282,10 +7356,16 @@ ${after}`;
       element.dataset.widgetKey = widget.key;
       element.setAttribute("aria-label", `Pi extension widget ${widget.key}`);
       const prepared = prepareCustomUiLines(widget.lines);
+      const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
+      const widgetBackground = getAnsiFullWidgetBackground(prepared.lines, backgroundColorsEnabled && state.outputColors);
+      if (widgetBackground) {
+        element.classList.add("extension-widget--ansi-background");
+        element.style.backgroundColor = widgetBackground;
+        element.style.borderColor = widgetBackground;
+      }
       for (const line of prepared.lines) {
         const lineElement = document.createElement("div");
         lineElement.className = "extension-widget__line";
-        const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
         const background = backgroundColorsEnabled ? getAnsiLineBackground(line, state.outputColors) : void 0;
         if (background) {
           lineElement.classList.add("extension-widget__line--ansi-background");

@@ -1,6 +1,6 @@
 import { configureCodeHighlighting, handleCodeHighlightMessage, watchCodeHighlightThemeChanges } from './codeHighlighting';
 import { prepareCustomUiLines } from './customUI/customUi';
-import { getAnsiLineBackground, renderAnsiTextInto } from './messages/ansi';
+import { getAnsiFullWidgetBackground, getAnsiLineBackground, renderAnsiTextInto } from './messages/ansi';
 import { configureMarkdownImageRendering, handleMarkdownImageMessage } from './messages/markdown';
 import { ComposerController } from './composer/composer';
 import { CustomUiController } from './customUI/customUi';
@@ -576,10 +576,18 @@ function renderExtensionWidgetContainer(container: HTMLElement, widgets: Webview
     element.setAttribute('aria-label', `Pi extension widget ${widget.key}`);
 
     const prepared = prepareCustomUiLines(widget.lines);
+    const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
+    const widgetBackground = getAnsiFullWidgetBackground(prepared.lines, backgroundColorsEnabled && state.outputColors);
+
+    if (widgetBackground) {
+      element.classList.add('extension-widget--ansi-background');
+      element.style.backgroundColor = widgetBackground;
+      element.style.borderColor = widgetBackground;
+    }
+
     for (const line of prepared.lines) {
       const lineElement = document.createElement('div');
       lineElement.className = 'extension-widget__line';
-      const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
       const background = backgroundColorsEnabled ? getAnsiLineBackground(line, state.outputColors) : undefined;
       if (background) {
         lineElement.classList.add('extension-widget__line--ansi-background');

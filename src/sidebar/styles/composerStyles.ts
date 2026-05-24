@@ -66,6 +66,10 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       line-height: 1.35;
     }
 
+    .extension-widget--ansi-background {
+      box-shadow: none;
+    }
+
     .extension-widget__line {
       width: 100%;
       min-width: 0;
