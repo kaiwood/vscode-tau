@@ -86,6 +86,10 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       pointer-events: auto;
     }
 
+    .tau-view--has-extension-widgets-above .messages {
+      padding-bottom: calc(14px + 1lh);
+    }
+
     .sessions,
     .session-tree {
       z-index: var(--tau-z-raised);

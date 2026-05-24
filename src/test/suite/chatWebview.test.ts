@@ -316,6 +316,7 @@ suite('Chat webview helpers', () => {
     assert.ok(html.includes('--tau-lane-transition-duration: 190ms'));
     assert.ok(html.includes('--tau-lane-transition-easing: cubic-bezier(0.16, 1, 0.3, 1)'));
     assert.ok(html.includes('transition: transform var(--tau-lane-transition-duration) var(--tau-lane-transition-easing);'));
+    assert.match(html, /\.tau-view--has-extension-widgets-above \.messages \{\n      padding-bottom: calc\(14px \+ 1lh\);/);
     assert.ok(html.includes('class="settings-surface tau-chat-surface__face tau-chat-surface__settings"'));
     assert.ok(!html.includes('translate3d(200%, 0, 0)'));
     assert.ok(!html.includes('translate3d(-200%, 0, 0)'));
