@@ -17,6 +17,10 @@ type AnsiStyle = {
   strikethrough?: boolean;
 };
 
+type AnsiRenderOptions = {
+  suppressBackgrounds?: boolean;
+};
+
 export function getAnsiLineBackground(value: string, outputColors: boolean): string | undefined {
   if (!outputColors) {
     return undefined;
@@ -42,7 +46,7 @@ export function getAnsiLineBackground(value: string, outputColors: boolean): str
   return hasVisibleText(value.slice(index)) ? effectiveBackground(style) : undefined;
 }
 
-export function renderAnsiTextInto(element: HTMLElement, value: string, outputColors: boolean): void {
+export function renderAnsiTextInto(element: HTMLElement, value: string, outputColors: boolean, options: AnsiRenderOptions = {}): void {
   element.replaceChildren();
 
   if (!outputColors) {
@@ -56,7 +60,7 @@ export function renderAnsiTextInto(element: HTMLElement, value: string, outputCo
   let match: RegExpExecArray | null;
 
   while ((match = csiPattern.exec(value)) !== null) {
-    appendAnsiText(element, value.slice(index, match.index), style);
+    appendAnsiText(element, value.slice(index, match.index), style, options);
 
     if (match[3] === 'm') {
       style = applyAnsiSgr(match[1], style);
@@ -65,10 +69,10 @@ export function renderAnsiTextInto(element: HTMLElement, value: string, outputCo
     index = match.index + match[0].length;
   }
 
-  appendAnsiText(element, value.slice(index), style);
+  appendAnsiText(element, value.slice(index), style, options);
 }
 
-function appendAnsiText(element: HTMLElement, value: string, style: AnsiStyle): void {
+function appendAnsiText(element: HTMLElement, value: string, style: AnsiStyle, options: AnsiRenderOptions): void {
   if (!value) {
     return;
   }
@@ -80,7 +84,7 @@ function appendAnsiText(element: HTMLElement, value: string, style: AnsiStyle): 
 
   const span = document.createElement('span');
   span.textContent = value;
-  applyAnsiStyle(span, style);
+  applyAnsiStyle(span, style, options);
   element.append(span);
 }
 
@@ -179,7 +183,7 @@ function parseAnsiCodes(parameters: string): number[] {
     .filter((part) => Number.isInteger(part));
 }
 
-function applyAnsiStyle(element: HTMLElement, style: AnsiStyle): void {
+function applyAnsiStyle(element: HTMLElement, style: AnsiStyle, options: AnsiRenderOptions): void {
   const foreground = effectiveForeground(style);
   const background = effectiveBackground(style);
 
@@ -189,10 +193,12 @@ function applyAnsiStyle(element: HTMLElement, style: AnsiStyle): void {
     element.style.color = 'var(--tau-code-background, var(--vscode-sideBar-background))';
   }
 
-  if (background) {
-    element.style.backgroundColor = background;
-  } else if (style.inverse && foreground) {
-    element.style.backgroundColor = foreground;
+  if (!options.suppressBackgrounds) {
+    if (background) {
+      element.style.backgroundColor = background;
+    } else if (style.inverse && foreground) {
+      element.style.backgroundColor = foreground;
+    }
   }
 
   if (style.bold) {

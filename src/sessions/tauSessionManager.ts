@@ -5,6 +5,7 @@ import type { ExtensionEditorHostMessage, ExtensionUi } from '../extensionUi/typ
 import type { TauChatControllerOptions } from '../controller/types';
 import type { TauChatSessionMetaSnapshot } from '../metadata/types';
 import type { PiPromptContextInput } from '../prompt/types';
+import type { SettingValue, TauSettingId } from '../settings/settingsRegistry';
 import type { WebviewMessage, WebviewMessagePatch, WebviewSessionItem, WebviewStateMessage } from '../webviewProtocol/types';
 
 export type TauSessionManagerOptions = TauChatControllerOptions & {
@@ -21,6 +22,17 @@ export type TauSessionManagerOptions = TauChatControllerOptions & {
 
 type OpenSessionStatus = 'idle' | 'running' | 'done' | 'error';
 
+type ExtensionSettings = {
+  aboveWidgetsEnabled: boolean;
+  belowWidgetsEnabled: boolean;
+  statusBarEnabled: boolean;
+  backgroundColorsEnabled: boolean;
+};
+
+const extensionAboveWidgetSettingId = 'tau.extensions.aboveWidgetsEnabled';
+const extensionBelowWidgetSettingId = 'tau.extensions.belowWidgetsEnabled';
+const extensionStatusSettingId = 'tau.extensions.statusBarEnabled';
+const extensionBackgroundColorSettingId = 'tau.extensions.backgroundColorsEnabled';
 const inactiveSessionDisposeAfterMs = 30 * 60 * 1000;
 const maxInactiveOpenSessions = 3;
 
@@ -58,6 +70,12 @@ export class TauSessionManager {
   private composerPasteRevision = 0;
   private extensionEditorSequence = 0;
   private pendingExtensionEditor: PendingExtensionEditor | undefined;
+  private readonly extensionSettings: ExtensionSettings = {
+    aboveWidgetsEnabled: true,
+    belowWidgetsEnabled: true,
+    statusBarEnabled: true,
+    backgroundColorsEnabled: true
+  };
 
   public constructor(private readonly options: TauSessionManagerOptions) {
     this.createSession({ initial: true });
@@ -247,6 +265,87 @@ export class TauSessionManager {
     active.controller.restartForWorkspaceChange(cwd, sessionFile);
   }
 
+  private getTauSettingValues(): Partial<Record<TauSettingId, SettingValue>> {
+    return {
+      ...(this.options.getTauSettingValues?.() ?? {}),
+      [extensionAboveWidgetSettingId]: this.extensionSettings.aboveWidgetsEnabled,
+      [extensionBelowWidgetSettingId]: this.extensionSettings.belowWidgetsEnabled,
+      [extensionStatusSettingId]: this.extensionSettings.statusBarEnabled,
+      [extensionBackgroundColorSettingId]: this.extensionSettings.backgroundColorsEnabled
+    };
+  }
+
+  private async updateTauSetting(settingId: TauSettingId, value: SettingValue): Promise<void> {
+    if (this.updateExtensionSetting(settingId, value)) {
+      return;
+    }
+
+    if (!this.options.updateTauSetting) {
+      throw new Error('Tau settings are not available in this session.');
+    }
+
+    await this.options.updateTauSetting(settingId, value);
+  }
+
+  private updateExtensionSetting(settingId: TauSettingId, value: SettingValue): boolean {
+    if (typeof value !== 'boolean') {
+      return false;
+    }
+
+    if (settingId === extensionAboveWidgetSettingId) {
+      this.extensionSettings.aboveWidgetsEnabled = value;
+      if (!value) {
+        this.clearAllExtensionWidgets('aboveEditor');
+      }
+      return true;
+    }
+
+    if (settingId === extensionBelowWidgetSettingId) {
+      this.extensionSettings.belowWidgetsEnabled = value;
+      if (!value) {
+        this.clearAllExtensionWidgets('belowEditor');
+      }
+      return true;
+    }
+
+    if (settingId === extensionStatusSettingId) {
+      this.extensionSettings.statusBarEnabled = value;
+      if (!value) {
+        this.clearAllExtensionStatuses();
+      }
+      return true;
+    }
+
+    if (settingId === extensionBackgroundColorSettingId) {
+      this.extensionSettings.backgroundColorsEnabled = value;
+      return true;
+    }
+
+    return false;
+  }
+
+  private clearAllExtensionWidgets(placement: 'aboveEditor' | 'belowEditor'): void {
+    for (const session of this.sessions) {
+      session.extensionWidgetHost.clearWidgets(placement);
+    }
+  }
+
+  private clearAllExtensionStatuses(): void {
+    for (const session of this.sessions) {
+      session.extensionStatuses.clear();
+    }
+  }
+
+  private isExtensionWidgetPlacementEnabled(placement: 'aboveEditor' | 'belowEditor' | undefined): boolean {
+    return placement === 'belowEditor'
+      ? this.extensionSettings.belowWidgetsEnabled
+      : this.extensionSettings.aboveWidgetsEnabled;
+  }
+
+  private filterEnabledExtensionWidgets(widgets: WebviewStateMessage['extensionWidgets']): WebviewStateMessage['extensionWidgets'] {
+    return widgets.filter((widget) => this.isExtensionWidgetPlacementEnabled(widget.placement));
+  }
+
   private createSession(options: { initial?: boolean; activate?: boolean; sessionFile?: string } = {}): OpenSession {
     const previousActive = this.activeSessionId ? this.active() : undefined;
 
@@ -264,6 +363,8 @@ export class TauSessionManager {
       controller: new TauChatController({
         ...this.options,
         extensionUi,
+        getTauSettingValues: () => this.getTauSettingValues(),
+        updateTauSetting: (settingId, value) => this.updateTauSetting(settingId, value),
         initialSessionFile,
         initialSessionMeta: this.options.initialSessionMeta,
         renameOpenSession: (sessionPath, name) => this.renameOpenSessionFrom(id, sessionPath, name),
@@ -388,9 +489,23 @@ export class TauSessionManager {
         : baseUi?.custom
           ? { custom: baseUi.custom }
           : {}),
-      setStatus: (key, text) => this.setExtensionStatus(id, key, text),
-      clearStatuses: () => this.clearExtensionStatuses(id),
-      setWidget: (key, content, options) => extensionWidgetHost.setWidget(key, content, options),
+      setStatus: (key, text) => {
+        if (this.extensionSettings.statusBarEnabled) {
+          this.setExtensionStatus(id, key, text);
+        }
+      },
+      clearStatuses: () => {
+        if (this.extensionSettings.statusBarEnabled) {
+          this.clearExtensionStatuses(id);
+        }
+      },
+      setWidget: (key, content, options) => {
+        if (content === undefined || this.isExtensionWidgetPlacementEnabled(options?.placement)) {
+          extensionWidgetHost.setWidget(key, content, options);
+        } else {
+          extensionWidgetHost.clearWidget(key);
+        }
+      },
       clearWidgets: () => extensionWidgetHost.clearWidgets(),
       editor: (title, prefill) => this.openExtensionEditorForSession(id, title, prefill),
       setEditorText: (text) => this.setEditorTextForSession(id, text),
@@ -639,8 +754,8 @@ export class TauSessionManager {
       ...(composerPaste ? { composerPaste } : {}),
       sessions: augmentSessions(sessions ?? [], this.sessions, this.activeSessionId),
       currentSessionName: state.currentSessionName || active.title,
-      extensionStatus: formatExtensionStatuses(active.extensionStatuses),
-      extensionWidgets: active.extensionWidgetHost.getEntries(),
+      extensionStatus: this.extensionSettings.statusBarEnabled ? formatExtensionStatuses(active.extensionStatuses) : [],
+      extensionWidgets: this.filterEnabledExtensionWidgets(active.extensionWidgetHost.getEntries()),
       outputColors: this.options.getOutputColors?.() ?? true,
       animationsEnabled: this.options.getAnimationsEnabled?.() ?? true,
       customUiTheme: this.options.getCustomUiTheme?.() ?? 'default'

@@ -530,8 +530,12 @@ function render(): void {
 }
 
 function syncExtensionWidgets(hiddenBySurface: boolean): void {
-  const aboveWidgets = hiddenBySurface ? [] : state.extensionWidgets.filter((widget) => widget.placement === 'aboveEditor');
-  const belowWidgets = hiddenBySurface ? [] : state.extensionWidgets.filter((widget) => widget.placement === 'belowEditor');
+  const aboveWidgets = hiddenBySurface || !areExtensionAboveWidgetsEnabled()
+    ? []
+    : state.extensionWidgets.filter((widget) => widget.placement === 'aboveEditor');
+  const belowWidgets = hiddenBySurface || !areExtensionBelowWidgetsEnabled()
+    ? []
+    : state.extensionWidgets.filter((widget) => widget.placement === 'belowEditor');
   const placeBusySubmitOnTopWidget = !hiddenBySurface && aboveWidgets.length > 0;
 
   const activeKeys = new Set([...aboveWidgets, ...belowWidgets].map((widget) => widget.key));
@@ -575,12 +579,13 @@ function renderExtensionWidgetContainer(container: HTMLElement, widgets: Webview
     for (const line of prepared.lines) {
       const lineElement = document.createElement('div');
       lineElement.className = 'extension-widget__line';
-      const background = getAnsiLineBackground(line, state.outputColors);
+      const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
+      const background = backgroundColorsEnabled ? getAnsiLineBackground(line, state.outputColors) : undefined;
       if (background) {
         lineElement.classList.add('extension-widget__line--ansi-background');
         lineElement.style.backgroundColor = background;
       }
-      renderAnsiTextInto(lineElement, line, state.outputColors);
+      renderAnsiTextInto(lineElement, line, state.outputColors, { suppressBackgrounds: !backgroundColorsEnabled });
       element.append(lineElement);
     }
 
@@ -664,11 +669,30 @@ function cssEscape(value: string): string {
     : value.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
 }
 
+function areExtensionAboveWidgetsEnabled(): boolean {
+  return state.settings.values['tau.extensions.aboveWidgetsEnabled'] !== false;
+}
+
+function areExtensionBelowWidgetsEnabled(): boolean {
+  return state.settings.values['tau.extensions.belowWidgetsEnabled'] !== false;
+}
+
+function areExtensionStatusBarEnabled(): boolean {
+  return state.settings.values['tau.extensions.statusBarEnabled'] !== false;
+}
+
+function areExtensionBackgroundColorsEnabled(): boolean {
+  return state.settings.values['tau.extensions.backgroundColorsEnabled'] !== false;
+}
+
 function syncExtensionStatus(hiddenBySurface: boolean): void {
-  const text = state.extensionStatus
-    .map((entry) => entry.text.trim())
-    .filter(Boolean)
-    .join('  •  ');
+  const statusEnabled = areExtensionStatusBarEnabled();
+  const text = statusEnabled
+    ? state.extensionStatus
+      .map((entry) => entry.text.trim())
+      .filter(Boolean)
+      .join('  •  ')
+    : '';
   const hidden = hiddenBySurface || text.length === 0;
 
   composerStatusTextElement.textContent = text;

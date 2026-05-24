@@ -116,6 +116,121 @@ suite('TauSessionManager', () => {
     harness.manager.dispose();
   });
 
+  test('clears and ignores above extension widgets when disabled in settings', async () => {
+    const harness = createManagerHarness([new FakePiClient()]);
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'hello' });
+
+    const extensionUi = harness.clientOptions[0].extensionUi;
+    assert.ok(extensionUi);
+
+    let disposed = false;
+    extensionUi.setWidget?.('above', () => ({
+      render: () => ['above rendered'],
+      invalidate: () => undefined,
+      dispose: () => { disposed = true; }
+    }));
+    extensionUi.setWidget?.('below', ['Below'], { placement: 'belowEditor' });
+    await flushPromises();
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'above', placement: 'aboveEditor', lines: ['above rendered'] },
+      { key: 'below', placement: 'belowEditor', lines: ['Below'] }
+    ]);
+
+    await harness.manager.handleWebviewMessage({
+      type: 'updateSetting',
+      settingId: 'tau.extensions.aboveWidgetsEnabled',
+      value: false
+    });
+
+    assert.strictEqual(disposed, true);
+    assert.strictEqual(lastState(harness).settings?.values['tau.extensions.aboveWidgetsEnabled'], false);
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'below', placement: 'belowEditor', lines: ['Below'] }
+    ]);
+
+    let renderedWhileDisabled = false;
+    extensionUi.setWidget?.('ignored-above', () => ({
+      render: () => {
+        renderedWhileDisabled = true;
+        return ['ignored'];
+      },
+      invalidate: () => undefined
+    }));
+    extensionUi.setWidget?.('ignored-lines', ['ignored']);
+    extensionUi.setWidget?.('below-2', ['Still enabled'], { placement: 'belowEditor' });
+    await flushPromises();
+
+    assert.strictEqual(renderedWhileDisabled, false);
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'below', placement: 'belowEditor', lines: ['Below'] },
+      { key: 'below-2', placement: 'belowEditor', lines: ['Still enabled'] }
+    ]);
+    harness.manager.dispose();
+  });
+
+  test('clears and ignores below extension widgets when disabled in settings', async () => {
+    const harness = createManagerHarness([new FakePiClient()]);
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'hello' });
+
+    const extensionUi = harness.clientOptions[0].extensionUi;
+    assert.ok(extensionUi);
+
+    extensionUi.setWidget?.('above', ['Above']);
+    extensionUi.setWidget?.('below', ['Below'], { placement: 'belowEditor' });
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'above', placement: 'aboveEditor', lines: ['Above'] },
+      { key: 'below', placement: 'belowEditor', lines: ['Below'] }
+    ]);
+
+    await harness.manager.handleWebviewMessage({
+      type: 'updateSetting',
+      settingId: 'tau.extensions.belowWidgetsEnabled',
+      value: false
+    });
+
+    assert.strictEqual(lastState(harness).settings?.values['tau.extensions.belowWidgetsEnabled'], false);
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'above', placement: 'aboveEditor', lines: ['Above'] }
+    ]);
+
+    extensionUi.setWidget?.('ignored-below', ['Ignored'], { placement: 'belowEditor' });
+    extensionUi.setWidget?.('above-2', ['Still enabled']);
+    assert.deepStrictEqual(lastState(harness).extensionWidgets, [
+      { key: 'above', placement: 'aboveEditor', lines: ['Above'] },
+      { key: 'above-2', placement: 'aboveEditor', lines: ['Still enabled'] }
+    ]);
+    harness.manager.dispose();
+  });
+
+  test('clears and ignores extension status when disabled in settings', async () => {
+    const harness = createManagerHarness([new FakePiClient()]);
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'hello' });
+
+    const extensionUi = harness.clientOptions[0].extensionUi;
+    assert.ok(extensionUi);
+
+    extensionUi.setStatus?.('plan', 'Planning');
+    assert.deepStrictEqual(lastState(harness).extensionStatus, [
+      { key: 'plan', text: 'Planning' }
+    ]);
+
+    await harness.manager.handleWebviewMessage({
+      type: 'updateSetting',
+      settingId: 'tau.extensions.statusBarEnabled',
+      value: false
+    });
+
+    assert.strictEqual(lastState(harness).settings?.values['tau.extensions.statusBarEnabled'], false);
+    assert.deepStrictEqual(lastState(harness).extensionStatus, []);
+
+    extensionUi.setStatus?.('ignored', 'Ignored');
+    assert.deepStrictEqual(lastState(harness).extensionStatus, []);
+    harness.manager.dispose();
+  });
+
   test('sets composer text from the active session extension UI', async () => {
     const harness = createManagerHarness([new FakePiClient()]);
 

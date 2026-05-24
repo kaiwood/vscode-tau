@@ -47,7 +47,7 @@ export class ExtensionWidgetHost {
     }
 
     if (content === undefined) {
-      this.clearWidget(normalizedKey);
+      this.clearWidgetByKey(normalizedKey);
       return;
     }
 
@@ -105,17 +105,25 @@ export class ExtensionWidgetHost {
     }
   }
 
-  public clearWidgets(): void {
-    if (this.widgets.size === 0) {
+  public clearWidgets(placement?: ExtensionWidgetPlacement): void {
+    const widgets = placement
+      ? [...this.widgets.values()].filter((widget) => widget.placement === placement)
+      : [...this.widgets.values()];
+
+    if (widgets.length === 0) {
       return;
     }
 
-    for (const widget of this.widgets.values()) {
+    for (const widget of widgets) {
       this.disposeWidget(widget);
+      this.widgets.delete(widget.key);
     }
 
-    this.widgets.clear();
     this.options.onChange();
+  }
+
+  public clearWidget(key: string): void {
+    this.clearWidgetByKey(key.trim());
   }
 
   public getEntries(): ExtensionWidgetEntry[] {
@@ -162,12 +170,12 @@ export class ExtensionWidgetHost {
         const current = this.widgets.get(widget.key);
 
         if (current?.version === version) {
-          this.clearWidget(widget.key);
+          this.clearWidgetByKey(widget.key);
         }
       });
   }
 
-  private clearWidget(key: string): void {
+  private clearWidgetByKey(key: string): void {
     const widget = this.widgets.get(key);
 
     if (!widget) {
@@ -204,7 +212,7 @@ export class ExtensionWidgetHost {
       this.options.onChange();
     } catch (error) {
       this.options.notify(`Pi extension widget render failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
-      this.clearWidget(key);
+      this.clearWidgetByKey(key);
     }
   }
 

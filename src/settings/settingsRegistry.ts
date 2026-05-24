@@ -3,6 +3,10 @@ export type TauSettingId =
   | 'tau.animationsEnabled'
   | 'tau.showWelcome'
   | 'tau.customUiTheme'
+  | 'tau.extensions.aboveWidgetsEnabled'
+  | 'tau.extensions.belowWidgetsEnabled'
+  | 'tau.extensions.statusBarEnabled'
+  | 'tau.extensions.backgroundColorsEnabled'
   | 'tau.blockHttpsImages'
   | 'tau.confirmSessionDeletion'
   | 'tau.rejectEditWriteOutsideWorkspace'
@@ -23,7 +27,7 @@ export type PiSettingId =
   | 'enabledModels'
   | 'enableSkillCommands';
 
-export type TauSettingsSection = 'appearance' | 'login' | 'runtime' | 'workspaceSafety' | 'advanced';
+export type TauSettingsSection = 'appearance' | 'login' | 'extensions' | 'runtime' | 'workspaceSafety' | 'advanced';
 export type SettingsOwner = 'tau' | 'pi';
 export type SettingControl = 'toggle' | 'select' | 'text' | 'readonlyList';
 export type SettingValue = boolean | string | string[];
@@ -94,6 +98,13 @@ export const settingsSections = [
     description: 'Tau-owned presentation controls for the sidebar and Pi extension UI.'
   },
   {
+    id: 'extensions',
+    label: 'Extensions',
+    eyebrow: 'Pi extensions',
+    title: 'Extensions',
+    description: 'Sidebar-only controls for Pi extension surfaces in Tau.'
+  },
+  {
     id: 'runtime',
     label: 'Runtime',
     eyebrow: 'Pi engine',
@@ -157,6 +168,50 @@ export const settingDefinitions = [
     control: 'select',
     options: customUiThemeOptions,
     defaultValue: 'default',
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'tau.extensions.aboveWidgetsEnabled',
+    owner: 'tau',
+    section: 'extensions',
+    label: 'Enable above widgets',
+    description: 'Show Pi extension widgets above the composer.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'Sidebar-only setting; turning this off clears current above widgets.',
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'tau.extensions.belowWidgetsEnabled',
+    owner: 'tau',
+    section: 'extensions',
+    label: 'Enable below widgets',
+    description: 'Show Pi extension widgets below the composer.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'Sidebar-only setting; turning this off clears current below widgets.',
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'tau.extensions.statusBarEnabled',
+    owner: 'tau',
+    section: 'extensions',
+    label: 'Enable status bar',
+    description: 'Show one-line Pi extension status updates below the composer.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'Sidebar-only setting; turning this off clears current statuses.',
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'tau.extensions.backgroundColorsEnabled',
+    owner: 'tau',
+    section: 'extensions',
+    label: 'Enable background colors',
+    description: 'Render background colors sent by Pi extension widgets.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'Foreground colors still follow Output colors.',
     liveBehavior: 'immediate'
   },
   {

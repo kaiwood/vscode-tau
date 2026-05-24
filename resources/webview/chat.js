@@ -263,7 +263,7 @@
     }
     return hasVisibleText(value.slice(index)) ? effectiveBackground(style) : void 0;
   }
-  function renderAnsiTextInto(element, value, outputColors) {
+  function renderAnsiTextInto(element, value, outputColors, options = {}) {
     element.replaceChildren();
     if (!outputColors) {
       element.textContent = stripAnsiSequences(value);
@@ -274,15 +274,15 @@
     let index = 0;
     let match;
     while ((match = csiPattern.exec(value)) !== null) {
-      appendAnsiText(element, value.slice(index, match.index), style);
+      appendAnsiText(element, value.slice(index, match.index), style, options);
       if (match[3] === "m") {
         style = applyAnsiSgr(match[1], style);
       }
       index = match.index + match[0].length;
     }
-    appendAnsiText(element, value.slice(index), style);
+    appendAnsiText(element, value.slice(index), style, options);
   }
-  function appendAnsiText(element, value, style) {
+  function appendAnsiText(element, value, style, options) {
     if (!value) {
       return;
     }
@@ -292,7 +292,7 @@
     }
     const span = document.createElement("span");
     span.textContent = value;
-    applyAnsiStyle(span, style);
+    applyAnsiStyle(span, style, options);
     element.append(span);
   }
   function applyAnsiSgr(parameters, current) {
@@ -371,7 +371,7 @@
     }
     return parameters.split(";").map((part) => part === "" ? 0 : Number(part)).filter((part) => Number.isInteger(part));
   }
-  function applyAnsiStyle(element, style) {
+  function applyAnsiStyle(element, style, options) {
     const foreground = effectiveForeground(style);
     const background = effectiveBackground(style);
     if (foreground) {
@@ -379,10 +379,12 @@
     } else if (style.inverse && background) {
       element.style.color = "var(--tau-code-background, var(--vscode-sideBar-background))";
     }
-    if (background) {
-      element.style.backgroundColor = background;
-    } else if (style.inverse && foreground) {
-      element.style.backgroundColor = foreground;
+    if (!options.suppressBackgrounds) {
+      if (background) {
+        element.style.backgroundColor = background;
+      } else if (style.inverse && foreground) {
+        element.style.backgroundColor = foreground;
+      }
     }
     if (style.bold) {
       element.style.fontWeight = "700";
@@ -3884,6 +3886,13 @@ ${after}`;
       description: "Tau-owned presentation controls for the sidebar and Pi extension UI."
     },
     {
+      id: "extensions",
+      label: "Extensions",
+      eyebrow: "Pi extensions",
+      title: "Extensions",
+      description: "Sidebar-only controls for Pi extension surfaces in Tau."
+    },
+    {
       id: "runtime",
       label: "Runtime",
       eyebrow: "Pi engine",
@@ -3946,6 +3955,50 @@ ${after}`;
       control: "select",
       options: customUiThemeOptions,
       defaultValue: "default",
+      liveBehavior: "immediate"
+    },
+    {
+      id: "tau.extensions.aboveWidgetsEnabled",
+      owner: "tau",
+      section: "extensions",
+      label: "Enable above widgets",
+      description: "Show Pi extension widgets above the composer.",
+      control: "toggle",
+      defaultValue: true,
+      helper: "Sidebar-only setting; turning this off clears current above widgets.",
+      liveBehavior: "immediate"
+    },
+    {
+      id: "tau.extensions.belowWidgetsEnabled",
+      owner: "tau",
+      section: "extensions",
+      label: "Enable below widgets",
+      description: "Show Pi extension widgets below the composer.",
+      control: "toggle",
+      defaultValue: true,
+      helper: "Sidebar-only setting; turning this off clears current below widgets.",
+      liveBehavior: "immediate"
+    },
+    {
+      id: "tau.extensions.statusBarEnabled",
+      owner: "tau",
+      section: "extensions",
+      label: "Enable status bar",
+      description: "Show one-line Pi extension status updates below the composer.",
+      control: "toggle",
+      defaultValue: true,
+      helper: "Sidebar-only setting; turning this off clears current statuses.",
+      liveBehavior: "immediate"
+    },
+    {
+      id: "tau.extensions.backgroundColorsEnabled",
+      owner: "tau",
+      section: "extensions",
+      label: "Enable background colors",
+      description: "Render background colors sent by Pi extension widgets.",
+      control: "toggle",
+      defaultValue: true,
+      helper: "Foreground colors still follow Output colors.",
       liveBehavior: "immediate"
     },
     {
@@ -7195,8 +7248,8 @@ ${after}`;
     }
   }
   function syncExtensionWidgets(hiddenBySurface) {
-    const aboveWidgets = hiddenBySurface ? [] : state.extensionWidgets.filter((widget) => widget.placement === "aboveEditor");
-    const belowWidgets = hiddenBySurface ? [] : state.extensionWidgets.filter((widget) => widget.placement === "belowEditor");
+    const aboveWidgets = hiddenBySurface || !areExtensionAboveWidgetsEnabled() ? [] : state.extensionWidgets.filter((widget) => widget.placement === "aboveEditor");
+    const belowWidgets = hiddenBySurface || !areExtensionBelowWidgetsEnabled() ? [] : state.extensionWidgets.filter((widget) => widget.placement === "belowEditor");
     const placeBusySubmitOnTopWidget = !hiddenBySurface && aboveWidgets.length > 0;
     const activeKeys = new Set([...aboveWidgets, ...belowWidgets].map((widget) => widget.key));
     for (const key of widgetDimensionSignatures.keys()) {
@@ -7232,12 +7285,13 @@ ${after}`;
       for (const line of prepared.lines) {
         const lineElement = document.createElement("div");
         lineElement.className = "extension-widget__line";
-        const background = getAnsiLineBackground(line, state.outputColors);
+        const backgroundColorsEnabled = areExtensionBackgroundColorsEnabled();
+        const background = backgroundColorsEnabled ? getAnsiLineBackground(line, state.outputColors) : void 0;
         if (background) {
           lineElement.classList.add("extension-widget__line--ansi-background");
           lineElement.style.backgroundColor = background;
         }
-        renderAnsiTextInto(lineElement, line, state.outputColors);
+        renderAnsiTextInto(lineElement, line, state.outputColors, { suppressBackgrounds: !backgroundColorsEnabled });
         element.append(lineElement);
       }
       fragment.append(element);
@@ -7299,8 +7353,21 @@ ${after}`;
   function cssEscape(value) {
     return typeof CSS !== "undefined" && typeof CSS.escape === "function" ? CSS.escape(value) : value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
   }
+  function areExtensionAboveWidgetsEnabled() {
+    return state.settings.values["tau.extensions.aboveWidgetsEnabled"] !== false;
+  }
+  function areExtensionBelowWidgetsEnabled() {
+    return state.settings.values["tau.extensions.belowWidgetsEnabled"] !== false;
+  }
+  function areExtensionStatusBarEnabled() {
+    return state.settings.values["tau.extensions.statusBarEnabled"] !== false;
+  }
+  function areExtensionBackgroundColorsEnabled() {
+    return state.settings.values["tau.extensions.backgroundColorsEnabled"] !== false;
+  }
   function syncExtensionStatus(hiddenBySurface) {
-    const text = state.extensionStatus.map((entry) => entry.text.trim()).filter(Boolean).join("  \u2022  ");
+    const statusEnabled = areExtensionStatusBarEnabled();
+    const text = statusEnabled ? state.extensionStatus.map((entry) => entry.text.trim()).filter(Boolean).join("  \u2022  ") : "";
     const hidden = hiddenBySurface || text.length === 0;
     composerStatusTextElement.textContent = text;
     composerStatusElement.hidden = hidden;

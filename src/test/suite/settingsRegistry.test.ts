@@ -8,6 +8,10 @@ suite('Settings registry', () => {
       ['tau.outputColors', 'tau.animationsEnabled', 'tau.showWelcome', 'tau.customUiTheme']
     );
     assert.deepStrictEqual(
+      getSettingsForSection('extensions').map((setting) => setting.id),
+      ['tau.extensions.aboveWidgetsEnabled', 'tau.extensions.belowWidgetsEnabled', 'tau.extensions.statusBarEnabled', 'tau.extensions.backgroundColorsEnabled']
+    );
+    assert.deepStrictEqual(
       getSettingsForSection('runtime').map((setting) => setting.id),
       ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'compaction.enabled', 'retry.enabled', 'steeringMode', 'followUpMode']
     );
@@ -29,6 +33,8 @@ suite('Settings registry', () => {
     assert.strictEqual(normalizeSettingValue('tau.outputColors', true), true);
     assert.strictEqual(normalizeSettingValue('tau.outputColors', 'true'), undefined);
     assert.strictEqual(normalizeSettingValue('tau.showWelcome', false), false);
+    assert.strictEqual(normalizeSettingValue('tau.extensions.aboveWidgetsEnabled', false), false);
+    assert.strictEqual(normalizeSettingValue('tau.extensions.belowWidgetsEnabled', false), false);
     assert.strictEqual(normalizeSettingValue('tau.customUiTheme', 'matrix'), 'matrix');
     assert.strictEqual(normalizeSettingValue('tau.customUiTheme', 'random'), undefined);
     assert.strictEqual(normalizeSettingValue('enabledModels', ['gpt-*', ' claude-* '])?.toString(), 'gpt-*,claude-*');
