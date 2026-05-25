@@ -109,7 +109,7 @@ export const activityStyles = /* css */ `    .activity-list {
 
     .activity__body--compaction:not(.activity__body--expanded) {
       box-sizing: content-box;
-      max-height: calc(2 * 1.4em);
+      max-height: calc(3 * 1.4em);
     }
 
     .activity__body--expanded {
