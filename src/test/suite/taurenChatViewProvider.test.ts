@@ -3,7 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { promises as fs } from 'node:fs';
 import * as vscode from 'vscode';
-import { TauChatViewProvider, type PiClient } from '../../tauChatViewProvider';
+import { TaurenChatViewProvider, type PiClient } from '../../taurenChatViewProvider';
 import { initialWebviewState, parseWebviewStateMessage } from '../../webview/state';
 import type { WebviewStateMessage } from '../../webviewProtocol/types';
 import type {
@@ -18,7 +18,7 @@ type ProviderWithDeleteSession = {
   deleteSession(sessionPath: string, displayName: string): Promise<boolean>;
 };
 
-suite('TauChatViewProvider', () => {
+suite('TaurenChatViewProvider', () => {
   test('posts cached legacy model metadata and persists refreshed session metadata', async () => {
     const workspaceState = new FakeMemento({
       'tauren.cachedModelMeta': {
@@ -37,7 +37,7 @@ suite('TauChatViewProvider', () => {
       models: [{ provider: 'openai', id: 'live-model', name: 'Live Model', reasoning: true }],
       stats: { contextUsage: { tokens: 60, contextWindow: 100, percent: 60 } }
     });
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => client,
       workspaceState,
@@ -80,7 +80,7 @@ suite('TauChatViewProvider', () => {
   });
 
   test('ignores unsafe persisted root-cwd session and starts fresh', async () => {
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-'));
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-'));
     const sessionFile = path.join(tempDir, 'root-session.jsonl');
 
     try {
@@ -97,7 +97,7 @@ suite('TauChatViewProvider', () => {
         },
         messages: []
       });
-      const provider = new TauChatViewProvider(
+      const provider = new TaurenChatViewProvider(
         vscode.Uri.file('/extension'),
         (options) => {
           clientOptions.push(options);
@@ -128,7 +128,7 @@ suite('TauChatViewProvider', () => {
         thinkingLevel: 'off'
       }
     });
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       (options) => {
         clientOptions.push(options);
@@ -160,7 +160,7 @@ suite('TauChatViewProvider', () => {
       },
       messages: [{ role: 'user', content: 'Restored prompt' }]
     });
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       (options) => {
         clientOptions.push(options);
@@ -189,7 +189,7 @@ suite('TauChatViewProvider', () => {
     const configuration = vscode.workspace.getConfiguration('tauren');
     const previousValue = configuration.inspect<boolean>('showWelcome')?.globalValue;
     const globalState = new FakeMemento();
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => {
         throw new Error('Unexpected Pi client creation');
@@ -222,7 +222,7 @@ suite('TauChatViewProvider', () => {
     const configuration = vscode.workspace.getConfiguration('tauren');
     const previousValue = configuration.inspect<boolean>('showWelcome')?.globalValue;
     const globalState = new FakeMemento({ 'tauren.welcomeDismissed': true });
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => {
         throw new Error('Unexpected Pi client creation');
@@ -250,7 +250,7 @@ suite('TauChatViewProvider', () => {
     const configuration = vscode.workspace.getConfiguration('tauren');
     const previousValue = configuration.inspect<boolean>('showWelcome')?.globalValue;
     const globalState = new FakeMemento({ 'tauren.welcomeDismissed': true });
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => {
         throw new Error('Unexpected Pi client creation');
@@ -278,7 +278,7 @@ suite('TauChatViewProvider', () => {
   });
 
   test('posts help toggle messages to the webview', async () => {
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({ state: {} }),
       undefined,
@@ -300,7 +300,7 @@ suite('TauChatViewProvider', () => {
   });
 
   test('adds dropped prompt images from the webview', async () => {
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({
         state: {
@@ -333,7 +333,7 @@ suite('TauChatViewProvider', () => {
   });
 
   test('rejects dropped prompt image batches when any item is invalid', async () => {
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({
         state: {
@@ -368,7 +368,7 @@ suite('TauChatViewProvider', () => {
     const editor = await vscode.window.showTextDocument(document);
     editor.selection = new vscode.Selection(new vscode.Position(1, 2), new vscode.Position(2, 3));
 
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({ state: {} }),
       undefined,
@@ -395,7 +395,7 @@ suite('TauChatViewProvider', () => {
     const editor = await vscode.window.showTextDocument(document);
     editor.selection = new vscode.Selection(new vscode.Position(1, 1), new vscode.Position(1, 1));
 
-    const provider = new TauChatViewProvider(
+    const provider = new TaurenChatViewProvider(
       vscode.Uri.file('/extension'),
       () => new FakePiClient({ state: {} }),
       undefined,
@@ -414,11 +414,11 @@ suite('TauChatViewProvider', () => {
   });
 
   test('deletes sessions without confirmation when configured', async () => {
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-delete-session-'));
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-delete-session-'));
     const sessionFile = path.join(tempDir, 'session.jsonl');
     const configuration = vscode.workspace.getConfiguration('tauren');
     const previousValue = configuration.inspect<boolean>('confirmSessionDeletion')?.globalValue;
-    const provider = new TauChatViewProvider(vscode.Uri.file('/extension'), () => {
+    const provider = new TaurenChatViewProvider(vscode.Uri.file('/extension'), () => {
       throw new Error('Unexpected Pi client creation');
     });
 
@@ -438,7 +438,7 @@ suite('TauChatViewProvider', () => {
   });
 
   test('clears webview-specific disposables when views are replaced, disposed, or provider is disposed', () => {
-    const provider = new TauChatViewProvider(vscode.Uri.file('/extension'), () => {
+    const provider = new TaurenChatViewProvider(vscode.Uri.file('/extension'), () => {
       throw new Error('Unexpected Pi client creation');
     });
 

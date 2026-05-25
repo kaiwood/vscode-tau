@@ -78,7 +78,7 @@ export function renderAnsiBlockImageLineInto(element: HTMLElement, value: string
 
   for (const cell of cells) {
     const cellElement = document.createElement('span');
-    cellElement.className = 'tau-ansi-block-image-cell';
+    cellElement.className = 'tauren-ansi-block-image-cell';
     cellElement.setAttribute('aria-hidden', 'true');
     applyAnsiBlockImageCellStyle(cellElement, cell);
     element.append(cellElement);
@@ -354,7 +354,7 @@ function applyAnsiStyle(element: HTMLElement, style: AnsiStyle, options: AnsiRen
   if (foreground) {
     element.style.color = foreground;
   } else if (style.inverse && background) {
-    element.style.color = 'var(--tau-code-background, var(--vscode-sideBar-background))';
+    element.style.color = 'var(--tauren-code-background, var(--vscode-sideBar-background))';
   }
 
   if (!options.suppressBackgrounds) {
@@ -433,24 +433,24 @@ function isBrightAnsiBackground(code: number): boolean {
 const ANSI_COLOR_NAMES = ['Black', 'Red', 'Green', 'Yellow', 'Blue', 'Magenta', 'Cyan', 'White'];
 const ANSI_BRIGHT_COLOR_NAMES = ['BrightBlack', 'BrightRed', 'BrightGreen', 'BrightYellow', 'BrightBlue', 'BrightMagenta', 'BrightCyan', 'BrightWhite'];
 const ANSI_COLOR_FALLBACK_VARIABLES = [
-  '--tau-ansi-black-fallback',
-  '--tau-ansi-red-fallback',
-  '--tau-ansi-green-fallback',
-  '--tau-ansi-yellow-fallback',
-  '--tau-ansi-blue-fallback',
-  '--tau-ansi-magenta-fallback',
-  '--tau-ansi-cyan-fallback',
-  '--tau-ansi-white-fallback'
+  '--tauren-ansi-black-fallback',
+  '--tauren-ansi-red-fallback',
+  '--tauren-ansi-green-fallback',
+  '--tauren-ansi-yellow-fallback',
+  '--tauren-ansi-blue-fallback',
+  '--tauren-ansi-magenta-fallback',
+  '--tauren-ansi-cyan-fallback',
+  '--tauren-ansi-white-fallback'
 ];
 const ANSI_BRIGHT_COLOR_FALLBACK_VARIABLES = [
-  '--tau-ansi-bright-black-fallback',
-  '--tau-ansi-bright-red-fallback',
-  '--tau-ansi-bright-green-fallback',
-  '--tau-ansi-bright-yellow-fallback',
-  '--tau-ansi-bright-blue-fallback',
-  '--tau-ansi-bright-magenta-fallback',
-  '--tau-ansi-bright-cyan-fallback',
-  '--tau-ansi-bright-white-fallback'
+  '--tauren-ansi-bright-black-fallback',
+  '--tauren-ansi-bright-red-fallback',
+  '--tauren-ansi-bright-green-fallback',
+  '--tauren-ansi-bright-yellow-fallback',
+  '--tauren-ansi-bright-blue-fallback',
+  '--tauren-ansi-bright-magenta-fallback',
+  '--tauren-ansi-bright-cyan-fallback',
+  '--tauren-ansi-bright-white-fallback'
 ];
 const ANSI_COLOR_FALLBACKS = ['#000000', '#cd3131', '#0dbc79', '#e5e510', '#2472c8', '#bc3fbc', '#11a8cd', '#e5e5e5'];
 const ANSI_BRIGHT_COLOR_FALLBACKS = ['#666666', '#f14c4c', '#23d18b', '#f5f543', '#3b8eea', '#d670d6', '#29b8db', '#e5e5e5'];
@@ -459,7 +459,7 @@ function ansiBasicColor(index: number, bright: boolean): string {
   const names = bright ? ANSI_BRIGHT_COLOR_NAMES : ANSI_COLOR_NAMES;
   const fallbackVariables = bright ? ANSI_BRIGHT_COLOR_FALLBACK_VARIABLES : ANSI_COLOR_FALLBACK_VARIABLES;
   const fallbacks = bright ? ANSI_BRIGHT_COLOR_FALLBACKS : ANSI_COLOR_FALLBACKS;
-  const fallbackVariable = fallbackVariables[index] ?? '--tau-ansi-white-fallback';
+  const fallbackVariable = fallbackVariables[index] ?? '--tauren-ansi-white-fallback';
   const fallback = fallbacks[index] ?? '#e5e5e5';
 
   return `var(--vscode-terminal-ansi${names[index] ?? 'White'}, var(${fallbackVariable}, ${fallback}))`;

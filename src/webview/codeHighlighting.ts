@@ -61,7 +61,7 @@ export function requestCodeHighlight(element: HTMLElement, code: string, languag
   highlightedElements.set(element, info);
   pendingHighlights.set(id, info);
   element.dataset.shikiHighlightId = id;
-  element.classList.add('tau-shiki-pending');
+  element.classList.add('tauren-shiki-pending');
   postMessage({
     type: 'highlightCode',
     id,
@@ -161,7 +161,7 @@ function applyCodeHighlightResult(message: Record<string, unknown>): void {
     return;
   }
 
-  element.classList.remove('tau-shiki-pending');
+  element.classList.remove('tauren-shiki-pending');
 
   if (!sanitizedHtml) {
     return;
@@ -190,7 +190,7 @@ function applyCachedHighlight(element: HTMLElement, code: string, language: stri
     requestId: ''
   });
   delete element.dataset.shikiHighlightId;
-  element.classList.remove('tau-shiki-pending');
+  element.classList.remove('tauren-shiki-pending');
   element.innerHTML = cached.html;
 }
 

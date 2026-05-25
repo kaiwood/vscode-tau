@@ -6,7 +6,7 @@ import { listPiSessionCandidates, listPiSessions } from '../../sessions/piSessio
 
 suite('Pi session list', () => {
   test('lists lightweight session candidates from headers only', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'tau-session-candidates-'));
+    const dir = await mkdtemp(join(tmpdir(), 'tauren-session-candidates-'));
 
     try {
       const sessionPath = join(dir, 'candidate.jsonl');
@@ -35,7 +35,7 @@ suite('Pi session list', () => {
   });
 
   test('falls back to current session file directory when cwd is unavailable', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'tau-sessions-'));
+    const dir = await mkdtemp(join(tmpdir(), 'tauren-sessions-'));
 
     try {
       const sessionPath = join(dir, 'current.jsonl');
@@ -55,7 +55,7 @@ suite('Pi session list', () => {
   });
 
   test('does not fall back to other default workspace session directories', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'tau-home-'));
+    const home = await mkdtemp(join(tmpdir(), 'tauren-home-'));
 
     try {
       const sessionDir = join(home, '.pi', 'agent', 'sessions', '--project--');
@@ -84,7 +84,7 @@ suite('Pi session list', () => {
   });
 
   test('lists sessions with names, message counts, current marker, and fork tree metadata', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'tau-sessions-'));
+    const dir = await mkdtemp(join(tmpdir(), 'tauren-sessions-'));
 
     try {
       const parentPath = join(dir, 'parent.jsonl');

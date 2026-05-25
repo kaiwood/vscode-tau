@@ -147,7 +147,7 @@ async function main() {
     sourcemap: false,
     legalComments: 'none',
     banner: {
-      js: "import { createRequire as __tauCreateRequire } from 'node:module';\nconst require = __tauCreateRequire(import.meta.url);"
+      js: "import { createRequire as __taurenCreateRequire } from 'node:module';\nconst require = __taurenCreateRequire(import.meta.url);"
     },
     logLevel: 'warning'
   });

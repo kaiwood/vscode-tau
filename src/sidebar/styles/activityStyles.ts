@@ -62,7 +62,7 @@ export const activityStyles = /* css */ `    .activity-list {
       border: 1.4px solid color-mix(in srgb, var(--vscode-descriptionForeground) 35%, transparent);
       border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
       border-radius: 999px;
-      animation: tau-spin 0.8s linear infinite;
+      animation: tauren-spin 0.8s linear infinite;
     }
 
     .activity__description {
@@ -81,7 +81,7 @@ export const activityStyles = /* css */ `    .activity-list {
       position: absolute;
       top: 4px;
       right: 4px;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       display: inline-flex;
       gap: 2px;
     }
@@ -104,7 +104,7 @@ export const activityStyles = /* css */ `    .activity-list {
     }
 
     .activity__body--compaction {
-      background: var(--tau-code-background);
+      background: var(--tauren-code-background);
     }
 
     .activity__body--compaction:not(.activity__body--expanded) {
@@ -134,8 +134,8 @@ export const activityStyles = /* css */ `    .activity-list {
     }
 
     .activity__body--code {
-      color: var(--tau-code-foreground);
-      background: var(--tau-code-background);
+      color: var(--tauren-code-foreground);
+      background: var(--tauren-code-background);
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
       line-height: 16px;
@@ -151,7 +151,7 @@ export const activityStyles = /* css */ `    .activity-list {
       margin: 0;
       padding: 5px 8px 6px;
       color: var(--vscode-textLink-foreground);
-      background: var(--tau-code-background);
+      background: var(--tauren-code-background);
       border: 0;
       border-top: 1px solid color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
       font-family: var(--vscode-editor-font-family, monospace);
@@ -190,11 +190,11 @@ export const activityStyles = /* css */ `    .activity-list {
       border: 1.5px solid color-mix(in srgb, var(--vscode-descriptionForeground) 35%, transparent);
       border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
       border-radius: 999px;
-      animation: tau-spin 0.8s linear infinite;
+      animation: tauren-spin 0.8s linear infinite;
       will-change: transform;
     }
 
-    @keyframes tau-spin {
+    @keyframes tauren-spin {
       to {
         transform: rotate(360deg);
       }

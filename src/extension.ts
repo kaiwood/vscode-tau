@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { tauChatViewType, TauChatViewProvider } from './tauChatViewProvider';
+import { taurenChatViewType, TaurenChatViewProvider } from './taurenChatViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
-  const provider = new TauChatViewProvider(
+  const provider = new TaurenChatViewProvider(
     context.extensionUri,
     undefined,
     context.workspaceState,
@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     provider,
-    vscode.window.registerWebviewViewProvider(tauChatViewType, provider),
+    vscode.window.registerWebviewViewProvider(taurenChatViewType, provider),
     vscode.commands.registerCommand('tauren.newSession', () => provider.newSession()),
     vscode.commands.registerCommand('tauren.resume', () => provider.resume()),
     vscode.commands.registerCommand('tauren.fork', () => provider.fork()),

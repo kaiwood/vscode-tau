@@ -1,14 +1,14 @@
 import type {
-  TauChatContextUsage,
-  TauChatModelMeta,
-  TauChatSessionMetaSnapshot,
+  TaurenChatContextUsage,
+  TaurenChatModelMeta,
+  TaurenChatSessionMetaSnapshot,
   SessionMetadataCacheStorage
 } from './types';
 
 const cachedSessionMetaStorageKey = 'tauren.cachedSessionMeta';
 const legacyCachedModelMetaStorageKey = 'tauren.cachedModelMeta';
 
-export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | undefined): TauChatSessionMetaSnapshot | undefined {
+export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | undefined): TaurenChatSessionMetaSnapshot | undefined {
   const value = storage?.get<unknown>(cachedSessionMetaStorageKey);
   const snapshot = parseCachedSessionMeta(value);
 
@@ -23,7 +23,7 @@ export function readCachedSessionMeta(storage: SessionMetadataCacheStorage | und
 
 export function writeCachedSessionMeta(
   storage: SessionMetadataCacheStorage | undefined,
-  metadata: TauChatSessionMetaSnapshot
+  metadata: TaurenChatSessionMetaSnapshot
 ): void {
   if (!storage) {
     return;
@@ -34,7 +34,7 @@ export function writeCachedSessionMeta(
   void storage.update(legacyCachedModelMetaStorageKey, undefined)?.then(undefined, () => undefined);
 }
 
-function parseCachedSessionMeta(value: unknown): TauChatSessionMetaSnapshot | undefined {
+function parseCachedSessionMeta(value: unknown): TaurenChatSessionMetaSnapshot | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -42,7 +42,7 @@ function parseCachedSessionMeta(value: unknown): TauChatSessionMetaSnapshot | un
   const model = parseCachedModelMeta(value.model);
   const modelOptions = parseCachedModelOptions(value.modelOptions);
   const contextUsage = parseCachedContextUsage(value.contextUsage);
-  const snapshot: TauChatSessionMetaSnapshot = {};
+  const snapshot: TaurenChatSessionMetaSnapshot = {};
 
   if (model) {
     snapshot.model = model;
@@ -59,7 +59,7 @@ function parseCachedSessionMeta(value: unknown): TauChatSessionMetaSnapshot | un
   return hasCachedSessionMeta(snapshot) ? snapshot : undefined;
 }
 
-function parseCachedModelMeta(value: unknown): TauChatModelMeta | undefined {
+function parseCachedModelMeta(value: unknown): TaurenChatModelMeta | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -79,7 +79,7 @@ function parseCachedModelMeta(value: unknown): TauChatModelMeta | undefined {
   };
 }
 
-function parseCachedModelOptions(value: unknown): TauChatSessionMetaSnapshot['modelOptions'] | undefined {
+function parseCachedModelOptions(value: unknown): TaurenChatSessionMetaSnapshot['modelOptions'] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -107,7 +107,7 @@ function parseCachedModelOptions(value: unknown): TauChatSessionMetaSnapshot['mo
   return modelOptions.length > 0 ? modelOptions : undefined;
 }
 
-function parseCachedContextUsage(value: unknown): TauChatContextUsage | undefined {
+function parseCachedContextUsage(value: unknown): TaurenChatContextUsage | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -125,7 +125,7 @@ function parseCachedContextUsage(value: unknown): TauChatContextUsage | undefine
   };
 }
 
-function hasCachedSessionMeta(snapshot: TauChatSessionMetaSnapshot): boolean {
+function hasCachedSessionMeta(snapshot: TaurenChatSessionMetaSnapshot): boolean {
   return Boolean(
     snapshot.model
     || (snapshot.modelOptions && snapshot.modelOptions.length > 0)

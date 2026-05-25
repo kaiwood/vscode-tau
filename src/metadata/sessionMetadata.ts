@@ -1,23 +1,23 @@
 import type { WebviewModelOption, WebviewSlashCommand } from '../webviewProtocol/types';
 import type { PiCommand, PiMessagesResult, PiModel, PiSessionState, PiSessionStats } from '../pi/types';
 import type {
-  TauChatContextUsage,
-  TauChatModelMeta,
-  TauChatSessionMetaSnapshot,
+  TaurenChatContextUsage,
+  TaurenChatModelMeta,
+  TaurenChatSessionMetaSnapshot,
   SessionMetadataWebviewState,
   PiRuntimeSettingsMeta
 } from './types';
 
 export type {
-  TauChatContextUsage,
-  TauChatModelMeta,
-  TauChatSessionMetaSnapshot,
+  TaurenChatContextUsage,
+  TaurenChatModelMeta,
+  TaurenChatSessionMetaSnapshot,
   SessionMetadataWebviewState
 } from './types';
 
 export type SessionMetadataStateOptions = {
-  initialSessionMeta?: TauChatSessionMetaSnapshot;
-  onChange?: (metadata: TauChatSessionMetaSnapshot) => void;
+  initialSessionMeta?: TaurenChatSessionMetaSnapshot;
+  onChange?: (metadata: TaurenChatSessionMetaSnapshot) => void;
   postState?: () => void;
 };
 
@@ -440,7 +440,7 @@ export class SessionMetadataState {
     this.slashCommandsRefreshing = false;
   }
 
-  private applyModelMeta(modelMeta: TauChatModelMeta, options: { notify?: boolean } = {}): boolean {
+  private applyModelMeta(modelMeta: TaurenChatModelMeta, options: { notify?: boolean } = {}): boolean {
     if (
       modelMeta.label === this.modelLabel
       && modelMeta.provider === this.modelProvider
@@ -458,7 +458,7 @@ export class SessionMetadataState {
     return true;
   }
 
-  private setModelMetaFields(modelMeta: TauChatModelMeta): void {
+  private setModelMetaFields(modelMeta: TaurenChatModelMeta): void {
     this.modelLabel = modelMeta.label;
     this.modelProvider = modelMeta.provider;
     this.modelId = modelMeta.id;
@@ -475,7 +475,7 @@ export class SessionMetadataState {
     return true;
   }
 
-  private applyContextUsage(contextUsage: TauChatContextUsage): boolean {
+  private applyContextUsage(contextUsage: TaurenChatContextUsage): boolean {
     if (
       contextUsage.label === this.contextUsageLabel
       && contextUsage.title === this.contextUsageTitle
@@ -510,7 +510,7 @@ export class SessionMetadataState {
     return true;
   }
 
-  private setFields(snapshot: TauChatSessionMetaSnapshot): void {
+  private setFields(snapshot: TaurenChatSessionMetaSnapshot): void {
     if (snapshot.model) {
       this.setModelMetaFields(snapshot.model);
     }
@@ -530,7 +530,7 @@ export class SessionMetadataState {
     this.options.onChange?.(this.getSnapshot());
   }
 
-  private getSnapshot(): TauChatSessionMetaSnapshot {
+  private getSnapshot(): TaurenChatSessionMetaSnapshot {
     return {
       model: this.modelId
         ? {
@@ -553,7 +553,7 @@ export class SessionMetadataState {
   }
 }
 
-export function formatContextUsage(stats: PiSessionStats): TauChatContextUsage {
+export function formatContextUsage(stats: PiSessionStats): TaurenChatContextUsage {
   const usage = stats.contextUsage;
 
   if (!usage || typeof usage.contextWindow !== 'number') {
@@ -699,7 +699,7 @@ function arePiSettingsEqual(left: PiRuntimeSettingsMeta, right: PiRuntimeSetting
   return true;
 }
 
-function getModelMeta(state: PiSessionState): TauChatModelMeta {
+function getModelMeta(state: PiSessionState): TaurenChatModelMeta {
   const model = state.model;
   const id = typeof model?.id === 'string' ? model.id : '';
   const provider = typeof model?.provider === 'string' ? model.provider : '';

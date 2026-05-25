@@ -12,7 +12,7 @@ type PackageJson = {
 
 suite('Tauren extension', () => {
   test('activates the development extension', async () => {
-    const extension = findTauExtension();
+    const extension = findTaurenExtension();
 
     assert.ok(extension, 'Expected the Tauren extension to be available');
     await extension.activate();
@@ -21,7 +21,7 @@ suite('Tauren extension', () => {
   });
 
   test('registers contributed commands', async () => {
-    const extension = findTauExtension();
+    const extension = findTaurenExtension();
 
     assert.ok(extension, 'Expected the Tauren extension to be available');
     await extension.activate();
@@ -51,7 +51,7 @@ suite('Tauren extension', () => {
   });
 
   test('keeps native new session action visible while busy', () => {
-    const extension = findTauExtension();
+    const extension = findTaurenExtension();
 
     assert.ok(extension, 'Expected the Tauren extension to be available');
 
@@ -63,7 +63,7 @@ suite('Tauren extension', () => {
   });
 });
 
-function findTauExtension(): vscode.Extension<unknown> | undefined {
+function findTaurenExtension(): vscode.Extension<unknown> | undefined {
   return vscode.extensions.all.find((extension) => {
     const packageJson = extension.packageJSON as PackageJson;
 

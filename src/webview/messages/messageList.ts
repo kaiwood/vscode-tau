@@ -230,7 +230,7 @@ export class MessageListController {
     const codeCopyButton = target?.closest('[data-copy-code-block]');
 
     if (codeCopyButton instanceof HTMLElement) {
-      const block = codeCopyButton.closest('.tau-code-block');
+      const block = codeCopyButton.closest('.tauren-code-block');
       const text = block?.querySelector('pre')?.textContent ?? '';
 
       if (text) {
@@ -294,7 +294,7 @@ export class MessageListController {
       return;
     }
 
-    const link = target?.closest('.tau-file-link');
+    const link = target?.closest('.tauren-file-link');
 
     if (!(link instanceof HTMLElement)) {
       return;

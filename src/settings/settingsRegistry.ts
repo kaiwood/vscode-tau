@@ -1,4 +1,4 @@
-export type TauSettingId =
+export type TaurenSettingId =
   | 'tauren.outputColors'
   | 'tauren.animationsEnabled'
   | 'tauren.showWelcome'
@@ -28,11 +28,11 @@ export type PiSettingId =
   | 'enabledModels'
   | 'enableSkillCommands';
 
-export type TauSettingsSection = 'appearance' | 'login' | 'extensions' | 'runtime' | 'workspaceSafety' | 'advanced';
-export type SettingsOwner = 'tau' | 'pi';
+export type TaurenSettingsSection = 'appearance' | 'login' | 'extensions' | 'runtime' | 'workspaceSafety' | 'advanced';
+export type SettingsOwner = 'tauren' | 'pi';
 export type SettingControl = 'toggle' | 'select' | 'text' | 'readonlyList';
 export type SettingValue = boolean | string | string[];
-export type SettingId = TauSettingId | PiSettingId;
+export type SettingId = TaurenSettingId | PiSettingId;
 
 export type SettingOption = {
   value: string;
@@ -42,7 +42,7 @@ export type SettingOption = {
 export type SettingDefinition = {
   id: SettingId;
   owner: SettingsOwner;
-  section: TauSettingsSection;
+  section: TaurenSettingsSection;
   label: string;
   description: string;
   control: SettingControl;
@@ -131,7 +131,7 @@ export const settingsSections = [
 export const settingDefinitions = [
   {
     id: 'tauren.outputColors',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'appearance',
     label: 'Output colors',
     description: 'Render ANSI and syntax colors in Tauren output.',
@@ -141,7 +141,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.animationsEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'appearance',
     label: 'Animations',
     description: 'Use subtle surface and counter animations.',
@@ -152,7 +152,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.showWelcome',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'appearance',
     label: 'Welcome message',
     description: 'Show the Welcome to Tauren empty state for new chats.',
@@ -162,7 +162,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.customUiTheme',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'appearance',
     label: 'Custom UI theme',
     description: 'Theme for Pi extension custom UI terminal panels.',
@@ -173,7 +173,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.extensions.aboveWidgetsEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'extensions',
     label: 'Enable above widgets',
     description: 'Show Pi extension widgets above the composer.',
@@ -184,7 +184,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.extensions.belowWidgetsEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'extensions',
     label: 'Enable below widgets',
     description: 'Show Pi extension widgets below the composer.',
@@ -195,7 +195,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.extensions.statusBarEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'extensions',
     label: 'Enable status bar',
     description: 'Show one-line Pi extension status updates below the composer.',
@@ -206,7 +206,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.extensions.backgroundColorsEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'extensions',
     label: 'Enable background colors',
     description: 'Render background colors sent by Pi extension widgets.',
@@ -217,7 +217,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.extensions.monospaceFontEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'extensions',
     label: 'Use monospace font',
     description: 'Use the editor monospace font for Pi extension widgets and status.',
@@ -227,7 +227,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.blockHttpsImages',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'workspaceSafety',
     label: 'Block HTTPS images',
     description: 'Block remote HTTPS images in chat markdown.',
@@ -313,7 +313,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.confirmSessionDeletion',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'workspaceSafety',
     label: 'Confirm deletion',
     description: 'Ask before moving Tauren sessions to Trash.',
@@ -324,7 +324,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.rejectEditWriteOutsideWorkspace',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'workspaceSafety',
     label: 'Reject external edits',
     description: 'Reject Pi edit/write mutations outside the active workspace folder.',
@@ -336,7 +336,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.readyScript',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'advanced',
     label: 'Ready script',
     description: 'Executable script Tauren runs when Pi becomes ready.',
@@ -348,7 +348,7 @@ export const settingDefinitions = [
   },
   {
     id: 'tauren.readyScriptEnabled',
-    owner: 'tau',
+    owner: 'tauren',
     section: 'advanced',
     label: 'Run ready script',
     description: 'Temporarily enable or disable the ready script without clearing its path.',
@@ -425,7 +425,7 @@ export function getSettingDefinition(id: string): SettingDefinition | undefined 
   return (settingDefinitions as readonly SettingDefinition[]).find((definition) => definition.id === id);
 }
 
-export function getSettingsForSection(section: TauSettingsSection): SettingDefinition[] {
+export function getSettingsForSection(section: TaurenSettingsSection): SettingDefinition[] {
   return (settingDefinitions as readonly SettingDefinition[]).filter((definition) => definition.section === section);
 }
 
@@ -433,9 +433,9 @@ export function isSettingId(value: unknown): value is SettingId {
   return typeof value === 'string' && Boolean(getSettingDefinition(value));
 }
 
-export function isTauSettingId(value: unknown): value is TauSettingId {
+export function isTaurenSettingId(value: unknown): value is TaurenSettingId {
   const definition = typeof value === 'string' ? getSettingDefinition(value) : undefined;
-  return definition?.owner === 'tau';
+  return definition?.owner === 'tauren';
 }
 
 export function isPiSettingId(value: unknown): value is PiSettingId {

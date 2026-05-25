@@ -1,13 +1,13 @@
-export const composerStyles = /* css */ `    .tau-view--has-extension-status {
-      --tau-composer-status-gap: 6px;
-      --tau-composer-status-height: 28px;
-      --tau-custom-ui-bottom-offset: calc(var(--tau-composer-bottom-margin) + var(--tau-composer-status-height) + var(--tau-composer-status-gap) + var(--tau-composer-min-height) + var(--tau-composer-custom-ui-clearance));
+export const composerStyles = /* css */ `    .tauren-view--has-extension-status {
+      --tauren-composer-status-gap: 6px;
+      --tauren-composer-status-height: 28px;
+      --tauren-custom-ui-bottom-offset: calc(var(--tauren-composer-bottom-margin) + var(--tauren-composer-status-height) + var(--tauren-composer-status-gap) + var(--tauren-composer-min-height) + var(--tauren-composer-custom-ui-clearance));
     }
 
     .composer__widget-busy-slot {
       grid-row: 2;
       grid-column: 1;
-      margin: 0 var(--tau-chat-inline-padding) 6px;
+      margin: 0 var(--tauren-chat-inline-padding) 6px;
     }
 
     .composer__widget-busy-slot[hidden] {
@@ -28,7 +28,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       grid-column: 1;
       display: grid;
       gap: 6px;
-      margin: 0 var(--tau-chat-inline-padding);
+      margin: 0 var(--tauren-chat-inline-padding);
     }
 
     .extension-widgets[hidden] {
@@ -43,11 +43,11 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
     .extension-widgets--below {
       grid-row: 5;
       margin-top: 6px;
-      margin-bottom: var(--tau-composer-bottom-margin);
+      margin-bottom: var(--tauren-composer-bottom-margin);
     }
 
-    .tau-view--has-extension-widgets-below.tau-view--has-extension-status .extension-widgets--below {
-      margin-bottom: var(--tau-composer-status-gap, 6px);
+    .tauren-view--has-extension-widgets-below.tauren-view--has-extension-status .extension-widgets--below {
+      margin-bottom: var(--tauren-composer-status-gap, 6px);
     }
 
     .extension-widget {
@@ -66,7 +66,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       line-height: 1.35;
     }
 
-    .tau-view--extension-ui-font .extension-widget {
+    .tauren-view--extension-ui-font .extension-widget {
       font-family: var(--vscode-font-family);
     }
 
@@ -97,7 +97,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       line-height: inherit;
     }
 
-    .extension-widget__line--ansi-image .tau-ansi-block-image-cell {
+    .extension-widget__line--ansi-image .tauren-ansi-block-image-cell {
       display: block;
       flex: 0 0 1ch;
       width: 1ch;
@@ -131,10 +131,10 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       grid-template-rows: minmax(22px, auto) 36px;
       align-items: end;
       gap: 4px 8px;
-      min-height: var(--tau-composer-min-height);
+      min-height: var(--tauren-composer-min-height);
       max-width: 100%;
       max-height: calc(100vh - 16px);
-      margin: 0 var(--tau-chat-inline-padding) var(--tau-composer-bottom-margin);
+      margin: 0 var(--tauren-chat-inline-padding) var(--tauren-composer-bottom-margin);
       padding: 14px 9px 8px;
       overflow: visible;
       background: var(--vscode-input-background);
@@ -179,12 +179,12 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
         0 0 0 2px color-mix(in srgb, var(--vscode-errorForeground, #f85149) 28%, transparent);
     }
 
-    .tau-view--has-extension-status .composer {
-      margin-bottom: var(--tau-composer-status-gap);
+    .tauren-view--has-extension-status .composer {
+      margin-bottom: var(--tauren-composer-status-gap);
     }
 
-    .tau-view--has-extension-widgets-below .composer,
-    .tau-view--has-extension-widgets-below.tau-view--has-extension-status .composer {
+    .tauren-view--has-extension-widgets-below .composer,
+    .tauren-view--has-extension-widgets-below.tauren-view--has-extension-status .composer {
       margin-bottom: 0;
     }
 
@@ -209,8 +209,8 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       display: flex;
       align-items: center;
       min-width: 0;
-      height: var(--tau-composer-status-height, 28px);
-      margin: 0 var(--tau-chat-inline-padding) var(--tau-composer-bottom-margin);
+      height: var(--tauren-composer-status-height, 28px);
+      margin: 0 var(--tauren-chat-inline-padding) var(--tauren-composer-bottom-margin);
       padding: 0 10px;
       overflow: hidden;
       color: var(--vscode-descriptionForeground);
@@ -224,7 +224,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       line-height: 1.35;
     }
 
-    .tau-view--extension-ui-font .composer-status {
+    .tauren-view--extension-ui-font .composer-status {
       font-family: var(--vscode-font-family);
     }
 
@@ -244,7 +244,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       left: 0;
       right: 0;
       bottom: calc(100% + 6px);
-      z-index: var(--tau-z-composer-menu);
+      z-index: var(--tauren-z-composer-menu);
       display: none;
       width: auto;
       max-height: min(272px, 45vh);
@@ -424,12 +424,12 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       left: 9px;
       right: 9px;
       bottom: calc(100% + 8px);
-      z-index: var(--tau-z-floating-panel);
+      z-index: var(--tauren-z-floating-panel);
       width: auto;
       max-width: none;
       overflow: hidden;
       visibility: hidden;
-      color: var(--tau-code-foreground);
+      color: var(--tauren-code-foreground);
       background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background, var(--vscode-sideBar-background)));
       border: 1px solid color-mix(in srgb, var(--vscode-foreground) 15%, transparent);
       border-radius: 6px;
@@ -514,7 +514,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       left: 4px;
       right: 4px;
       bottom: calc(100% + 6px);
-      z-index: var(--tau-z-tooltip);
+      z-index: var(--tauren-z-tooltip);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -708,7 +708,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       position: absolute;
       left: 0;
       bottom: calc(100% + 8px);
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       display: none;
       width: max-content;
       max-width: min(260px, 70vw);
@@ -792,7 +792,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       position: absolute;
       right: 0;
       bottom: calc(100% + 8px);
-      z-index: var(--tau-z-floating-panel);
+      z-index: var(--tauren-z-floating-panel);
       display: none;
       width: max-content;
       max-width: min(260px, 70vw);
@@ -865,7 +865,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       position: absolute;
       right: 46px;
       bottom: 44px;
-      z-index: var(--tau-z-tooltip);
+      z-index: var(--tauren-z-tooltip);
       display: none;
       width: min(320px, calc(100vw - 24px));
       padding: 10px;

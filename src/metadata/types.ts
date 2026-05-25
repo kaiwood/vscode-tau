@@ -1,7 +1,7 @@
 import type { SettingValue, PiSettingId } from '../settings/settingsRegistry';
 import type { WebviewModelOption, WebviewSlashCommand } from '../webviewProtocol/types';
 
-export type TauChatModelMeta = {
+export type TaurenChatModelMeta = {
   label: string;
   provider: string;
   id: string;
@@ -9,16 +9,16 @@ export type TauChatModelMeta = {
   thinkingLevel: string;
 };
 
-export type TauChatContextUsage = {
+export type TaurenChatContextUsage = {
   label: string;
   title: string;
   level: string;
 };
 
-export type TauChatSessionMetaSnapshot = {
-  model?: TauChatModelMeta;
+export type TaurenChatSessionMetaSnapshot = {
+  model?: TaurenChatModelMeta;
   modelOptions?: WebviewModelOption[];
-  contextUsage?: TauChatContextUsage;
+  contextUsage?: TaurenChatContextUsage;
 };
 
 export type PiRuntimeSettingsMeta = Partial<Record<PiSettingId, SettingValue>>;
@@ -32,7 +32,7 @@ export type SessionMetadataWebviewState = {
     thinkingLevel: string;
     options: WebviewModelOption[];
   };
-  contextUsage: TauChatContextUsage;
+  contextUsage: TaurenChatContextUsage;
   metadataRefreshing: boolean;
   slashCommands: WebviewSlashCommand[];
   slashCommandsRefreshing: boolean;

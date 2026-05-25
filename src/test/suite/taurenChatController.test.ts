@@ -3,10 +3,10 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import {
-  TauChatController,
-  type TauChatControllerOptions,
-  type TauChatSessionMetaSnapshot
-} from '../../tauChatController';
+  TaurenChatController,
+  type TaurenChatControllerOptions,
+  type TaurenChatSessionMetaSnapshot
+} from '../../taurenChatController';
 import type { PiClient } from '../../pi/clientTypes';
 import type { WebviewSessionItem, WebviewStateMessage, WebviewTreeItem } from '../../webviewProtocol/types';
 import type { StatePublisherScheduler } from '../../controller/statePublisher';
@@ -21,7 +21,7 @@ import type {
   PiImageContent
 } from '../../pi/types';
 
-suite('TauChatController', () => {
+suite('TaurenChatController', () => {
   test('webview ready starts one live metadata refresh and dedupes repeated ready messages', async () => {
     const stateDeferred = createDeferred<PiSessionState>();
     const statsDeferred = createDeferred<PiSessionStats>();
@@ -1027,7 +1027,7 @@ suite('TauChatController', () => {
   });
 
   test('publishes historical per-session diff stats from edit tool calls', async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-diff-'));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-diff-'));
     const client = new FakePiClient();
     const harness = createControllerHarness([client], { cwd });
 
@@ -1078,7 +1078,7 @@ suite('TauChatController', () => {
 
     assert.strictEqual(client.prompts.length, 1);
     assert.ok(client.prompts[0].startsWith('explain this\n\n<ide_context source="vscode-tauren">\n'));
-    assert.ok(!client.prompts[0].includes('<!-- tau:ide-context'));
+    assert.ok(!client.prompts[0].includes('<!-- tauren:ide-context'));
     assert.ok(client.prompts[0].includes('<selection path="src/foo.ts" start_line="2" end_line="4" language="typescript"><![CDATA[\nconst answer = 42;\n]]></selection>'));
     assert.ok(!client.prompts[0].includes('```typescript'));
     assert.ok(client.prompts[0].endsWith('\n</ide_context>'));
@@ -2142,7 +2142,7 @@ suite('TauChatController', () => {
       statsResult: statsDeferred.promise,
       modelsResult: modelsDeferred.promise
     });
-    const cachedSessionChanges: TauChatSessionMetaSnapshot[] = [];
+    const cachedSessionChanges: TaurenChatSessionMetaSnapshot[] = [];
     const harness = createControllerHarness([client], {
       onSessionMetaChange: (metadata) => cachedSessionChanges.push(metadata)
     });
@@ -2504,7 +2504,7 @@ suite('TauChatController', () => {
 });
 
 type ControllerHarness = {
-  controller: TauChatController;
+  controller: TaurenChatController;
   states: WebviewStateMessage[];
   notifications: { message: string; type: string }[];
   toasts: string[];
@@ -2515,11 +2515,11 @@ type ControllerHarness = {
 type ControllerHarnessOptions = {
   cwd?: string;
   getCwd?: () => string | undefined;
-  extensionUi?: TauChatControllerOptions['extensionUi'];
+  extensionUi?: TaurenChatControllerOptions['extensionUi'];
   stateScheduler?: StatePublisherScheduler;
-  initialSessionMeta?: TauChatSessionMetaSnapshot;
+  initialSessionMeta?: TaurenChatSessionMetaSnapshot;
   initialSessionFile?: string;
-  onSessionMetaChange?: (metadata: TauChatSessionMetaSnapshot) => void;
+  onSessionMetaChange?: (metadata: TaurenChatSessionMetaSnapshot) => void;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
   listSessions?: (cwd: string | undefined, currentSessionFile: string | undefined) => Promise<WebviewSessionItem[]>;
   deleteSession?: (sessionPath: string, displayName: string) => Promise<boolean>;
@@ -2527,7 +2527,7 @@ type ControllerHarnessOptions = {
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
   getRejectEditWriteOutsideWorkspace?: () => boolean;
-  runReadyScript?: TauChatControllerOptions['runReadyScript'];
+  runReadyScript?: TaurenChatControllerOptions['runReadyScript'];
 };
 
 function createControllerHarness(
@@ -2541,7 +2541,7 @@ function createControllerHarness(
   const pendingClients = [...clients];
   let createCalls = 0;
 
-  const controllerOptions: TauChatControllerOptions = {
+  const controllerOptions: TaurenChatControllerOptions = {
     createClient: (clientOption) => {
       createCalls += 1;
       clientOptions.push(clientOption);
@@ -2574,7 +2574,7 @@ function createControllerHarness(
     runReadyScript: options.runReadyScript
   };
 
-  const controller = new TauChatController(controllerOptions);
+  const controller = new TaurenChatController(controllerOptions);
 
   return {
     controller,

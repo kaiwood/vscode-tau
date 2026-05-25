@@ -1294,13 +1294,13 @@ export class ComposerController {
 
 function createTooltipElement(text: string): HTMLSpanElement {
   const tooltip = document.createElement('span');
-  tooltip.className = 'tau-icon-action-tooltip';
+  tooltip.className = 'tauren-icon-action-tooltip';
   tooltip.textContent = text;
   return tooltip;
 }
 
 function setTooltipText(element: HTMLElement, text: string): void {
-  const tooltip = element.querySelector<HTMLElement>('.tau-icon-action-tooltip');
+  const tooltip = element.querySelector<HTMLElement>('.tauren-icon-action-tooltip');
 
   if (tooltip) {
     tooltip.textContent = text;

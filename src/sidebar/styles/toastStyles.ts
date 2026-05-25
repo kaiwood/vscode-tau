@@ -1,9 +1,9 @@
-export const toastStyles = /* css */ `    .tau-toast {
+export const toastStyles = /* css */ `    .tauren-toast {
       position: absolute;
       left: 12px;
       right: 12px;
       top: 42px;
-      z-index: var(--tau-z-toast);
+      z-index: var(--tauren-z-toast);
       justify-self: center;
       display: inline-flex;
       align-items: center;
@@ -25,7 +25,7 @@ export const toastStyles = /* css */ `    .tau-toast {
       pointer-events: none;
     }
 
-    .tau-toast__icon {
+    .tauren-toast__icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -37,23 +37,23 @@ export const toastStyles = /* css */ `    .tau-toast {
       line-height: 1;
     }
 
-    .tau-toast--success .tau-toast__icon {
+    .tauren-toast--success .tauren-toast__icon {
       color: var(--vscode-testing-iconPassed, #3fb950);
     }
 
-    .tau-toast--warning .tau-toast__icon {
+    .tauren-toast--warning .tauren-toast__icon {
       color: var(--vscode-testing-iconQueued, #d29922);
     }
 
-    .tau-toast--error .tau-toast__icon {
+    .tauren-toast--error .tauren-toast__icon {
       color: var(--vscode-testing-iconFailed, #f85149);
     }
 
-    .tau-toast[hidden] {
+    .tauren-toast[hidden] {
       display: none;
     }
 
-    .tau-toast--visible {
+    .tauren-toast--visible {
       opacity: 1;
       transform: translateY(0);
     }

@@ -56,10 +56,10 @@ export const messageStyles = /* css */ `    .message {
 
     .message__body--markdown code {
       padding: 1px 3px;
-      color: var(--tau-code-foreground);
+      color: var(--tauren-code-foreground);
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 0.92em;
-      background: var(--tau-code-inline-background);
+      background: var(--tauren-code-inline-background);
       border-radius: 3px;
     }
 
@@ -67,8 +67,8 @@ export const messageStyles = /* css */ `    .message {
       max-width: 100%;
       padding: 8px;
       overflow: auto;
-      color: var(--tau-code-foreground);
-      background: var(--tau-code-background);
+      color: var(--tauren-code-foreground);
+      background: var(--tauren-code-background);
       border-radius: 6px;
       white-space: pre;
     }
@@ -81,31 +81,31 @@ export const messageStyles = /* css */ `    .message {
       white-space: inherit;
     }
 
-    .tau-code-block {
+    .tauren-code-block {
       position: relative;
       margin: 0 0 8px;
     }
 
-    .message__body--markdown > .tau-code-block:last-child {
+    .message__body--markdown > .tauren-code-block:last-child {
       margin-bottom: 0;
     }
 
-    .message__body--markdown .tau-code-block > pre {
+    .message__body--markdown .tauren-code-block > pre {
       margin: 0;
       padding-right: 34px;
     }
 
-    .tau-code-block__actions {
+    .tauren-code-block__actions {
       position: absolute;
       top: 4px;
       right: 4px;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       display: inline-flex;
       gap: 2px;
     }
 
-    .tau-shiki-pending {
-      color: var(--tau-code-foreground);
+    .tauren-shiki-pending {
+      color: var(--tauren-code-foreground);
     }
 
     .message__body--markdown blockquote {
@@ -131,7 +131,7 @@ export const messageStyles = /* css */ `    .message {
       color: var(--vscode-textLink-foreground);
     }
 
-    .message__body--markdown .tau-file-link {
+    .message__body--markdown .tauren-file-link {
       cursor: pointer;
       text-decoration: underline;
       text-underline-offset: 2px;
@@ -144,7 +144,7 @@ export const messageStyles = /* css */ `    .message {
       margin-top: 8px;
     }
 
-    .tau-image {
+    .tauren-image {
       display: block;
       max-width: 100%;
       max-height: min(520px, 60vh);
@@ -154,15 +154,15 @@ export const messageStyles = /* css */ `    .message {
       background: color-mix(in srgb, var(--vscode-editor-background) 94%, var(--vscode-foreground) 6%);
     }
 
-    .message__body--markdown .tau-image,
+    .message__body--markdown .tauren-image,
     .message__body--markdown img,
-    .activity__body--markdown .tau-image,
+    .activity__body--markdown .tauren-image,
     .activity__body--markdown img {
       max-width: 100%;
       max-height: min(520px, 60vh);
     }
 
-    .tau-image-fallback {
+    .tauren-image-fallback {
       display: inline-block;
       margin: 2px 0;
       padding: 4px 6px;
@@ -173,13 +173,13 @@ export const messageStyles = /* css */ `    .message {
       font-size: 12px;
     }
 
-    .tau-stream-word {
+    .tauren-stream-word {
       display: inline-block;
-      animation: tau-stream-word-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: tauren-stream-word-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
       will-change: opacity, filter, transform;
     }
 
-    @keyframes tau-stream-word-in {
+    @keyframes tauren-stream-word-in {
       from {
         opacity: 0;
         filter: blur(2.5px);
@@ -193,14 +193,14 @@ export const messageStyles = /* css */ `    .message {
       }
     }
 
-    body.vscode-reduce-motion .tau-stream-word {
+    body.vscode-reduce-motion .tauren-stream-word {
       display: inline;
       animation: none;
       will-change: auto;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tau-stream-word {
+      .tauren-stream-word {
         display: inline;
         animation: none;
         will-change: auto;
@@ -218,7 +218,7 @@ export const messageStyles = /* css */ `    .message {
     }
 
     .message__copy,
-    .tau-code-block__action,
+    .tauren-code-block__action,
     .activity__body-action {
       position: relative;
       display: grid;
@@ -236,8 +236,8 @@ export const messageStyles = /* css */ `    .message {
 
     .message__copy:hover,
     .message__copy:focus-visible,
-    .tau-code-block__action:hover,
-    .tau-code-block__action:focus-visible,
+    .tauren-code-block__action:hover,
+    .tauren-code-block__action:focus-visible,
     .activity__body-action:hover,
     .activity__body-action:focus-visible {
       color: var(--vscode-foreground);
@@ -245,16 +245,16 @@ export const messageStyles = /* css */ `    .message {
       outline: none;
     }
 
-    .tau-code-block__action,
+    .tauren-code-block__action,
     .activity__body-action {
-      background: color-mix(in srgb, var(--tau-code-background, var(--vscode-editor-background)) 88%, var(--vscode-foreground) 12%);
+      background: color-mix(in srgb, var(--tauren-code-background, var(--vscode-editor-background)) 88%, var(--vscode-foreground) 12%);
     }
 
-    .tau-icon-action-tooltip {
+    .tauren-icon-action-tooltip {
       position: absolute;
       right: 0;
       bottom: calc(100% + 5px);
-      z-index: var(--tau-z-tooltip);
+      z-index: var(--tauren-z-tooltip);
       display: none;
       width: max-content;
       max-width: min(220px, 70vw);
@@ -272,43 +272,43 @@ export const messageStyles = /* css */ `    .message {
       pointer-events: none;
     }
 
-    .tau-toolbar__sessions .tau-icon-action-tooltip,
-    .tau-toolbar__tree .tau-icon-action-tooltip,
-    .sessions__menu-button .tau-icon-action-tooltip,
-    .sessions__named-filter .tau-icon-action-tooltip {
+    .tauren-toolbar__sessions .tauren-icon-action-tooltip,
+    .tauren-toolbar__tree .tauren-icon-action-tooltip,
+    .sessions__menu-button .tauren-icon-action-tooltip,
+    .sessions__named-filter .tauren-icon-action-tooltip {
       top: calc(100% + 5px);
       right: 0;
       bottom: auto;
     }
 
-    .tau-toolbar__sessions .tau-icon-action-tooltip,
-    .composer__diff-summary .tau-icon-action-tooltip {
+    .tauren-toolbar__sessions .tauren-icon-action-tooltip,
+    .composer__diff-summary .tauren-icon-action-tooltip {
       right: auto;
       left: 0;
     }
 
-    .message__copy:hover .tau-icon-action-tooltip,
-    .message__copy:focus-visible .tau-icon-action-tooltip,
-    .tau-code-block__action:hover .tau-icon-action-tooltip,
-    .tau-code-block__action:focus-visible .tau-icon-action-tooltip,
-    .activity__body-action:hover .tau-icon-action-tooltip,
-    .activity__body-action:focus-visible .tau-icon-action-tooltip,
-    .tau-toolbar__sessions:hover .tau-icon-action-tooltip,
-    .tau-toolbar__sessions:focus-visible .tau-icon-action-tooltip,
-    .tau-toolbar__tree:hover .tau-icon-action-tooltip,
-    .tau-toolbar__tree:focus-visible .tau-icon-action-tooltip,
-    .composer__submit:hover:not(:disabled) .tau-icon-action-tooltip,
-    .composer__submit:focus-visible:not(:disabled) .tau-icon-action-tooltip,
-    .composer__diff-summary:hover .tau-icon-action-tooltip,
-    .composer__diff-summary:focus-visible .tau-icon-action-tooltip,
-    .composer__mode-button:hover .tau-icon-action-tooltip,
-    .composer__mode-button:focus-visible .tau-icon-action-tooltip,
-    .composer__model[aria-expanded="false"]:hover .tau-icon-action-tooltip,
-    .composer__model[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
-    .sessions__menu-button[aria-expanded="false"]:hover .tau-icon-action-tooltip,
-    .sessions__menu-button[aria-expanded="false"]:focus-visible .tau-icon-action-tooltip,
-    .sessions__named-filter:hover .tau-icon-action-tooltip,
-    .sessions__named-filter:focus-visible .tau-icon-action-tooltip {
+    .message__copy:hover .tauren-icon-action-tooltip,
+    .message__copy:focus-visible .tauren-icon-action-tooltip,
+    .tauren-code-block__action:hover .tauren-icon-action-tooltip,
+    .tauren-code-block__action:focus-visible .tauren-icon-action-tooltip,
+    .activity__body-action:hover .tauren-icon-action-tooltip,
+    .activity__body-action:focus-visible .tauren-icon-action-tooltip,
+    .tauren-toolbar__sessions:hover .tauren-icon-action-tooltip,
+    .tauren-toolbar__sessions:focus-visible .tauren-icon-action-tooltip,
+    .tauren-toolbar__tree:hover .tauren-icon-action-tooltip,
+    .tauren-toolbar__tree:focus-visible .tauren-icon-action-tooltip,
+    .composer__submit:hover:not(:disabled) .tauren-icon-action-tooltip,
+    .composer__submit:focus-visible:not(:disabled) .tauren-icon-action-tooltip,
+    .composer__diff-summary:hover .tauren-icon-action-tooltip,
+    .composer__diff-summary:focus-visible .tauren-icon-action-tooltip,
+    .composer__mode-button:hover .tauren-icon-action-tooltip,
+    .composer__mode-button:focus-visible .tauren-icon-action-tooltip,
+    .composer__model[aria-expanded="false"]:hover .tauren-icon-action-tooltip,
+    .composer__model[aria-expanded="false"]:focus-visible .tauren-icon-action-tooltip,
+    .sessions__menu-button[aria-expanded="false"]:hover .tauren-icon-action-tooltip,
+    .sessions__menu-button[aria-expanded="false"]:focus-visible .tauren-icon-action-tooltip,
+    .sessions__named-filter:hover .tauren-icon-action-tooltip,
+    .sessions__named-filter:focus-visible .tauren-icon-action-tooltip {
       display: block;
     }
 

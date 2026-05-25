@@ -4,7 +4,7 @@ import type { ExtensionWidgetContent, ExtensionWidgetPlacement } from './types';
 import {
   createTuiFacade,
   setComponentFocused,
-  tauTheme,
+  taurenTheme,
   type CustomUiComponent,
   type CustomUiTerminal
 } from './customUiHost';
@@ -180,7 +180,7 @@ export class ExtensionWidgetHost {
     const tui = createTuiFacade(widget.terminal, () => this.scheduleRender(widget.key));
 
     Promise.resolve()
-      .then(() => factory(tui as never, tauTheme as never))
+      .then(() => factory(tui as never, taurenTheme as never))
       .then((component) => {
         const current = this.widgets.get(widget.key);
 

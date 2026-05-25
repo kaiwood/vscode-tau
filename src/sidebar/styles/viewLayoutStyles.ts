@@ -1,4 +1,4 @@
-export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
+export const viewLayoutStyles = /* css */ `    .tauren-chat-surface,
     .sessions,
     .session-tree {
       grid-row: 2 / 4;
@@ -10,12 +10,12 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       max-width: 100vw;
       min-width: 0;
       min-height: 0;
-      transition: transform var(--tau-lane-transition-duration) var(--tau-lane-transition-easing);
+      transition: transform var(--tauren-lane-transition-duration) var(--tauren-lane-transition-easing);
       will-change: transform;
     }
 
-    .tau-chat-surface {
-      z-index: var(--tau-z-base);
+    .tauren-chat-surface {
+      z-index: var(--tauren-z-base);
       display: grid;
       overflow: hidden;
       overflow: clip;
@@ -25,7 +25,7 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       pointer-events: auto;
     }
 
-    .tau-chat-surface__face {
+    .tauren-chat-surface__face {
       grid-row: 1;
       grid-column: 1;
       min-width: 0;
@@ -38,11 +38,11 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       will-change: transform, opacity;
     }
 
-    .tau-view--suppress-face-transition .tau-chat-surface__face {
+    .tauren-view--suppress-face-transition .tauren-chat-surface__face {
       transition: none;
     }
 
-    .tau-chat-surface__main {
+    .tauren-chat-surface__main {
       position: relative;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -53,20 +53,20 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       pointer-events: auto;
     }
 
-    .tau-chat-surface__settings {
+    .tauren-chat-surface__settings {
       overflow: hidden;
       transform: rotateY(-180deg);
       opacity: 0;
       pointer-events: none;
     }
 
-    .tau-view--chat-face-settings .tau-chat-surface__main {
+    .tauren-view--chat-face-settings .tauren-chat-surface__main {
       transform: rotateY(180deg);
       opacity: 0;
       pointer-events: none;
     }
 
-    .tau-view--chat-face-settings .tau-chat-surface__settings {
+    .tauren-view--chat-face-settings .tauren-chat-surface__settings {
       transform: rotateY(0deg);
       opacity: 1;
       pointer-events: auto;
@@ -80,19 +80,19 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       max-width: 100vw;
       min-width: 0;
       min-height: 0;
-      padding: 8px var(--tau-chat-inline-padding) calc(14px + 4lh);
+      padding: 8px var(--tauren-chat-inline-padding) calc(14px + 4lh);
       overflow-x: hidden;
       overflow-y: auto;
       pointer-events: auto;
     }
 
-    .tau-view--has-extension-widgets-above .messages {
+    .tauren-view--has-extension-widgets-above .messages {
       padding-bottom: calc(14px + 1lh);
     }
 
     .sessions,
     .session-tree {
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       overflow-x: hidden;
       overflow-y: auto;
       padding: 6px 12px 12px 8px;
@@ -109,55 +109,55 @@ export const viewLayoutStyles = /* css */ `    .tau-chat-surface,
       transform: translate3d(100%, 0, 0);
     }
 
-    .tau-view--lane-chat .tau-chat-surface {
+    .tauren-view--lane-chat .tauren-chat-surface {
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
     }
 
-    .tau-view--lane-chat .sessions {
+    .tauren-view--lane-chat .sessions {
       transform: translate3d(-100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-chat .session-tree {
+    .tauren-view--lane-chat .session-tree {
       transform: translate3d(100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-sessions .tau-chat-surface {
+    .tauren-view--lane-sessions .tauren-chat-surface {
       transform: translate3d(100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-sessions .sessions {
+    .tauren-view--lane-sessions .sessions {
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
     }
 
-    .tau-view--lane-sessions .session-tree {
+    .tauren-view--lane-sessions .session-tree {
       transform: translate3d(100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-tree .tau-chat-surface {
+    .tauren-view--lane-tree .tauren-chat-surface {
       transform: translate3d(-100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-tree .sessions {
+    .tauren-view--lane-tree .sessions {
       transform: translate3d(-100%, 0, 0);
       pointer-events: none;
     }
 
-    .tau-view--lane-tree .session-tree {
+    .tauren-view--lane-tree .session-tree {
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
     }
 
 
     @media (prefers-reduced-motion: reduce) {
-      .tau-chat-surface,
-      .tau-chat-surface__face,
+      .tauren-chat-surface,
+      .tauren-chat-surface__face,
       .sessions,
       .session-tree {
         transition: none;

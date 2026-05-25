@@ -294,7 +294,7 @@ export const sessionListStyles = /* css */ `    .sessions__search {
     .sessions__tree-footer {
       position: sticky;
       bottom: 0;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       margin-top: 4px;
       background: var(--vscode-sideBar-background);
       border-top: 1px solid color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
@@ -393,7 +393,7 @@ export const sessionListStyles = /* css */ `    .sessions__search {
       position: absolute;
       top: 26px;
       right: 0;
-      z-index: var(--tau-z-modal);
+      z-index: var(--tauren-z-modal);
       min-width: 170px;
       padding: 4px;
       background: var(--vscode-dropdown-background, var(--vscode-editorWidget-background));

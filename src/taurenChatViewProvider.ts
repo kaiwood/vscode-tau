@@ -5,7 +5,7 @@ import {
   parseWebviewMessage
 } from './sidebar/chatWebview';
 import { parseWebviewCustomUiTheme } from './webviewProtocol/values';
-import type { SettingValue, TauSettingId } from './settings/settingsRegistry';
+import type { SettingValue, TaurenSettingId } from './settings/settingsRegistry';
 import type { WebviewCustomUiTheme, WebviewMessage, WebviewStateMessage } from './webviewProtocol/types';
 import { type PiClientFactory, type PiClient } from './pi/clientTypes';
 import type { PiClientOptions } from './pi/types';
@@ -15,8 +15,8 @@ import type { ExtensionEditorHostMessage, ExtensionUi } from './extensionUi/type
 import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessionDiffSnapshot } from './diff/sessionDiffStorage';
 import { SessionDiffViewer } from './diff/sessionDiffViewer';
 import { ShikiCodeRenderer } from './highlighting/shikiCodeRenderer';
-import { TauSessionManager } from './sessions/tauSessionManager';
-import type { PiPromptImageAttachment } from './tauChatController';
+import { TaurenSessionManager } from './sessions/taurenSessionManager';
+import type { PiPromptImageAttachment } from './taurenChatController';
 import { listPiSessions } from './sessions/piSessionList';
 import { runReadyScript } from './readyScript';
 import { createPromptContextFromEditor } from './prompt/editorContext';
@@ -34,13 +34,13 @@ import { readCachedSessionMeta, writeCachedSessionMeta } from './metadata/cache'
 import { readSessionJsonlHeaderCwdSync } from './pi/sessionJsonl';
 import { getPiStartupCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './workspace/cwdSafety';
 
-export const tauChatViewType = 'tauren.chatView';
+export const taurenChatViewType = 'tauren.chatView';
 export type { PiClient } from './pi/clientTypes';
 
 const currentSessionFileStorageKey = 'tauren.currentSessionFile';
 const welcomeDismissedStorageKey = 'tauren.welcomeDismissed';
-const tauSidebarFocusContextKey = 'tauren.sidebarFocus';
-const tauBusyContextKey = 'tauren.busy';
+const taurenSidebarFocusContextKey = 'tauren.sidebarFocus';
+const taurenBusyContextKey = 'tauren.busy';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
 
@@ -62,7 +62,7 @@ function createConfiguredPiClient(
   });
 }
 
-export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private webviewView: vscode.WebviewView | undefined;
   private pendingInputFocus = false;
   private pendingModelPickerOpen = false;
@@ -71,7 +71,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
   private pendingSessionNameEditStart = false;
   private webviewReady = false;
   private readonly pendingToastMessages: Array<{ message: string; kind: 'success' | 'warning' | 'error' }> = [];
-  private readonly controller: TauSessionManager;
+  private readonly controller: TaurenSessionManager;
   private readonly codeRenderer = new ShikiCodeRenderer();
   private readonly sessionDiffViewer = new SessionDiffViewer((message, notifyType) => this.showNotification(message, notifyType));
   private contextUsagePollTimer: NodeJS.Timeout | undefined;
@@ -109,7 +109,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     }));
     const initialSessionFile = this.sanitizeInitialSessionFile(readCurrentSessionFile(this.workspaceState));
 
-    this.controller = new TauSessionManager({
+    this.controller = new TaurenSessionManager({
       createClient: configuredCreateClient,
       getCwd: () => this.workspaceCwdProvider(),
       getOutputColors: () => getOutputColorsSetting(),
@@ -118,8 +118,8 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
       getReadyScript: () => getReadyScriptSetting(),
       getReadyScriptEnabled: () => getReadyScriptEnabledSetting(),
       getRejectEditWriteOutsideWorkspace: () => getRejectEditWriteOutsideWorkspaceSetting(),
-      getTauSettingValues: () => getTauSettingValues(this.globalState),
-      updateTauSetting: (id, value) => this.updateTauSetting(id, value),
+      getTaurenSettingValues: () => getTaurenSettingValues(this.globalState),
+      updateTaurenSetting: (id, value) => this.updateTaurenSetting(id, value),
       runReadyScript: (scriptPath, cwd) => {
         runReadyScript(scriptPath, cwd, {
           onError: (message) => this.showNotification(message, 'warning')
@@ -176,10 +176,10 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
         }
 
         const affectsWelcome = event.affectsConfiguration('tauren.showWelcome');
-        const affectsExtensionSettings = affectsAnyTauExtensionSetting(event);
+        const affectsExtensionSettings = affectsAnyTaurenExtensionSetting(event);
 
         if (affectsExtensionSettings) {
-          this.controller.refreshTauSettingValues();
+          this.controller.refreshTaurenSettingValues();
         }
 
         if (affectsWelcome && hasConfiguredShowWelcomeSetting()) {
@@ -314,7 +314,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
+      await vscode.commands.executeCommand(`${taurenChatViewType}.focus`);
     }
 
     this.postInputFocusSoon();
@@ -398,7 +398,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
+      await vscode.commands.executeCommand(`${taurenChatViewType}.focus`);
     }
 
     this.refreshLiveMetadata();
@@ -410,7 +410,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
+      await vscode.commands.executeCommand(`${taurenChatViewType}.focus`);
     }
 
     this.pendingHelpToggle = true;
@@ -743,7 +743,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.controller.postState();
 
     try {
-      await updateTauSetting('tauren.showWelcome', false);
+      await updateTaurenSetting('tauren.showWelcome', false);
       await this.globalState?.update(welcomeDismissedStorageKey, undefined);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -751,8 +751,8 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
   }
 
-  private async updateTauSetting(id: TauSettingId, value: SettingValue): Promise<void> {
-    await updateTauSetting(id, value);
+  private async updateTaurenSetting(id: TaurenSettingId, value: SettingValue): Promise<void> {
+    await updateTaurenSetting(id, value);
 
     if (id === 'tauren.showWelcome' && typeof value === 'boolean') {
       await this.globalState?.update(welcomeDismissedStorageKey, undefined);
@@ -940,7 +940,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     if (this.webviewView?.visible) {
       this.webviewView.show(false);
     } else {
-      await vscode.commands.executeCommand(`${tauChatViewType}.focus`);
+      await vscode.commands.executeCommand(`${taurenChatViewType}.focus`);
     }
 
     this.refreshLiveMetadata();
@@ -1140,7 +1140,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
 
     this.sidebarFocusContext = focused;
-    void vscode.commands.executeCommand('setContext', tauSidebarFocusContextKey, focused).then(undefined, () => undefined);
+    void vscode.commands.executeCommand('setContext', taurenSidebarFocusContextKey, focused).then(undefined, () => undefined);
   }
 
   private setBusyContext(busy: boolean): void {
@@ -1149,7 +1149,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
 
     this.busyContext = busy;
-    void vscode.commands.executeCommand('setContext', tauBusyContextKey, busy).then(undefined, () => undefined);
+    void vscode.commands.executeCommand('setContext', taurenBusyContextKey, busy).then(undefined, () => undefined);
   }
 
 }
@@ -1326,7 +1326,7 @@ function getRejectEditWriteOutsideWorkspaceSetting(): boolean {
   return vscode.workspace.getConfiguration('tauren').get<boolean>('rejectEditWriteOutsideWorkspace', false);
 }
 
-function affectsAnyTauExtensionSetting(event: vscode.ConfigurationChangeEvent): boolean {
+function affectsAnyTaurenExtensionSetting(event: vscode.ConfigurationChangeEvent): boolean {
   return event.affectsConfiguration('tauren.extensions.aboveWidgetsEnabled')
     || event.affectsConfiguration('tauren.extensions.belowWidgetsEnabled')
     || event.affectsConfiguration('tauren.extensions.statusBarEnabled')
@@ -1354,7 +1354,7 @@ function getExtensionMonospaceFontEnabledSetting(): boolean {
   return vscode.workspace.getConfiguration('tauren').get<boolean>('extensions.monospaceFontEnabled', true);
 }
 
-function getTauSettingValues(globalState?: vscode.Memento): Partial<Record<TauSettingId, SettingValue>> {
+function getTaurenSettingValues(globalState?: vscode.Memento): Partial<Record<TaurenSettingId, SettingValue>> {
   return {
     'tauren.outputColors': getOutputColorsSetting(),
     'tauren.animationsEnabled': getAnimationsEnabledSetting(),
@@ -1373,7 +1373,7 @@ function getTauSettingValues(globalState?: vscode.Memento): Partial<Record<TauSe
   };
 }
 
-async function updateTauSetting(id: TauSettingId, value: SettingValue): Promise<void> {
+async function updateTaurenSetting(id: TaurenSettingId, value: SettingValue): Promise<void> {
   const configKey = id.slice('tauren.'.length);
 
   if (Array.isArray(value)) {

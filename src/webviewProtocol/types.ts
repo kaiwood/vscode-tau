@@ -1,5 +1,5 @@
 import type { ChatSnapshotMessage, ChatSnapshotState, ChatState } from '../chat/chatSession';
-import type { SettingId, SettingValue, TauSettingsSection } from '../settings/settingsRegistry';
+import type { SettingId, SettingValue, TaurenSettingsSection } from '../settings/settingsRegistry';
 
 export type WebviewStreamingBehavior = 'steer' | 'followUp';
 export type WebviewComposerTextMode = 'replace' | 'append';
@@ -127,7 +127,7 @@ export type WebviewSlashCommand = {
 
 export type WebviewLane = 'chat' | 'sessions' | 'tree';
 export type WebviewChatFace = 'main' | 'settings';
-export type WebviewSettingsSection = TauSettingsSection;
+export type WebviewSettingsSection = TaurenSettingsSection;
 
 export type WebviewNavigationState = {
   lane?: WebviewLane;

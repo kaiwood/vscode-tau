@@ -93,7 +93,7 @@ let pendingRenderFrame: number | undefined;
 let pendingReturnToChatAfterRender = false;
 let hasReceivedHostState = false;
 let faceTransitionSuppressionFrame: number | undefined;
-const renderInstrumentationEnabled = document.body.dataset.tauDevRenderInstrumentation === 'true';
+const renderInstrumentationEnabled = document.body.dataset.taurenDevRenderInstrumentation === 'true';
 const busySubmitHomeMarker = document.createComment('busy-submit-home');
 busySubmitElement.after(busySubmitHomeMarker);
 const widgetDimensionSignatures = new Map<string, string>();
@@ -268,7 +268,7 @@ window.addEventListener('message', (event) => {
   if (isInitialHostState) {
     suppressFaceTransitionForNextRender();
   }
-  document.body.classList.toggle('tau-animations-disabled', !state.animationsEnabled);
+  document.body.classList.toggle('tauren-animations-disabled', !state.animationsEnabled);
   applyCustomUiTheme(state.customUiTheme);
   const wasSessionLane = previousLane === 'sessions' || previousLane === 'tree';
   const isSessionLane = state.lane === 'sessions' || state.lane === 'tree';
@@ -379,12 +379,12 @@ function showToast(message: string, kind: 'success' | 'warning' | 'error' = 'suc
     clearTimeout(toastHideTimeout);
   }
 
-  toastElement.className = 'tau-toast tau-toast--' + kind;
+  toastElement.className = 'tauren-toast tauren-toast--' + kind;
   toastElement.replaceChildren(createToastIcon(kind), document.createTextNode(message));
   toastElement.hidden = false;
-  toastElement.classList.add('tau-toast--visible');
+  toastElement.classList.add('tauren-toast--visible');
   toastHideTimeout = setTimeout(() => {
-    toastElement.classList.remove('tau-toast--visible');
+    toastElement.classList.remove('tauren-toast--visible');
     toastElement.hidden = true;
     toastHideTimeout = undefined;
   }, 2500);
@@ -396,13 +396,13 @@ function parseToastKind(value: unknown): 'success' | 'warning' | 'error' {
 
 function applyCustomUiTheme(theme: WebviewState['customUiTheme']): void {
   for (const name of ['default', 'modern', 'crt', 'amber', 'matrix']) {
-    document.body.classList.toggle(`tau-custom-ui-theme-${name}`, name === theme);
+    document.body.classList.toggle(`tauren-custom-ui-theme-${name}`, name === theme);
   }
 }
 
 function createToastIcon(kind: 'success' | 'warning' | 'error'): HTMLElement {
   const icon = document.createElement('span');
-  icon.className = 'tau-toast__icon';
+  icon.className = 'tauren-toast__icon';
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = kind === 'warning' ? '⚠' : kind === 'error' ? '✕' : '✓';
   return icon;
@@ -430,7 +430,7 @@ function scheduleRender(options: { returnToChatMain?: boolean } = {}): void {
 }
 
 function suppressFaceTransitionForNextRender(): void {
-  viewElement.classList.add('tau-view--suppress-face-transition');
+  viewElement.classList.add('tauren-view--suppress-face-transition');
 
   if (faceTransitionSuppressionFrame !== undefined) {
     cancelAnimationFrame(faceTransitionSuppressionFrame);
@@ -439,7 +439,7 @@ function suppressFaceTransitionForNextRender(): void {
   faceTransitionSuppressionFrame = requestAnimationFrame(() => {
     faceTransitionSuppressionFrame = requestAnimationFrame(() => {
       faceTransitionSuppressionFrame = undefined;
-      viewElement.classList.remove('tau-view--suppress-face-transition');
+      viewElement.classList.remove('tauren-view--suppress-face-transition');
     });
   });
 }
@@ -468,12 +468,12 @@ function render(): void {
   const isSessionLane = state.lane === 'sessions' || state.lane === 'tree';
   const isSettingsFaceVisible = !isSessionLane && state.chatFace === 'settings';
   const shouldStickToBottom = !isSessionLane && !isSettingsFaceVisible && messagesController.shouldFollowOutput();
-  viewElement.classList.toggle('tau-view--session-lane', isSessionLane);
-  viewElement.classList.toggle('tau-view--lane-sessions', state.lane === 'sessions');
-  viewElement.classList.toggle('tau-view--lane-tree', state.lane === 'tree');
-  viewElement.classList.toggle('tau-view--lane-chat', !isSessionLane);
-  viewElement.classList.toggle('tau-view--chat-face-settings', isSettingsFaceVisible);
-  viewElement.classList.toggle('tau-view--extension-ui-font', !isExtensionMonospaceFontEnabled());
+  viewElement.classList.toggle('tauren-view--session-lane', isSessionLane);
+  viewElement.classList.toggle('tauren-view--lane-sessions', state.lane === 'sessions');
+  viewElement.classList.toggle('tauren-view--lane-tree', state.lane === 'tree');
+  viewElement.classList.toggle('tauren-view--lane-chat', !isSessionLane);
+  viewElement.classList.toggle('tauren-view--chat-face-settings', isSettingsFaceVisible);
+  viewElement.classList.toggle('tauren-view--extension-ui-font', !isExtensionMonospaceFontEnabled());
   messagesElement.hidden = false;
   sessionsElement.hidden = false;
   sessionTreeElement.hidden = false;
@@ -554,8 +554,8 @@ function syncExtensionWidgets(hiddenBySurface: boolean): void {
   renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets);
   syncBusySubmitPlacement(placeBusySubmitOnTopWidget);
   extensionWidgetsAboveElement.classList.toggle('extension-widgets--with-busy', placeBusySubmitOnTopWidget);
-  viewElement.classList.toggle('tau-view--has-extension-widgets-above', aboveWidgets.length > 0);
-  viewElement.classList.toggle('tau-view--has-extension-widgets-below', belowWidgets.length > 0);
+  viewElement.classList.toggle('tauren-view--has-extension-widgets-above', aboveWidgets.length > 0);
+  viewElement.classList.toggle('tauren-view--has-extension-widgets-below', belowWidgets.length > 0);
 }
 
 function renderExtensionWidgetContainer(container: HTMLElement, widgets: WebviewState['extensionWidgets'], leadingElement?: HTMLElement): void {
@@ -738,7 +738,7 @@ function syncExtensionStatus(hiddenBySurface: boolean): void {
   composerStatusTextElement.textContent = text;
   composerStatusElement.hidden = hidden;
   composerStatusElement.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-  viewElement.classList.toggle('tau-view--has-extension-status', !hidden);
+  viewElement.classList.toggle('tauren-view--has-extension-status', !hidden);
 }
 
 function toggleHelpOverlay(): void {

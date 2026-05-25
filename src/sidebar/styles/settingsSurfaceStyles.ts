@@ -33,7 +33,7 @@ export const settingsSurfaceStyles = /* css */ `    .settings-surface {
     .settings-surface__header,
     .settings-surface__body {
       position: relative;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
     }
 
     .settings-surface__header {
@@ -299,7 +299,7 @@ export const settingsSurfaceStyles = /* css */ `    .settings-surface {
       transform: translateX(16px);
     }
 
-    .tau-animations-disabled .settings-surface__toggle span::after {
+    .tauren-animations-disabled .settings-surface__toggle span::after {
       transition: none;
     }
 

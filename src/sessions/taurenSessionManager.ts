@@ -1,14 +1,14 @@
-import { TauChatController, type PiPromptImageAttachment } from '../tauChatController';
+import { TaurenChatController, type PiPromptImageAttachment } from '../taurenChatController';
 import { ExtensionCustomUiHost, type CustomUiHostMessage } from '../extensionUi/customUiHost';
 import { ExtensionWidgetHost } from '../extensionUi/extensionWidgetHost';
 import type { ExtensionEditorHostMessage, ExtensionUi } from '../extensionUi/types';
-import type { TauChatControllerOptions } from '../controller/types';
-import type { TauChatSessionMetaSnapshot } from '../metadata/types';
+import type { TaurenChatControllerOptions } from '../controller/types';
+import type { TaurenChatSessionMetaSnapshot } from '../metadata/types';
 import type { PiPromptContextInput } from '../prompt/types';
-import type { SettingValue, TauSettingId } from '../settings/settingsRegistry';
+import type { SettingValue, TaurenSettingId } from '../settings/settingsRegistry';
 import type { WebviewMessage, WebviewMessagePatch, WebviewSessionItem, WebviewStateMessage } from '../webviewProtocol/types';
 
-export type TauSessionManagerOptions = TauChatControllerOptions & {
+export type TaurenSessionManagerOptions = TaurenChatControllerOptions & {
   customUi?: {
     isAvailable(): boolean;
     postMessage(message: CustomUiHostMessage): boolean;
@@ -41,13 +41,13 @@ const extensionSettingIds = [
   extensionStatusSettingId,
   extensionBackgroundColorSettingId,
   extensionMonospaceFontSettingId
-] as const satisfies readonly TauSettingId[];
+] as const satisfies readonly TaurenSettingId[];
 type ExtensionSettingId = typeof extensionSettingIds[number];
 const inactiveSessionDisposeAfterMs = 30 * 60 * 1000;
 const maxInactiveOpenSessions = 3;
 
-function isExtensionSettingId(settingId: TauSettingId): settingId is ExtensionSettingId {
-  return (extensionSettingIds as readonly TauSettingId[]).includes(settingId);
+function isExtensionSettingId(settingId: TaurenSettingId): settingId is ExtensionSettingId {
+  return (extensionSettingIds as readonly TaurenSettingId[]).includes(settingId);
 }
 
 type PendingExtensionEditor = {
@@ -58,7 +58,7 @@ type PendingExtensionEditor = {
 
 type OpenSession = {
   id: string;
-  controller: TauChatController;
+  controller: TaurenChatController;
   state: WebviewStateMessage | undefined;
   sessionFile: string | undefined;
   status: OpenSessionStatus;
@@ -75,7 +75,7 @@ type OpenSession = {
   pendingComposerPaste: { text: string; revision: number } | undefined;
 };
 
-export class TauSessionManager {
+export class TaurenSessionManager {
   private readonly sessions: OpenSession[] = [];
   private sessionCatalog: WebviewSessionItem[] = [];
   private customUiViewAttached = false;
@@ -92,7 +92,7 @@ export class TauSessionManager {
     monospaceFontEnabled: true
   };
 
-  public constructor(private readonly options: TauSessionManagerOptions) {
+  public constructor(private readonly options: TaurenSessionManagerOptions) {
     this.syncExtensionSettingsFromOptions();
     this.createSession({ initial: true });
   }
@@ -243,7 +243,7 @@ export class TauSessionManager {
     void this.active().controller.refreshSessionDiffStats();
   }
 
-  public refreshTauSettingValues(): void {
+  public refreshTaurenSettingValues(): void {
     if (this.syncExtensionSettingsFromOptions()) {
       this.active().controller.postState();
     }
@@ -296,9 +296,9 @@ export class TauSessionManager {
     active.controller.restartForWorkspaceChange(cwd, sessionFile);
   }
 
-  private getTauSettingValues(): Partial<Record<TauSettingId, SettingValue>> {
+  private getTaurenSettingValues(): Partial<Record<TaurenSettingId, SettingValue>> {
     return {
-      ...(this.options.getTauSettingValues?.() ?? {}),
+      ...(this.options.getTaurenSettingValues?.() ?? {}),
       [extensionAboveWidgetSettingId]: this.extensionSettings.aboveWidgetsEnabled,
       [extensionBelowWidgetSettingId]: this.extensionSettings.belowWidgetsEnabled,
       [extensionStatusSettingId]: this.extensionSettings.statusBarEnabled,
@@ -307,30 +307,30 @@ export class TauSessionManager {
     };
   }
 
-  private async updateTauSetting(settingId: TauSettingId, value: SettingValue): Promise<void> {
+  private async updateTaurenSetting(settingId: TaurenSettingId, value: SettingValue): Promise<void> {
     if (isExtensionSettingId(settingId)) {
       if (typeof value !== 'boolean') {
         throw new Error(`Unsupported Tauren setting value for ${settingId}.`);
       }
 
-      if (!this.options.updateTauSetting) {
+      if (!this.options.updateTaurenSetting) {
         throw new Error('Tauren settings are not available in this session.');
       }
 
-      await this.options.updateTauSetting(settingId, value);
+      await this.options.updateTaurenSetting(settingId, value);
       this.applyExtensionSetting(settingId, value);
       return;
     }
 
-    if (!this.options.updateTauSetting) {
+    if (!this.options.updateTaurenSetting) {
       throw new Error('Tauren settings are not available in this session.');
     }
 
-    await this.options.updateTauSetting(settingId, value);
+    await this.options.updateTaurenSetting(settingId, value);
   }
 
   private syncExtensionSettingsFromOptions(): boolean {
-    const values = this.options.getTauSettingValues?.() ?? {};
+    const values = this.options.getTaurenSettingValues?.() ?? {};
     let changed = false;
 
     for (const settingId of extensionSettingIds) {
@@ -432,11 +432,11 @@ export class TauSessionManager {
     const extensionUi = this.createSessionExtensionUi(id, customUiHost, extensionWidgetHost);
     const session: OpenSession = {
       id,
-      controller: new TauChatController({
+      controller: new TaurenChatController({
         ...this.options,
         extensionUi,
-        getTauSettingValues: () => this.getTauSettingValues(),
-        updateTauSetting: (settingId, value) => this.updateTauSetting(settingId, value),
+        getTaurenSettingValues: () => this.getTaurenSettingValues(),
+        updateTaurenSetting: (settingId, value) => this.updateTaurenSetting(settingId, value),
         initialSessionFile,
         initialSessionMeta: this.options.initialSessionMeta,
         renameOpenSession: (sessionPath, name) => this.renameOpenSessionFrom(id, sessionPath, name),
@@ -794,7 +794,7 @@ export class TauSessionManager {
     to.controller.replacePromptImages(images);
   }
 
-  private handleSessionMetaChange(id: string, metadata: TauChatSessionMetaSnapshot): void {
+  private handleSessionMetaChange(id: string, metadata: TaurenChatSessionMetaSnapshot): void {
     if (id === this.activeSessionId) {
       this.options.onSessionMetaChange?.(metadata);
     }

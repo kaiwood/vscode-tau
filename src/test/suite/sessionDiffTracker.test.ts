@@ -79,7 +79,7 @@ suite('SessionDiffTracker', () => {
   });
 
   test('restores historical stats from session files', async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-diff-history-'));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-diff-history-'));
     const sessionFile = path.join(cwd, 'session.jsonl');
     await fs.writeFile(sessionFile, JSON.stringify({
       type: 'tool_execution_end',
@@ -93,7 +93,7 @@ suite('SessionDiffTracker', () => {
   });
 
   test('reconstructs per-file session diffs', async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-diff-files-'));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-diff-files-'));
     const sessionFile = path.join(cwd, 'session.jsonl');
     const editedFile = path.join(cwd, 'src', 'example.ts');
     await fs.mkdir(path.dirname(editedFile), { recursive: true });
@@ -117,7 +117,7 @@ suite('SessionDiffTracker', () => {
   });
 
   test('falls back to recorded edit snippets when full file reconstruction is unavailable', async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-diff-synthetic-'));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-diff-synthetic-'));
     const sessionFile = path.join(cwd, 'session.jsonl');
 
     await fs.writeFile(sessionFile, JSON.stringify({
@@ -138,7 +138,7 @@ suite('SessionDiffTracker', () => {
   });
 
   test('restores net historical stats across repeated edits to the same file', async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-session-diff-net-'));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-session-diff-net-'));
     const sessionFile = path.join(cwd, 'session.jsonl');
     const editedFile = path.join(cwd, 'example.txt');
 

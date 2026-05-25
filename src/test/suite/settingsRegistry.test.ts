@@ -39,7 +39,7 @@ suite('Settings registry', () => {
     const contributedSettings = Object.keys(packageJson.contributes?.configuration?.properties ?? {});
 
     for (const setting of settingDefinitions) {
-      if (setting.owner === 'tau') {
+      if (setting.owner === 'tauren') {
         assert.ok(contributedSettings.includes(setting.id), `${setting.id} should be contributed in package.json`);
       }
     }

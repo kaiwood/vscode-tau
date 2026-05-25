@@ -23,8 +23,8 @@ export function runReadyScript(
       detached: true,
       env: {
         ...process.env,
-        TAU_READY_CWD: cwd ?? '',
-        TAU_READY_SCRIPT: command
+        TAUREN_READY_CWD: cwd ?? '',
+        TAUREN_READY_SCRIPT: command
       },
       stdio: 'ignore'
     });

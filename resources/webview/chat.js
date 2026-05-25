@@ -41,7 +41,7 @@
     highlightedElements.set(element, info);
     pendingHighlights.set(id, info);
     element.dataset.shikiHighlightId = id;
-    element.classList.add("tau-shiki-pending");
+    element.classList.add("tauren-shiki-pending");
     postMessage({
       type: "highlightCode",
       id,
@@ -119,7 +119,7 @@
       highlightedElements.delete(element);
       return;
     }
-    element.classList.remove("tau-shiki-pending");
+    element.classList.remove("tauren-shiki-pending");
     if (!sanitizedHtml) {
       return;
     }
@@ -143,7 +143,7 @@
       requestId: ""
     });
     delete element.dataset.shikiHighlightId;
-    element.classList.remove("tau-shiki-pending");
+    element.classList.remove("tauren-shiki-pending");
     element.innerHTML = cached.html;
   }
   function sanitizeHighlightHtml(value) {
@@ -351,7 +351,7 @@
     element.replaceChildren();
     for (const cell of cells) {
       const cellElement = document.createElement("span");
-      cellElement.className = "tau-ansi-block-image-cell";
+      cellElement.className = "tauren-ansi-block-image-cell";
       cellElement.setAttribute("aria-hidden", "true");
       applyAnsiBlockImageCellStyle(cellElement, cell);
       element.append(cellElement);
@@ -567,7 +567,7 @@
     if (foreground) {
       element.style.color = foreground;
     } else if (style.inverse && background) {
-      element.style.color = "var(--tau-code-background, var(--vscode-sideBar-background))";
+      element.style.color = "var(--tauren-code-background, var(--vscode-sideBar-background))";
     }
     if (!options.suppressBackgrounds) {
       if (background) {
@@ -623,24 +623,24 @@
   var ANSI_COLOR_NAMES = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"];
   var ANSI_BRIGHT_COLOR_NAMES = ["BrightBlack", "BrightRed", "BrightGreen", "BrightYellow", "BrightBlue", "BrightMagenta", "BrightCyan", "BrightWhite"];
   var ANSI_COLOR_FALLBACK_VARIABLES = [
-    "--tau-ansi-black-fallback",
-    "--tau-ansi-red-fallback",
-    "--tau-ansi-green-fallback",
-    "--tau-ansi-yellow-fallback",
-    "--tau-ansi-blue-fallback",
-    "--tau-ansi-magenta-fallback",
-    "--tau-ansi-cyan-fallback",
-    "--tau-ansi-white-fallback"
+    "--tauren-ansi-black-fallback",
+    "--tauren-ansi-red-fallback",
+    "--tauren-ansi-green-fallback",
+    "--tauren-ansi-yellow-fallback",
+    "--tauren-ansi-blue-fallback",
+    "--tauren-ansi-magenta-fallback",
+    "--tauren-ansi-cyan-fallback",
+    "--tauren-ansi-white-fallback"
   ];
   var ANSI_BRIGHT_COLOR_FALLBACK_VARIABLES = [
-    "--tau-ansi-bright-black-fallback",
-    "--tau-ansi-bright-red-fallback",
-    "--tau-ansi-bright-green-fallback",
-    "--tau-ansi-bright-yellow-fallback",
-    "--tau-ansi-bright-blue-fallback",
-    "--tau-ansi-bright-magenta-fallback",
-    "--tau-ansi-bright-cyan-fallback",
-    "--tau-ansi-bright-white-fallback"
+    "--tauren-ansi-bright-black-fallback",
+    "--tauren-ansi-bright-red-fallback",
+    "--tauren-ansi-bright-green-fallback",
+    "--tauren-ansi-bright-yellow-fallback",
+    "--tauren-ansi-bright-blue-fallback",
+    "--tauren-ansi-bright-magenta-fallback",
+    "--tauren-ansi-bright-cyan-fallback",
+    "--tauren-ansi-bright-white-fallback"
   ];
   var ANSI_COLOR_FALLBACKS = ["#000000", "#cd3131", "#0dbc79", "#e5e510", "#2472c8", "#bc3fbc", "#11a8cd", "#e5e5e5"];
   var ANSI_BRIGHT_COLOR_FALLBACKS = ["#666666", "#f14c4c", "#23d18b", "#f5f543", "#3b8eea", "#d670d6", "#29b8db", "#e5e5e5"];
@@ -648,7 +648,7 @@
     const names = bright ? ANSI_BRIGHT_COLOR_NAMES : ANSI_COLOR_NAMES;
     const fallbackVariables = bright ? ANSI_BRIGHT_COLOR_FALLBACK_VARIABLES : ANSI_COLOR_FALLBACK_VARIABLES;
     const fallbacks = bright ? ANSI_BRIGHT_COLOR_FALLBACKS : ANSI_COLOR_FALLBACKS;
-    const fallbackVariable = fallbackVariables[index] ?? "--tau-ansi-white-fallback";
+    const fallbackVariable = fallbackVariables[index] ?? "--tauren-ansi-white-fallback";
     const fallback = fallbacks[index] ?? "#e5e5e5";
     return `var(--vscode-terminal-ansi${names[index] ?? "White"}, var(${fallbackVariable}, ${fallback}))`;
   }
@@ -1390,7 +1390,7 @@
     button.setAttribute("aria-label", label);
     button.innerHTML = copyIconSvg;
     const tooltip = document.createElement("span");
-    tooltip.className = "tau-icon-action-tooltip";
+    tooltip.className = "tauren-icon-action-tooltip";
     tooltip.textContent = label;
     button.append(tooltip);
     return button;
@@ -1510,7 +1510,7 @@
     image.replaceWith(createImageFallback("Unsupported image source."));
   }
   function markRenderableImage(image) {
-    image.classList.add("tau-image");
+    image.classList.add("tauren-image");
     image.loading = "lazy";
     image.decoding = "async";
   }
@@ -1521,7 +1521,7 @@
     }
     const id = `local-image-${nextLocalImageRequestId++}`;
     const placeholder = createImageFallback("Loading image\u2026");
-    placeholder.classList.add("tau-image--pending");
+    placeholder.classList.add("tauren-image--pending");
     placeholder.dataset.localImageRequestId = id;
     localImageRequests.set(id, { placeholder, alt });
     image.replaceWith(placeholder);
@@ -1545,7 +1545,7 @@
   }
   function createImageFallback(text) {
     const fallback = document.createElement("span");
-    fallback.className = "tau-image-fallback";
+    fallback.className = "tauren-image-fallback";
     fallback.textContent = text;
     return fallback;
   }
@@ -1650,7 +1650,7 @@
   function createFileReferenceLink(reference) {
     const link = document.createElement("a");
     link.href = "#";
-    link.className = "tau-file-link";
+    link.className = "tauren-file-link";
     link.textContent = reference.linkText;
     link.dataset.filePath = reference.path;
     if (reference.line) {
@@ -1663,14 +1663,14 @@
   }
   function addCodeBlockActions(root) {
     for (const pre of Array.from(root.querySelectorAll("pre"))) {
-      if (!(pre instanceof HTMLElement) || pre.closest(".tau-code-block")) {
+      if (!(pre instanceof HTMLElement) || pre.closest(".tauren-code-block")) {
         continue;
       }
       const wrapper = document.createElement("div");
-      wrapper.className = "tau-code-block";
+      wrapper.className = "tauren-code-block";
       const actions = document.createElement("div");
-      actions.className = "tau-code-block__actions";
-      const copyButton = createIconActionButton("tau-code-block__action", "Copy code");
+      actions.className = "tauren-code-block__actions";
+      const copyButton = createIconActionButton("tauren-code-block__action", "Copy code");
       copyButton.dataset.copyCodeBlock = "true";
       actions.append(copyButton);
       pre.replaceWith(wrapper);
@@ -1751,7 +1751,7 @@
         continue;
       }
       const span = document.createElement("span");
-      span.className = "tau-stream-word";
+      span.className = "tauren-stream-word";
       span.textContent = token;
       if (wordIndex > 0) {
         span.style.animationDelay = Math.min(wordIndex * 16, 120) + "ms";
@@ -3012,12 +3012,12 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
   };
   function createTooltipElement(text) {
     const tooltip = document.createElement("span");
-    tooltip.className = "tau-icon-action-tooltip";
+    tooltip.className = "tauren-icon-action-tooltip";
     tooltip.textContent = text;
     return tooltip;
   }
   function setTooltipText(element, text) {
-    const tooltip = element.querySelector(".tau-icon-action-tooltip");
+    const tooltip = element.querySelector(".tauren-icon-action-tooltip");
     if (tooltip) {
       tooltip.textContent = text;
     }
@@ -3370,19 +3370,19 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
   // src/webview/dom.ts
   function getWebviewDom() {
     return {
-      viewElement: queryRequired(".tau-view"),
-      toolbarTitleElement: queryRequired(".tau-toolbar__title"),
-      toolbarTitleTextElement: queryRequired(".tau-toolbar__title-text"),
-      toolbarTimestampElement: queryRequired(".tau-toolbar__timestamp"),
-      sessionNameInputElement: queryRequired(".tau-toolbar__title-input"),
-      sessionToggleButton: queryRequired(".tau-toolbar__sessions"),
-      treeToggleButton: queryRequired(".tau-toolbar__tree"),
-      helpOverlayElement: queryRequired(".tau-help-overlay"),
-      helpCloseButton: queryRequired(".tau-help-overlay__close"),
+      viewElement: queryRequired(".tauren-view"),
+      toolbarTitleElement: queryRequired(".tauren-toolbar__title"),
+      toolbarTitleTextElement: queryRequired(".tauren-toolbar__title-text"),
+      toolbarTimestampElement: queryRequired(".tauren-toolbar__timestamp"),
+      sessionNameInputElement: queryRequired(".tauren-toolbar__title-input"),
+      sessionToggleButton: queryRequired(".tauren-toolbar__sessions"),
+      treeToggleButton: queryRequired(".tauren-toolbar__tree"),
+      helpOverlayElement: queryRequired(".tauren-help-overlay"),
+      helpCloseButton: queryRequired(".tauren-help-overlay__close"),
       settingsElement: queryRequired(".settings-surface"),
       settingsBodyElement: queryRequired(".settings-surface__body"),
       settingsBackButton: queryRequired(".settings-surface__back"),
-      toastElement: queryRequired(".tau-toast"),
+      toastElement: queryRequired(".tauren-toast"),
       messagesElement: queryRequired(".messages"),
       sessionsElement: queryRequired(".sessions"),
       sessionTreeElement: queryRequired(".session-tree"),
@@ -3542,7 +3542,7 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
     const element = document.createElement("img");
     const mimeType = typeof image.mimeType === "string" ? image.mimeType.toLowerCase() : "";
     const data = typeof image.data === "string" ? image.data : "";
-    element.className = "tau-image";
+    element.className = "tauren-image";
     element.alt = typeof image.alt === "string" && image.alt ? image.alt : "Image";
     element.loading = "lazy";
     element.decoding = "async";
@@ -3727,7 +3727,7 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
       openFile.setAttribute("aria-label", "Open file");
       openFile.dataset.openFilePath = filePath;
       const openFileTooltip = document.createElement("span");
-      openFileTooltip.className = "tau-icon-action-tooltip";
+      openFileTooltip.className = "tauren-icon-action-tooltip";
       openFileTooltip.textContent = "Open file";
       openFile.append(openFileTooltip);
       actions.append(openFile);
@@ -4078,7 +4078,7 @@ ${after}`;
       }
       const codeCopyButton = target?.closest("[data-copy-code-block]");
       if (codeCopyButton instanceof HTMLElement) {
-        const block = codeCopyButton.closest(".tau-code-block");
+        const block = codeCopyButton.closest(".tauren-code-block");
         const text = block?.querySelector("pre")?.textContent ?? "";
         if (text) {
           event.preventDefault();
@@ -4123,7 +4123,7 @@ ${after}`;
         }
         return;
       }
-      const link = target?.closest(".tau-file-link");
+      const link = target?.closest(".tauren-file-link");
       if (!(link instanceof HTMLElement)) {
         return;
       }
@@ -4575,7 +4575,7 @@ ${after}`;
   var settingDefinitions = [
     {
       id: "tauren.outputColors",
-      owner: "tau",
+      owner: "tauren",
       section: "appearance",
       label: "Output colors",
       description: "Render ANSI and syntax colors in Tauren output.",
@@ -4585,7 +4585,7 @@ ${after}`;
     },
     {
       id: "tauren.animationsEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "appearance",
       label: "Animations",
       description: "Use subtle surface and counter animations.",
@@ -4596,7 +4596,7 @@ ${after}`;
     },
     {
       id: "tauren.showWelcome",
-      owner: "tau",
+      owner: "tauren",
       section: "appearance",
       label: "Welcome message",
       description: "Show the Welcome to Tauren empty state for new chats.",
@@ -4606,7 +4606,7 @@ ${after}`;
     },
     {
       id: "tauren.customUiTheme",
-      owner: "tau",
+      owner: "tauren",
       section: "appearance",
       label: "Custom UI theme",
       description: "Theme for Pi extension custom UI terminal panels.",
@@ -4617,7 +4617,7 @@ ${after}`;
     },
     {
       id: "tauren.extensions.aboveWidgetsEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "extensions",
       label: "Enable above widgets",
       description: "Show Pi extension widgets above the composer.",
@@ -4628,7 +4628,7 @@ ${after}`;
     },
     {
       id: "tauren.extensions.belowWidgetsEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "extensions",
       label: "Enable below widgets",
       description: "Show Pi extension widgets below the composer.",
@@ -4639,7 +4639,7 @@ ${after}`;
     },
     {
       id: "tauren.extensions.statusBarEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "extensions",
       label: "Enable status bar",
       description: "Show one-line Pi extension status updates below the composer.",
@@ -4650,7 +4650,7 @@ ${after}`;
     },
     {
       id: "tauren.extensions.backgroundColorsEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "extensions",
       label: "Enable background colors",
       description: "Render background colors sent by Pi extension widgets.",
@@ -4661,7 +4661,7 @@ ${after}`;
     },
     {
       id: "tauren.extensions.monospaceFontEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "extensions",
       label: "Use monospace font",
       description: "Use the editor monospace font for Pi extension widgets and status.",
@@ -4671,7 +4671,7 @@ ${after}`;
     },
     {
       id: "tauren.blockHttpsImages",
-      owner: "tau",
+      owner: "tauren",
       section: "workspaceSafety",
       label: "Block HTTPS images",
       description: "Block remote HTTPS images in chat markdown.",
@@ -4757,7 +4757,7 @@ ${after}`;
     },
     {
       id: "tauren.confirmSessionDeletion",
-      owner: "tau",
+      owner: "tauren",
       section: "workspaceSafety",
       label: "Confirm deletion",
       description: "Ask before moving Tauren sessions to Trash.",
@@ -4768,7 +4768,7 @@ ${after}`;
     },
     {
       id: "tauren.rejectEditWriteOutsideWorkspace",
-      owner: "tau",
+      owner: "tauren",
       section: "workspaceSafety",
       label: "Reject external edits",
       description: "Reject Pi edit/write mutations outside the active workspace folder.",
@@ -4780,7 +4780,7 @@ ${after}`;
     },
     {
       id: "tauren.readyScript",
-      owner: "tau",
+      owner: "tauren",
       section: "advanced",
       label: "Ready script",
       description: "Executable script Tauren runs when Pi becomes ready.",
@@ -4792,7 +4792,7 @@ ${after}`;
     },
     {
       id: "tauren.readyScriptEnabled",
-      owner: "tau",
+      owner: "tauren",
       section: "advanced",
       label: "Run ready script",
       description: "Temporarily enable or disable the ready script without clearing its path.",
@@ -4918,13 +4918,13 @@ ${after}`;
   // src/webview/sessions/sessionItemCommands.ts
   var sessionItemMenuCommands = webviewSessionItemCommands;
   var sessionItemCommandIcons = {
-    rename: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.1 11.9L5.45 11.6L11.15 5.9C11.55 5.5 11.55 4.85 11.15 4.45L10.9 4.2C10.5 3.8 9.85 3.8 9.45 4.2L3.75 9.9L3.45 11.25C3.37 11.65 3.7 11.98 4.1 11.9Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.85 4.8L10.55 6.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>',
-    showChanges: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 4.5H12.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 8H9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 11.5H7.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M11.1 9.1V13.1M9.1 11.1H13.1" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
-    fork: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><path d="M5.5 4.25V8.5C5.5 10.16 6.84 11.5 8.5 11.5H10.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 4.25V14.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M10.25 8.5L13.25 11.5L10.25 14.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="4.25" r="1.55" fill="currentColor"/><circle cx="5.5" cy="14.75" r="1.55" fill="currentColor"/></svg>',
-    clone: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><rect x="4.25" y="6.25" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.35"/><path d="M7.25 4.25H13.25C14.08 4.25 14.75 4.92 14.75 5.75V11.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    compact: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 3.5H3.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5H12.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5H3.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 12.5H12.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3 5.3L7.05 7.05M10.7 5.3L8.95 7.05M5.3 10.7L7.05 8.95M10.7 10.7L8.95 8.95" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
-    export: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3.5V10" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M5.6 5.9L8 3.5L10.4 5.9" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9.5V11.6C4 12.1 4.4 12.5 4.9 12.5H11.1C11.6 12.5 12 12.1 12 11.6V9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
-    delete: '<svg class="tau-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M6 2h4l1 1h3v1H2V3h3l1-1Zm-2 3h8l-.6 9.2A2 2 0 0 1 9.4 16H6.6a2 2 0 0 1-2-1.8L4 5Zm2 1v8h1V6H6Zm3 0v8h1V6H9Z"/></svg>'
+    rename: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.1 11.9L5.45 11.6L11.15 5.9C11.55 5.5 11.55 4.85 11.15 4.45L10.9 4.2C10.5 3.8 9.85 3.8 9.45 4.2L3.75 9.9L3.45 11.25C3.37 11.65 3.7 11.98 4.1 11.9Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.85 4.8L10.55 6.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>',
+    showChanges: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 4.5H12.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 8H9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M3.5 11.5H7.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M11.1 9.1V13.1M9.1 11.1H13.1" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
+    fork: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><path d="M5.5 4.25V8.5C5.5 10.16 6.84 11.5 8.5 11.5H10.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 4.25V14.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M10.25 8.5L13.25 11.5L10.25 14.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="4.25" r="1.55" fill="currentColor"/><circle cx="5.5" cy="14.75" r="1.55" fill="currentColor"/></svg>',
+    clone: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 19 19" fill="none"><rect x="4.25" y="6.25" width="8.5" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.35"/><path d="M7.25 4.25H13.25C14.08 4.25 14.75 4.92 14.75 5.75V11.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    compact: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 3.5H3.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5H12.5V5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.5H3.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 12.5H12.5V11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3 5.3L7.05 7.05M10.7 5.3L8.95 7.05M5.3 10.7L7.05 8.95M10.7 10.7L8.95 8.95" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    export: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3.5V10" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><path d="M5.6 5.9L8 3.5L10.4 5.9" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9.5V11.6C4 12.1 4.4 12.5 4.9 12.5H11.1C11.6 12.5 12 12.1 12 11.6V9.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>',
+    delete: '<svg class="tauren-toolbar__menu-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M6 2h4l1 1h3v1H2V3h3l1-1Zm-2 3h8l-.6 9.2A2 2 0 0 1 9.4 16H6.6a2 2 0 0 1-2-1.8L4 5Zm2 1v8h1V6H6Zm3 0v8h1V6H9Z"/></svg>'
   };
   function parseSessionItemCommand(command) {
     return parseWebviewSessionItemCommand(command);
@@ -5100,7 +5100,7 @@ ${after}`;
     button.setAttribute("aria-haspopup", "menu");
     button.setAttribute("aria-expanded", options.openMenuIndex === options.index ? "true" : "false");
     button.disabled = !options.canRunSessionItemCommand(options.session);
-    button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg><span class="tau-icon-action-tooltip">Session commands</span>';
+    button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg><span class="tauren-icon-action-tooltip">Session commands</span>';
     wrap.append(button);
     const menu = document.createElement("span");
     menu.className = "sessions__menu";
@@ -5121,12 +5121,12 @@ ${after}`;
   function createSessionItemMenuButton(command, commandIndex, options) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "tau-toolbar__menu-item sessions__menu-item";
+    button.className = "tauren-toolbar__menu-item sessions__menu-item";
     button.setAttribute("role", "menuitem");
     button.setAttribute("data-session-command", command);
     button.setAttribute("data-session-command-index", String(commandIndex));
     button.disabled = !options.canRunSessionItemCommand(options.session, command);
-    button.innerHTML = '<span class="tau-toolbar__menu-label">' + getSessionItemCommandLabel(command) + "</span>" + getSessionItemCommandIcon(command);
+    button.innerHTML = '<span class="tauren-toolbar__menu-label">' + getSessionItemCommandLabel(command) + "</span>" + getSessionItemCommandIcon(command);
     button.addEventListener("pointerenter", () => options.onCommandActivate(commandIndex, button));
     button.addEventListener("pointerleave", () => options.onCommandHover(button, false));
     button.addEventListener("focus", () => options.onCommandActivate(commandIndex, button));
@@ -5737,17 +5737,17 @@ ${after}`;
       this.options.toolbarTimestampElement.textContent = toolbarTimestamp;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !toolbarTimestamp;
       this.options.toolbarTitleElement.title = toolbarTitleTooltip;
-      this.options.toolbarTitleElement.classList.toggle("tau-toolbar__title--editing", this.sessionNameEditing);
+      this.options.toolbarTitleElement.classList.toggle("tauren-toolbar__title--editing", this.sessionNameEditing);
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
       const sessionToggleLabel = isSessionLane ? "Back to chat" : "Show sessions";
       this.options.sessionToggleButton.setAttribute("aria-label", sessionToggleLabel);
       setTooltipText2(this.options.sessionToggleButton, sessionToggleLabel);
-      this.options.sessionToggleButton.classList.toggle("tau-toolbar__sessions--back", isSessionLane);
+      this.options.sessionToggleButton.classList.toggle("tauren-toolbar__sessions--back", isSessionLane);
       const treeToggleLabel = isSessionLane ? "Back to chat" : "Show tree";
       this.options.treeToggleButton.setAttribute("aria-label", treeToggleLabel);
       setTooltipText2(this.options.treeToggleButton, treeToggleLabel);
-      this.options.treeToggleButton.classList.toggle("tau-toolbar__tree--back", isSessionLane);
+      this.options.treeToggleButton.classList.toggle("tauren-toolbar__tree--back", isSessionLane);
     }
     cancelSessionNameEdit(options = {}) {
       if (!this.sessionNameEditing) {
@@ -5803,7 +5803,7 @@ ${after}`;
       this.syncSessionNameEditor();
     }
     syncSessionNameEditor() {
-      this.options.toolbarTitleElement.classList.toggle("tau-toolbar__title--editing", this.sessionNameEditing);
+      this.options.toolbarTitleElement.classList.toggle("tauren-toolbar__title--editing", this.sessionNameEditing);
       this.options.toolbarTitleTextElement.hidden = this.sessionNameEditing;
       this.options.toolbarTimestampElement.hidden = this.sessionNameEditing || !this.options.toolbarTimestampElement.textContent;
       this.options.sessionNameInputElement.hidden = !this.sessionNameEditing;
@@ -5830,7 +5830,7 @@ ${after}`;
     }
   };
   function setTooltipText2(element, text) {
-    const tooltip = element.querySelector(".tau-icon-action-tooltip");
+    const tooltip = element.querySelector(".tauren-icon-action-tooltip");
     if (tooltip) {
       tooltip.textContent = text;
     }
@@ -6622,7 +6622,7 @@ ${after}`;
       namedOnlyButton.className = "sessions__named-filter";
       namedOnlyButton.classList.toggle("sessions__named-filter--active", this.sessionNamedOnlyFilter);
       namedOnlyButton.type = "button";
-      namedOnlyButton.innerHTML = '<svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.75 2.5H8.6C8.95 2.5 9.29 2.64 9.54 2.89L13.1 6.45C13.62 6.97 13.62 7.81 13.1 8.33L8.33 13.1C7.81 13.62 6.97 13.62 6.45 13.1L2.89 9.54C2.64 9.29 2.5 8.95 2.5 8.6V3.75C2.5 3.06 3.06 2.5 3.75 2.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="5.65" cy="5.65" r="1" fill="currentColor"/><path d="M7.35 8.3H10.7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><span class="tau-icon-action-tooltip">Filter to named sessions</span>';
+      namedOnlyButton.innerHTML = '<svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.75 2.5H8.6C8.95 2.5 9.29 2.64 9.54 2.89L13.1 6.45C13.62 6.97 13.62 7.81 13.1 8.33L8.33 13.1C7.81 13.62 6.97 13.62 6.45 13.1L2.89 9.54C2.64 9.29 2.5 8.95 2.5 8.6V3.75C2.5 3.06 3.06 2.5 3.75 2.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="5.65" cy="5.65" r="1" fill="currentColor"/><path d="M7.35 8.3H10.7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><span class="tauren-icon-action-tooltip">Filter to named sessions</span>';
       namedOnlyButton.setAttribute("aria-label", "Filter to named sessions");
       namedOnlyButton.setAttribute("aria-pressed", this.sessionNamedOnlyFilter ? "true" : "false");
       namedOnlyButton.addEventListener("click", (event) => {
@@ -6793,7 +6793,7 @@ ${after}`;
       return Math.max(0, Math.min(index, count - 1));
     }
     setSessionMenuItemHover(item, hovered) {
-      item.classList.toggle("tau-toolbar__menu-item--hover", hovered);
+      item.classList.toggle("tauren-toolbar__menu-item--hover", hovered);
     }
     getCurrentSessionName() {
       const state2 = this.options.getState();
@@ -7149,7 +7149,7 @@ ${after}`;
       const titleRow = document.createElement("div");
       titleRow.className = "settings-surface__card-title-row";
       titleRow.append(createTextElement("h4", "settings-surface__card-title", definition.label));
-      titleRow.append(createTextElement("span", `settings-surface__card-status settings-surface__card-status--${definition.owner}`, definition.owner === "tau" ? "Tauren" : "Pi"));
+      titleRow.append(createTextElement("span", `settings-surface__card-status settings-surface__card-status--${definition.owner}`, definition.owner === "tauren" ? "Tauren" : "Pi"));
       const control = this.createControl(definition, value, state2);
       const body = createTextElement("p", "settings-surface__card-body", definition.description);
       const helperText = getHelperText(definition);
@@ -7651,7 +7651,7 @@ ${after}`;
   var pendingReturnToChatAfterRender = false;
   var hasReceivedHostState = false;
   var faceTransitionSuppressionFrame;
-  var renderInstrumentationEnabled = document.body.dataset.tauDevRenderInstrumentation === "true";
+  var renderInstrumentationEnabled = document.body.dataset.taurenDevRenderInstrumentation === "true";
   var busySubmitHomeMarker = document.createComment("busy-submit-home");
   busySubmitElement.after(busySubmitHomeMarker);
   var widgetDimensionSignatures = /* @__PURE__ */ new Map();
@@ -7804,7 +7804,7 @@ ${after}`;
     if (isInitialHostState) {
       suppressFaceTransitionForNextRender();
     }
-    document.body.classList.toggle("tau-animations-disabled", !state.animationsEnabled);
+    document.body.classList.toggle("tauren-animations-disabled", !state.animationsEnabled);
     applyCustomUiTheme(state.customUiTheme);
     const wasSessionLane = previousLane === "sessions" || previousLane === "tree";
     const isSessionLane = state.lane === "sessions" || state.lane === "tree";
@@ -7886,12 +7886,12 @@ ${after}`;
     if (toastHideTimeout) {
       clearTimeout(toastHideTimeout);
     }
-    toastElement.className = "tau-toast tau-toast--" + kind;
+    toastElement.className = "tauren-toast tauren-toast--" + kind;
     toastElement.replaceChildren(createToastIcon(kind), document.createTextNode(message));
     toastElement.hidden = false;
-    toastElement.classList.add("tau-toast--visible");
+    toastElement.classList.add("tauren-toast--visible");
     toastHideTimeout = setTimeout(() => {
-      toastElement.classList.remove("tau-toast--visible");
+      toastElement.classList.remove("tauren-toast--visible");
       toastElement.hidden = true;
       toastHideTimeout = void 0;
     }, 2500);
@@ -7901,12 +7901,12 @@ ${after}`;
   }
   function applyCustomUiTheme(theme) {
     for (const name of ["default", "modern", "crt", "amber", "matrix"]) {
-      document.body.classList.toggle(`tau-custom-ui-theme-${name}`, name === theme);
+      document.body.classList.toggle(`tauren-custom-ui-theme-${name}`, name === theme);
     }
   }
   function createToastIcon(kind) {
     const icon = document.createElement("span");
-    icon.className = "tau-toast__icon";
+    icon.className = "tauren-toast__icon";
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = kind === "warning" ? "\u26A0" : kind === "error" ? "\u2715" : "\u2713";
     return icon;
@@ -7928,14 +7928,14 @@ ${after}`;
     });
   }
   function suppressFaceTransitionForNextRender() {
-    viewElement.classList.add("tau-view--suppress-face-transition");
+    viewElement.classList.add("tauren-view--suppress-face-transition");
     if (faceTransitionSuppressionFrame !== void 0) {
       cancelAnimationFrame(faceTransitionSuppressionFrame);
     }
     faceTransitionSuppressionFrame = requestAnimationFrame(() => {
       faceTransitionSuppressionFrame = requestAnimationFrame(() => {
         faceTransitionSuppressionFrame = void 0;
-        viewElement.classList.remove("tau-view--suppress-face-transition");
+        viewElement.classList.remove("tauren-view--suppress-face-transition");
       });
     });
   }
@@ -7960,12 +7960,12 @@ ${after}`;
     const isSessionLane = state.lane === "sessions" || state.lane === "tree";
     const isSettingsFaceVisible = !isSessionLane && state.chatFace === "settings";
     const shouldStickToBottom = !isSessionLane && !isSettingsFaceVisible && messagesController.shouldFollowOutput();
-    viewElement.classList.toggle("tau-view--session-lane", isSessionLane);
-    viewElement.classList.toggle("tau-view--lane-sessions", state.lane === "sessions");
-    viewElement.classList.toggle("tau-view--lane-tree", state.lane === "tree");
-    viewElement.classList.toggle("tau-view--lane-chat", !isSessionLane);
-    viewElement.classList.toggle("tau-view--chat-face-settings", isSettingsFaceVisible);
-    viewElement.classList.toggle("tau-view--extension-ui-font", !isExtensionMonospaceFontEnabled());
+    viewElement.classList.toggle("tauren-view--session-lane", isSessionLane);
+    viewElement.classList.toggle("tauren-view--lane-sessions", state.lane === "sessions");
+    viewElement.classList.toggle("tauren-view--lane-tree", state.lane === "tree");
+    viewElement.classList.toggle("tauren-view--lane-chat", !isSessionLane);
+    viewElement.classList.toggle("tauren-view--chat-face-settings", isSettingsFaceVisible);
+    viewElement.classList.toggle("tauren-view--extension-ui-font", !isExtensionMonospaceFontEnabled());
     messagesElement.hidden = false;
     sessionsElement.hidden = false;
     sessionTreeElement.hidden = false;
@@ -8032,8 +8032,8 @@ ${after}`;
     renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets);
     syncBusySubmitPlacement(placeBusySubmitOnTopWidget);
     extensionWidgetsAboveElement.classList.toggle("extension-widgets--with-busy", placeBusySubmitOnTopWidget);
-    viewElement.classList.toggle("tau-view--has-extension-widgets-above", aboveWidgets.length > 0);
-    viewElement.classList.toggle("tau-view--has-extension-widgets-below", belowWidgets.length > 0);
+    viewElement.classList.toggle("tauren-view--has-extension-widgets-above", aboveWidgets.length > 0);
+    viewElement.classList.toggle("tauren-view--has-extension-widgets-below", belowWidgets.length > 0);
   }
   function renderExtensionWidgetContainer(container, widgets, leadingElement) {
     const hasContent = widgets.length > 0 || Boolean(leadingElement);
@@ -8174,7 +8174,7 @@ ${after}`;
     composerStatusTextElement.textContent = text;
     composerStatusElement.hidden = hidden;
     composerStatusElement.setAttribute("aria-hidden", hidden ? "true" : "false");
-    viewElement.classList.toggle("tau-view--has-extension-status", !hidden);
+    viewElement.classList.toggle("tauren-view--has-extension-status", !hidden);
   }
   function toggleHelpOverlay() {
     if (hasHelpOverlayOpen()) {

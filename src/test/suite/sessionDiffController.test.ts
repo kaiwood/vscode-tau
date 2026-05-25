@@ -4,8 +4,8 @@ import type { SessionDiffSnapshot, SessionDiffStats } from '../../diff/types';
 
 suite('SessionDiffController', () => {
   test('ignores stale in-flight refresh after switching session files', async () => {
-    const oldSessionFile = '/tmp/tau-old-session.jsonl';
-    const newSessionFile = '/tmp/tau-new-session.jsonl';
+    const oldSessionFile = '/tmp/tauren-old-session.jsonl';
+    const newSessionFile = '/tmp/tauren-new-session.jsonl';
     const pendingRestores = new Map<string, Deferred<SessionDiffStats | undefined>>();
     const savedSnapshots = new Map<string, SessionDiffSnapshot>();
     let postStateCount = 0;

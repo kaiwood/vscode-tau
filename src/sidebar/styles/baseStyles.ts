@@ -1,39 +1,39 @@
 export const baseStyles = /* css */ `    :root {
       color-scheme: light dark;
-      --tau-code-foreground: var(--vscode-editor-foreground, var(--vscode-foreground));
-      --tau-code-background: var(--vscode-textCodeBlock-background, color-mix(in srgb, var(--vscode-foreground) 8%, transparent));
-      --tau-code-inline-background: var(--vscode-textPreformat-background, color-mix(in srgb, var(--vscode-foreground) 10%, transparent));
-      --tau-chat-inline-padding: 20px;
-      --tau-composer-min-height: 84px;
-      --tau-composer-bottom-margin: 1lh;
-      --tau-composer-custom-ui-clearance: 8px;
-      --tau-custom-ui-inline-offset: var(--tau-chat-inline-padding);
-      --tau-custom-ui-bottom-offset: calc(var(--tau-composer-bottom-margin) + var(--tau-composer-min-height) + var(--tau-composer-custom-ui-clearance));
-      --tau-custom-ui-viewport-bottom-reserve: 42px;
-      --tau-z-base: 0;
-      --tau-z-raised: 1;
-      --tau-z-tooltip: 2;
-      --tau-z-composer-menu: 3;
-      --tau-z-floating-panel: 4;
-      --tau-z-toast: 5;
-      --tau-z-popover: 10;
-      --tau-z-modal: 20;
-      --tau-ansi-black-fallback: #000000;
-      --tau-ansi-red-fallback: #cd3131;
-      --tau-ansi-green-fallback: #0dbc79;
-      --tau-ansi-yellow-fallback: #e5e510;
-      --tau-ansi-blue-fallback: #2472c8;
-      --tau-ansi-magenta-fallback: #bc3fbc;
-      --tau-ansi-cyan-fallback: #11a8cd;
-      --tau-ansi-white-fallback: #e5e5e5;
-      --tau-ansi-bright-black-fallback: #666666;
-      --tau-ansi-bright-red-fallback: #f14c4c;
-      --tau-ansi-bright-green-fallback: #23d18b;
-      --tau-ansi-bright-yellow-fallback: #f5f543;
-      --tau-ansi-bright-blue-fallback: #3b8eea;
-      --tau-ansi-bright-magenta-fallback: #d670d6;
-      --tau-ansi-bright-cyan-fallback: #29b8db;
-      --tau-ansi-bright-white-fallback: #e5e5e5;
+      --tauren-code-foreground: var(--vscode-editor-foreground, var(--vscode-foreground));
+      --tauren-code-background: var(--vscode-textCodeBlock-background, color-mix(in srgb, var(--vscode-foreground) 8%, transparent));
+      --tauren-code-inline-background: var(--vscode-textPreformat-background, color-mix(in srgb, var(--vscode-foreground) 10%, transparent));
+      --tauren-chat-inline-padding: 20px;
+      --tauren-composer-min-height: 84px;
+      --tauren-composer-bottom-margin: 1lh;
+      --tauren-composer-custom-ui-clearance: 8px;
+      --tauren-custom-ui-inline-offset: var(--tauren-chat-inline-padding);
+      --tauren-custom-ui-bottom-offset: calc(var(--tauren-composer-bottom-margin) + var(--tauren-composer-min-height) + var(--tauren-composer-custom-ui-clearance));
+      --tauren-custom-ui-viewport-bottom-reserve: 42px;
+      --tauren-z-base: 0;
+      --tauren-z-raised: 1;
+      --tauren-z-tooltip: 2;
+      --tauren-z-composer-menu: 3;
+      --tauren-z-floating-panel: 4;
+      --tauren-z-toast: 5;
+      --tauren-z-popover: 10;
+      --tauren-z-modal: 20;
+      --tauren-ansi-black-fallback: #000000;
+      --tauren-ansi-red-fallback: #cd3131;
+      --tauren-ansi-green-fallback: #0dbc79;
+      --tauren-ansi-yellow-fallback: #e5e510;
+      --tauren-ansi-blue-fallback: #2472c8;
+      --tauren-ansi-magenta-fallback: #bc3fbc;
+      --tauren-ansi-cyan-fallback: #11a8cd;
+      --tauren-ansi-white-fallback: #e5e5e5;
+      --tauren-ansi-bright-black-fallback: #666666;
+      --tauren-ansi-bright-red-fallback: #f14c4c;
+      --tauren-ansi-bright-green-fallback: #23d18b;
+      --tauren-ansi-bright-yellow-fallback: #f5f543;
+      --tauren-ansi-bright-blue-fallback: #3b8eea;
+      --tauren-ansi-bright-magenta-fallback: #d670d6;
+      --tauren-ansi-bright-cyan-fallback: #29b8db;
+      --tauren-ansi-bright-white-fallback: #e5e5e5;
     }
 
     * {
@@ -66,16 +66,16 @@ export const baseStyles = /* css */ `    :root {
     }
 
     body.vscode-light {
-      --tau-ansi-yellow-fallback: #949800;
-      --tau-ansi-blue-fallback: #0451a5;
-      --tau-ansi-white-fallback: #555555;
-      --tau-ansi-bright-yellow-fallback: #795e26;
-      --tau-ansi-bright-white-fallback: #222222;
+      --tauren-ansi-yellow-fallback: #949800;
+      --tauren-ansi-blue-fallback: #0451a5;
+      --tauren-ansi-white-fallback: #555555;
+      --tauren-ansi-bright-yellow-fallback: #795e26;
+      --tauren-ansi-bright-white-fallback: #222222;
     }
 
-    .tau-view {
-      --tau-lane-transition-duration: 190ms;
-      --tau-lane-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    .tauren-view {
+      --tauren-lane-transition-duration: 190ms;
+      --tauren-lane-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       display: grid;
       grid-template-columns: minmax(0, 1fr);

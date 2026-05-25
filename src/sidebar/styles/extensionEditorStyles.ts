@@ -1,7 +1,7 @@
 export const extensionEditorStyles = /* css */ `    .extension-editor {
       position: absolute;
       inset: 0;
-      z-index: var(--tau-z-modal);
+      z-index: var(--tauren-z-modal);
       display: grid;
       place-items: center;
       padding: 20px;

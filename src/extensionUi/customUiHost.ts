@@ -82,7 +82,7 @@ export class ExtensionCustomUiHost {
       const tui = createTuiFacade(terminal, () => this.scheduleRender(id));
 
       Promise.resolve()
-        .then(() => factory(tui as never, tauTheme as never, tauKeybindings as never, finish))
+        .then(() => factory(tui as never, taurenTheme as never, taurenKeybindings as never, finish))
         .then((component) => {
           if (completedBeforeMount) {
             try {
@@ -402,7 +402,7 @@ const bgCodes: Record<string, number> = {
   toolErrorBg: 41
 };
 
-export const tauTheme = {
+export const taurenTheme = {
   fg(color: string, text: string) {
     return wrap(colorCodes[color] ?? 37, text);
   },
@@ -441,7 +441,7 @@ export const tauTheme = {
   }
 };
 
-export const tauKeybindings = {
+export const taurenKeybindings = {
   matches(data: string, keybinding: string) {
     const keys = keybindingDefaults[keybinding] ?? [];
     return keys.some((key) => terminalDataForKey(key) === data);

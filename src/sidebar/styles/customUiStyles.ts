@@ -1,15 +1,15 @@
 export const customUiStyles = /* css */ `    .custom-ui {
       position: absolute;
-      left: var(--tau-custom-ui-inline-offset);
-      right: var(--tau-custom-ui-inline-offset);
-      bottom: var(--tau-custom-ui-bottom-offset);
-      z-index: var(--tau-z-floating-panel);
+      left: var(--tauren-custom-ui-inline-offset);
+      right: var(--tauren-custom-ui-inline-offset);
+      bottom: var(--tauren-custom-ui-bottom-offset);
+      z-index: var(--tauren-z-floating-panel);
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
       gap: 6px;
       min-height: 96px;
-      max-height: min(72vh, calc(100vh - var(--tau-custom-ui-bottom-offset) - var(--tau-custom-ui-viewport-bottom-reserve)));
-      max-width: calc(100% - var(--tau-custom-ui-inline-offset) - var(--tau-custom-ui-inline-offset));
+      max-height: min(72vh, calc(100vh - var(--tauren-custom-ui-bottom-offset) - var(--tauren-custom-ui-viewport-bottom-reserve)));
+      max-width: calc(100% - var(--tauren-custom-ui-inline-offset) - var(--tauren-custom-ui-inline-offset));
       margin: 0;
       padding: 8px 9px 9px;
       overflow: hidden;
@@ -91,15 +91,15 @@ export const customUiStyles = /* css */ `    .custom-ui {
       min-width: 1ch;
       background: var(--vscode-editorCursor-foreground, var(--vscode-foreground));
       pointer-events: none;
-      z-index: var(--tau-z-raised);
-      animation: tau-custom-ui-cursor-blink 1s steps(1, end) infinite;
+      z-index: var(--tauren-z-raised);
+      animation: tauren-custom-ui-cursor-blink 1s steps(1, end) infinite;
     }
 
     .custom-ui__cursor[hidden] {
       display: none;
     }
 
-    @keyframes tau-custom-ui-cursor-blink {
+    @keyframes tauren-custom-ui-cursor-blink {
       0%, 49% { opacity: 1; }
       50%, 100% { opacity: 0; }
     }
@@ -140,7 +140,7 @@ export const customUiStyles = /* css */ `    .custom-ui {
       line-height: inherit;
     }
 
-    .custom-ui__line--ansi-image .tau-ansi-block-image-cell {
+    .custom-ui__line--ansi-image .tauren-ansi-block-image-cell {
       display: block;
       flex: 0 0 1ch;
       width: 1ch;
@@ -148,13 +148,13 @@ export const customUiStyles = /* css */ `    .custom-ui {
       height: 1lh;
     }
 
-    body[class*="tau-custom-ui-theme-"] .custom-ui__header,
-    body[class*="tau-custom-ui-theme-"] .custom-ui__output {
+    body[class*="tauren-custom-ui-theme-"] .custom-ui__header,
+    body[class*="tauren-custom-ui-theme-"] .custom-ui__output {
       position: relative;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
     }
 
-    body.tau-custom-ui-theme-modern .custom-ui {
+    body.tauren-custom-ui-theme-modern .custom-ui {
       color: var(--vscode-foreground);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 28%) padding-box,
@@ -167,11 +167,11 @@ export const customUiStyles = /* css */ `    .custom-ui {
         inset 0 -14px 24px rgba(0, 0, 0, 0.32);
     }
 
-    body.tau-custom-ui-theme-modern .custom-ui::before {
+    body.tauren-custom-ui-theme-modern .custom-ui::before {
       content: "";
       position: absolute;
       inset: 7px;
-      z-index: var(--tau-z-base);
+      z-index: var(--tauren-z-base);
       pointer-events: none;
       background: var(--vscode-input-background);
       border: 1px solid color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
@@ -181,16 +181,16 @@ export const customUiStyles = /* css */ `    .custom-ui {
         0 0 0 1px rgba(255, 255, 255, 0.04);
     }
 
-    body.tau-custom-ui-theme-modern .custom-ui__header {
+    body.tauren-custom-ui-theme-modern .custom-ui__header {
       padding: 0 4px;
     }
 
-    body.tau-custom-ui-theme-modern .custom-ui__output {
+    body.tauren-custom-ui-theme-modern .custom-ui__output {
       margin: 0 2px 2px;
       padding: 8px 10px;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden {
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden {
       opacity: 0.98;
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03) 18%, transparent 42%) padding-box,
@@ -205,11 +205,11 @@ export const customUiStyles = /* css */ `    .custom-ui {
       transform-origin: top center;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden::before {
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden::before {
       content: "";
       position: absolute;
       inset: 13px 14px 18px;
-      z-index: var(--tau-z-base);
+      z-index: var(--tauren-z-base);
       overflow: hidden;
       pointer-events: none;
       background:
@@ -226,13 +226,13 @@ export const customUiStyles = /* css */ `    .custom-ui {
       opacity: 0.76;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden::after {
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden::after {
       content: "";
       position: absolute;
       left: 24px;
       right: 24px;
       bottom: 8px;
-      z-index: var(--tau-z-raised);
+      z-index: var(--tauren-z-raised);
       height: 8px;
       pointer-events: none;
       background:
@@ -246,30 +246,30 @@ export const customUiStyles = /* css */ `    .custom-ui {
       opacity: 0.7;
     }
 
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__slash-menu,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__context-badges,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__input,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__busy-submit,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__session-actions,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__info,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__model-menu,
-    body.tau-custom-ui-theme-modern .composer.composer--custom-hidden .composer__submit {
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__slash-menu,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__context-badges,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__input,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__busy-submit,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__session-actions,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__info,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__model-menu,
+    body.tauren-custom-ui-theme-modern .composer.composer--custom-hidden .composer__submit {
       opacity: 0 !important;
       pointer-events: none !important;
       visibility: hidden !important;
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui,
-    body.tau-custom-ui-theme-amber .custom-ui,
-    body.tau-custom-ui-theme-matrix .custom-ui {
-      --tau-custom-ui-screen: #061008;
-      --tau-custom-ui-bezel: #101510;
-      --tau-custom-ui-text: #9cff9c;
-      --tau-custom-ui-dim: #64b764;
-      --tau-custom-ui-accent: #c8ffc8;
-      --tau-custom-ui-glow: rgba(132, 255, 132, 0.28);
-      --tau-custom-ui-scanline: rgba(255, 255, 255, 0.045);
-      --tau-custom-ui-vignette: rgba(0, 0, 0, 0.42);
+    body.tauren-custom-ui-theme-crt .custom-ui,
+    body.tauren-custom-ui-theme-amber .custom-ui,
+    body.tauren-custom-ui-theme-matrix .custom-ui {
+      --tauren-custom-ui-screen: #061008;
+      --tauren-custom-ui-bezel: #101510;
+      --tauren-custom-ui-text: #9cff9c;
+      --tauren-custom-ui-dim: #64b764;
+      --tauren-custom-ui-accent: #c8ffc8;
+      --tauren-custom-ui-glow: rgba(132, 255, 132, 0.28);
+      --tauren-custom-ui-scanline: rgba(255, 255, 255, 0.045);
+      --tauren-custom-ui-vignette: rgba(0, 0, 0, 0.42);
       --vscode-terminal-ansiBlack: #031006;
       --vscode-terminal-ansiRed: #91d991;
       --vscode-terminal-ansiGreen: #8cff8c;
@@ -286,25 +286,25 @@ export const customUiStyles = /* css */ `    .custom-ui {
       --vscode-terminal-ansiBrightMagenta: #c8ffc8;
       --vscode-terminal-ansiBrightCyan: #d5ffd5;
       --vscode-terminal-ansiBrightWhite: #f0fff0;
-      color: var(--tau-custom-ui-text);
+      color: var(--tauren-custom-ui-text);
       background:
-        linear-gradient(180deg, color-mix(in srgb, var(--tau-custom-ui-bezel) 82%, white 10%), var(--tau-custom-ui-bezel)) padding-box,
-        linear-gradient(180deg, color-mix(in srgb, var(--tau-custom-ui-accent) 38%, transparent), rgba(0, 0, 0, 0.72)) border-box;
+        linear-gradient(180deg, color-mix(in srgb, var(--tauren-custom-ui-bezel) 82%, white 10%), var(--tauren-custom-ui-bezel)) padding-box,
+        linear-gradient(180deg, color-mix(in srgb, var(--tauren-custom-ui-accent) 38%, transparent), rgba(0, 0, 0, 0.72)) border-box;
       border: 3px solid transparent;
       border-radius: 18px;
       box-shadow:
         0 14px 34px rgba(0, 0, 0, 0.42),
         inset 0 1px 0 rgba(255, 255, 255, 0.14),
         inset 0 -16px 26px rgba(0, 0, 0, 0.34);
-      text-shadow: 0 0 6px var(--tau-custom-ui-glow);
+      text-shadow: 0 0 6px var(--tauren-custom-ui-glow);
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui::before,
-    body.tau-custom-ui-theme-amber .custom-ui::before,
-    body.tau-custom-ui-theme-matrix .custom-ui::before,
-    body.tau-custom-ui-theme-crt .custom-ui::after,
-    body.tau-custom-ui-theme-amber .custom-ui::after,
-    body.tau-custom-ui-theme-matrix .custom-ui::after {
+    body.tauren-custom-ui-theme-crt .custom-ui::before,
+    body.tauren-custom-ui-theme-amber .custom-ui::before,
+    body.tauren-custom-ui-theme-matrix .custom-ui::before,
+    body.tauren-custom-ui-theme-crt .custom-ui::after,
+    body.tauren-custom-ui-theme-amber .custom-ui::after,
+    body.tauren-custom-ui-theme-matrix .custom-ui::after {
       content: "";
       position: absolute;
       inset: 7px;
@@ -312,28 +312,28 @@ export const customUiStyles = /* css */ `    .custom-ui {
       border-radius: 12px;
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui::before,
-    body.tau-custom-ui-theme-amber .custom-ui::before,
-    body.tau-custom-ui-theme-matrix .custom-ui::before {
-      z-index: var(--tau-z-base);
+    body.tauren-custom-ui-theme-crt .custom-ui::before,
+    body.tauren-custom-ui-theme-amber .custom-ui::before,
+    body.tauren-custom-ui-theme-matrix .custom-ui::before {
+      z-index: var(--tauren-z-base);
       background:
-        radial-gradient(ellipse at center, transparent 0%, transparent 58%, var(--tau-custom-ui-vignette) 100%),
-        var(--tau-custom-ui-screen);
+        radial-gradient(ellipse at center, transparent 0%, transparent 58%, var(--tauren-custom-ui-vignette) 100%),
+        var(--tauren-custom-ui-screen);
       box-shadow:
         inset 0 0 22px rgba(0, 0, 0, 0.78),
-        inset 0 0 4px var(--tau-custom-ui-glow),
-        0 0 18px color-mix(in srgb, var(--tau-custom-ui-accent) 18%, transparent);
+        inset 0 0 4px var(--tauren-custom-ui-glow),
+        0 0 18px color-mix(in srgb, var(--tauren-custom-ui-accent) 18%, transparent);
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui::after,
-    body.tau-custom-ui-theme-amber .custom-ui::after,
-    body.tau-custom-ui-theme-matrix .custom-ui::after {
-      z-index: var(--tau-z-tooltip);
+    body.tauren-custom-ui-theme-crt .custom-ui::after,
+    body.tauren-custom-ui-theme-amber .custom-ui::after,
+    body.tauren-custom-ui-theme-matrix .custom-ui::after {
+      z-index: var(--tauren-z-tooltip);
       background:
         repeating-linear-gradient(
           to bottom,
-          var(--tau-custom-ui-scanline) 0,
-          var(--tau-custom-ui-scanline) 1px,
+          var(--tauren-custom-ui-scanline) 0,
+          var(--tauren-custom-ui-scanline) 1px,
           transparent 2px,
           transparent 4px
         );
@@ -341,56 +341,56 @@ export const customUiStyles = /* css */ `    .custom-ui {
       opacity: 0.65;
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui__header,
-    body.tau-custom-ui-theme-amber .custom-ui__header,
-    body.tau-custom-ui-theme-matrix .custom-ui__header {
-      color: var(--tau-custom-ui-dim);
+    body.tauren-custom-ui-theme-crt .custom-ui__header,
+    body.tauren-custom-ui-theme-amber .custom-ui__header,
+    body.tauren-custom-ui-theme-matrix .custom-ui__header {
+      color: var(--tauren-custom-ui-dim);
       padding: 0 4px;
       font-family: var(--vscode-editor-font-family, monospace);
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui__output,
-    body.tau-custom-ui-theme-amber .custom-ui__output,
-    body.tau-custom-ui-theme-matrix .custom-ui__output {
+    body.tauren-custom-ui-theme-crt .custom-ui__output,
+    body.tauren-custom-ui-theme-amber .custom-ui__output,
+    body.tauren-custom-ui-theme-matrix .custom-ui__output {
       margin: 0 2px 2px;
       padding: 8px 10px;
-      color: var(--tau-custom-ui-text);
-      scrollbar-color: var(--tau-custom-ui-dim) transparent;
+      color: var(--tauren-custom-ui-text);
+      scrollbar-color: var(--tauren-custom-ui-dim) transparent;
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui__close,
-    body.tau-custom-ui-theme-amber .custom-ui__close,
-    body.tau-custom-ui-theme-matrix .custom-ui__close {
-      color: var(--tau-custom-ui-dim);
+    body.tauren-custom-ui-theme-crt .custom-ui__close,
+    body.tauren-custom-ui-theme-amber .custom-ui__close,
+    body.tauren-custom-ui-theme-matrix .custom-ui__close {
+      color: var(--tauren-custom-ui-dim);
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui__close:hover,
-    body.tau-custom-ui-theme-crt .custom-ui__close:focus-visible,
-    body.tau-custom-ui-theme-amber .custom-ui__close:hover,
-    body.tau-custom-ui-theme-amber .custom-ui__close:focus-visible,
-    body.tau-custom-ui-theme-matrix .custom-ui__close:hover,
-    body.tau-custom-ui-theme-matrix .custom-ui__close:focus-visible {
-      color: var(--tau-custom-ui-accent);
-      background: color-mix(in srgb, var(--tau-custom-ui-accent) 12%, transparent);
+    body.tauren-custom-ui-theme-crt .custom-ui__close:hover,
+    body.tauren-custom-ui-theme-crt .custom-ui__close:focus-visible,
+    body.tauren-custom-ui-theme-amber .custom-ui__close:hover,
+    body.tauren-custom-ui-theme-amber .custom-ui__close:focus-visible,
+    body.tauren-custom-ui-theme-matrix .custom-ui__close:hover,
+    body.tauren-custom-ui-theme-matrix .custom-ui__close:focus-visible {
+      color: var(--tauren-custom-ui-accent);
+      background: color-mix(in srgb, var(--tauren-custom-ui-accent) 12%, transparent);
     }
 
-    body.tau-custom-ui-theme-crt .custom-ui__cursor,
-    body.tau-custom-ui-theme-amber .custom-ui__cursor,
-    body.tau-custom-ui-theme-matrix .custom-ui__cursor {
-      background: var(--tau-custom-ui-accent);
-      box-shadow: 0 0 10px var(--tau-custom-ui-glow);
+    body.tauren-custom-ui-theme-crt .custom-ui__cursor,
+    body.tauren-custom-ui-theme-amber .custom-ui__cursor,
+    body.tauren-custom-ui-theme-matrix .custom-ui__cursor {
+      background: var(--tauren-custom-ui-accent);
+      box-shadow: 0 0 10px var(--tauren-custom-ui-glow);
     }
 
-    body.tau-custom-ui-theme-amber .custom-ui {
-      --tau-custom-ui-screen: #120b02;
-      --tau-custom-ui-bezel: #16110a;
-      --tau-custom-ui-text: #ffbf4d;
-      --tau-custom-ui-dim: #b9822a;
-      --tau-custom-ui-accent: #ffd27a;
-      --tau-custom-ui-glow: rgba(255, 176, 0, 0.28);
-      --tau-custom-ui-scanline: rgba(255, 190, 77, 0.06);
+    body.tauren-custom-ui-theme-amber .custom-ui {
+      --tauren-custom-ui-screen: #120b02;
+      --tauren-custom-ui-bezel: #16110a;
+      --tauren-custom-ui-text: #ffbf4d;
+      --tauren-custom-ui-dim: #b9822a;
+      --tauren-custom-ui-accent: #ffd27a;
+      --tauren-custom-ui-glow: rgba(255, 176, 0, 0.28);
+      --tauren-custom-ui-scanline: rgba(255, 190, 77, 0.06);
       --vscode-terminal-ansiBlack: #120b02;
       --vscode-terminal-ansiRed: #e0a34a;
       --vscode-terminal-ansiGreen: #ffbf4d;
@@ -409,14 +409,14 @@ export const customUiStyles = /* css */ `    .custom-ui {
       --vscode-terminal-ansiBrightWhite: #fff3d6;
     }
 
-    body.tau-custom-ui-theme-matrix .custom-ui {
-      --tau-custom-ui-screen: #020703;
-      --tau-custom-ui-bezel: #07100a;
-      --tau-custom-ui-text: #00ff66;
-      --tau-custom-ui-dim: #00a84c;
-      --tau-custom-ui-accent: #8dffb4;
-      --tau-custom-ui-glow: rgba(0, 255, 102, 0.34);
-      --tau-custom-ui-scanline: rgba(0, 255, 102, 0.052);
+    body.tauren-custom-ui-theme-matrix .custom-ui {
+      --tauren-custom-ui-screen: #020703;
+      --tauren-custom-ui-bezel: #07100a;
+      --tauren-custom-ui-text: #00ff66;
+      --tauren-custom-ui-dim: #00a84c;
+      --tauren-custom-ui-accent: #8dffb4;
+      --tauren-custom-ui-glow: rgba(0, 255, 102, 0.34);
+      --tauren-custom-ui-scanline: rgba(0, 255, 102, 0.052);
       --vscode-terminal-ansiBlack: #020703;
       --vscode-terminal-ansiRed: #00b84a;
       --vscode-terminal-ansiGreen: #00ff66;

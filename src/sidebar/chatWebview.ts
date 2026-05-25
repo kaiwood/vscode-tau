@@ -432,36 +432,36 @@ export function createWebviewHtml(scriptUris: WebviewScriptUris, options: Create
 ${chatWebviewStyles}
   </style>
 </head>
-<body${options.devRenderInstrumentation ? ' data-tau-dev-render-instrumentation="true"' : ''}>
-  <main class="tau-view tau-view--lane-chat">
-    <header class="tau-toolbar">
-      <button class="tau-toolbar__sessions" type="button" aria-label="Show sessions">
+<body${options.devRenderInstrumentation ? ' data-tauren-dev-render-instrumentation="true"' : ''}>
+  <main class="tauren-view tauren-view--lane-chat">
+    <header class="tauren-toolbar">
+      <button class="tauren-toolbar__sessions" type="button" aria-label="Show sessions">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span class="tau-icon-action-tooltip">Show sessions</span>
+        <span class="tauren-icon-action-tooltip">Show sessions</span>
       </button>
-      <div class="tau-toolbar__title"><span class="tau-toolbar__title-text">Tauren</span><span class="tau-toolbar__timestamp" hidden></span><input class="tau-toolbar__title-input" type="text" aria-label="Session name" spellcheck="false" hidden></div>
-      <button class="tau-toolbar__tree" type="button" aria-label="Show tree">
+      <div class="tauren-toolbar__title"><span class="tauren-toolbar__title-text">Tauren</span><span class="tauren-toolbar__timestamp" hidden></span><input class="tauren-toolbar__title-input" type="text" aria-label="Session name" spellcheck="false" hidden></div>
+      <button class="tauren-toolbar__tree" type="button" aria-label="Show tree">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M6.75 4.5L11.25 9L6.75 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span class="tau-icon-action-tooltip">Show tree</span>
+        <span class="tauren-icon-action-tooltip">Show tree</span>
       </button>
     </header>
-    <div class="tau-toast" role="status" aria-live="polite" hidden></div>
-    <section class="tau-help-overlay" role="dialog" aria-label="Tauren help" tabindex="-1" hidden>
-      <header class="tau-help-overlay__header">
+    <div class="tauren-toast" role="status" aria-live="polite" hidden></div>
+    <section class="tauren-help-overlay" role="dialog" aria-label="Tauren help" tabindex="-1" hidden>
+      <header class="tauren-help-overlay__header">
         <div>
-          <div class="tau-help-overlay__eyebrow">Tauren shortcuts</div>
-          <h2 class="tau-help-overlay__title">Help</h2>
+          <div class="tauren-help-overlay__eyebrow">Tauren shortcuts</div>
+          <h2 class="tauren-help-overlay__title">Help</h2>
         </div>
-        <button class="tau-help-overlay__close" type="button" aria-label="Close help">×</button>
+        <button class="tauren-help-overlay__close" type="button" aria-label="Close help">×</button>
       </header>
-      <div class="tau-help-overlay__body">
-        <section class="tau-help-overlay__section" aria-labelledby="chat-help-heading">
-          <h3 id="chat-help-heading" class="tau-help-overlay__section-title">Chat View</h3>
-          <table class="tau-help-overlay__table">
+      <div class="tauren-help-overlay__body">
+        <section class="tauren-help-overlay__section" aria-labelledby="chat-help-heading">
+          <h3 id="chat-help-heading" class="tauren-help-overlay__section-title">Chat View</h3>
+          <table class="tauren-help-overlay__table">
             <thead><tr><th scope="col">Key</th><th scope="col">Function</th></tr></thead>
             <tbody>
               <tr><td><kbd>Enter</kbd></td><td>Send message</td></tr>
@@ -478,9 +478,9 @@ ${chatWebviewStyles}
             </tbody>
           </table>
         </section>
-        <section class="tau-help-overlay__section" aria-labelledby="session-help-heading">
-          <h3 id="session-help-heading" class="tau-help-overlay__section-title">Session List</h3>
-          <table class="tau-help-overlay__table">
+        <section class="tauren-help-overlay__section" aria-labelledby="session-help-heading">
+          <h3 id="session-help-heading" class="tauren-help-overlay__section-title">Session List</h3>
+          <table class="tauren-help-overlay__table">
             <thead><tr><th scope="col">Key</th><th scope="col">Function</th></tr></thead>
             <tbody>
               <tr><td><kbd>Enter</kbd></td><td>Open selected session</td></tr>
@@ -497,8 +497,8 @@ ${chatWebviewStyles}
         </section>
       </div>
     </section>
-    <div class="tau-chat-surface" aria-label="Tauren chat surface">
-      <div class="tau-chat-surface__face tau-chat-surface__main">
+    <div class="tauren-chat-surface" aria-label="Tauren chat surface">
+      <div class="tauren-chat-surface__face tauren-chat-surface__main">
         <section class="messages" aria-live="polite" aria-label="Tauren conversation">
 ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
         </section>
@@ -534,11 +534,11 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
           <span class="composer__diff-added">+0</span>
           <span aria-hidden="true">|</span>
           <span class="composer__diff-removed">-0</span>
-          <span class="tau-icon-action-tooltip">Show session changes</span>
+          <span class="tauren-icon-action-tooltip">Show session changes</span>
         </button>
         <span class="composer__busy-submit-modes" role="group" aria-label="Busy submit mode">
-          <button class="composer__mode-button" type="button" data-streaming-behavior="steer">Steer<span class="tau-icon-action-tooltip">Steer current run</span></button>
-          <button class="composer__mode-button" type="button" data-streaming-behavior="followUp">Follow-up<span class="tau-icon-action-tooltip">Queue follow-up</span></button>
+          <button class="composer__mode-button" type="button" data-streaming-behavior="steer">Steer<span class="tauren-icon-action-tooltip">Steer current run</span></button>
+          <button class="composer__mode-button" type="button" data-streaming-behavior="followUp">Follow-up<span class="tauren-icon-action-tooltip">Queue follow-up</span></button>
         </span>
       </div>
       <div class="composer__session-actions" role="group" aria-label="Session actions">
@@ -582,7 +582,7 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
           <path class="composer__submit-play" d="M5.1 3.55C5.1 2.75 5.97 2.27 6.65 2.68L15.65 8.05C16.34 8.46 16.34 9.54 15.65 9.95L6.65 15.32C5.97 15.73 5.1 15.25 5.1 14.45Z" fill="currentColor"/>
           <rect class="composer__submit-stop" x="4" y="4" width="10" height="10" rx="1.5" fill="currentColor"/>
         </svg>
-        <span class="tau-icon-action-tooltip">Send message</span>
+        <span class="tauren-icon-action-tooltip">Send message</span>
       </button>
         </form>
         <section class="extension-widgets extension-widgets--below" aria-label="Pi extension widgets below composer" hidden></section>
@@ -590,7 +590,7 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
           <span class="composer-status__text"></span>
         </section>
       </div>
-      <section class="settings-surface tau-chat-surface__face tau-chat-surface__settings" aria-label="Tauren settings" tabindex="-1" aria-hidden="true">
+      <section class="settings-surface tauren-chat-surface__face tauren-chat-surface__settings" aria-label="Tauren settings" tabindex="-1" aria-hidden="true">
         <div class="settings-surface__chrome" aria-hidden="true"></div>
         <header class="settings-surface__header">
           <div>

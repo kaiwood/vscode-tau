@@ -160,7 +160,7 @@ function createDataImageElement(image: ChatImage): HTMLImageElement {
   const element = document.createElement('img');
   const mimeType = typeof image.mimeType === 'string' ? image.mimeType.toLowerCase() : '';
   const data = typeof image.data === 'string' ? image.data : '';
-  element.className = 'tau-image';
+  element.className = 'tauren-image';
   element.alt = typeof image.alt === 'string' && image.alt ? image.alt : 'Image';
   element.loading = 'lazy';
   element.decoding = 'async';
@@ -417,7 +417,7 @@ function createActivityBodyWrap(
     openFile.setAttribute('aria-label', 'Open file');
     openFile.dataset.openFilePath = filePath;
     const openFileTooltip = document.createElement('span');
-    openFileTooltip.className = 'tau-icon-action-tooltip';
+    openFileTooltip.className = 'tauren-icon-action-tooltip';
     openFileTooltip.textContent = 'Open file';
     openFile.append(openFileTooltip);
     actions.append(openFile);

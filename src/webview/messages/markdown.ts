@@ -150,7 +150,7 @@ function processImageElement(image: HTMLImageElement, options: RenderMarkdownOpt
 }
 
 function markRenderableImage(image: HTMLImageElement): void {
-  image.classList.add('tau-image');
+  image.classList.add('tauren-image');
   image.loading = 'lazy';
   image.decoding = 'async';
 }
@@ -163,7 +163,7 @@ function requestLocalImage(image: HTMLImageElement, src: string, alt: string): v
 
   const id = `local-image-${nextLocalImageRequestId++}`;
   const placeholder = createImageFallback('Loading image…');
-  placeholder.classList.add('tau-image--pending');
+  placeholder.classList.add('tauren-image--pending');
   placeholder.dataset.localImageRequestId = id;
   localImageRequests.set(id, { placeholder, alt });
   image.replaceWith(placeholder);
@@ -192,7 +192,7 @@ function applyLocalImageResolveResult(message: LocalImageResolveResult): void {
 
 function createImageFallback(text: string): HTMLElement {
   const fallback = document.createElement('span');
-  fallback.className = 'tau-image-fallback';
+  fallback.className = 'tauren-image-fallback';
   fallback.textContent = text;
   return fallback;
 }
@@ -330,7 +330,7 @@ function parseFileReferenceMatch(fullMatch: string, pathMatch: string, lineMatch
 function createFileReferenceLink(reference: { path: string; line?: number; column?: number; linkText: string }): HTMLAnchorElement {
   const link = document.createElement('a');
   link.href = '#';
-  link.className = 'tau-file-link';
+  link.className = 'tauren-file-link';
   link.textContent = reference.linkText;
   link.dataset.filePath = reference.path;
 
@@ -347,17 +347,17 @@ function createFileReferenceLink(reference: { path: string; line?: number; colum
 
 function addCodeBlockActions(root: HTMLElement): void {
   for (const pre of Array.from(root.querySelectorAll('pre'))) {
-    if (!(pre instanceof HTMLElement) || pre.closest('.tau-code-block')) {
+    if (!(pre instanceof HTMLElement) || pre.closest('.tauren-code-block')) {
       continue;
     }
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'tau-code-block';
+    wrapper.className = 'tauren-code-block';
 
     const actions = document.createElement('div');
-    actions.className = 'tau-code-block__actions';
+    actions.className = 'tauren-code-block__actions';
 
-    const copyButton = createIconActionButton('tau-code-block__action', 'Copy code');
+    const copyButton = createIconActionButton('tauren-code-block__action', 'Copy code');
     copyButton.dataset.copyCodeBlock = 'true';
     actions.append(copyButton);
 
@@ -464,7 +464,7 @@ function appendAnimatedText(fragment: DocumentFragment, text: string, initialWor
     }
 
     const span = document.createElement('span');
-    span.className = 'tau-stream-word';
+    span.className = 'tauren-stream-word';
     span.textContent = token;
 
     if (wordIndex > 0) {

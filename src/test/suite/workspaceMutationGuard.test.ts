@@ -6,7 +6,7 @@ import { assertWorkspaceMutationAllowed } from '../../sdk/workspaceMutationGuard
 
 suite('workspaceMutationGuard', () => {
   test('allows paths inside the workspace', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-guard-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-guard-'));
 
     try {
       await fs.mkdir(path.join(root, 'src'));
@@ -20,8 +20,8 @@ suite('workspaceMutationGuard', () => {
   });
 
   test('rejects paths outside the workspace when enabled', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-guard-'));
-    const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-outside-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-guard-'));
+    const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-outside-'));
 
     try {
       await assert.rejects(assertWorkspaceMutationAllowed(path.join(outside, 'file.ts'), {

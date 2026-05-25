@@ -8,7 +8,7 @@ export function createIconActionButton(className: string, label: string): HTMLBu
   button.innerHTML = copyIconSvg;
 
   const tooltip = document.createElement('span');
-  tooltip.className = 'tau-icon-action-tooltip';
+  tooltip.className = 'tauren-icon-action-tooltip';
   tooltip.textContent = label;
   button.append(tooltip);
 

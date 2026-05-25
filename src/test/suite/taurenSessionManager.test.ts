@@ -1,9 +1,9 @@
 import * as assert from 'assert';
-import { TauSessionManager, type TauSessionManagerOptions } from '../../sessions/tauSessionManager';
+import { TaurenSessionManager, type TaurenSessionManagerOptions } from '../../sessions/taurenSessionManager';
 import type { CustomUiHostMessage } from '../../extensionUi/customUiHost';
 import type { ExtensionEditorHostMessage } from '../../extensionUi/types';
 import type { WebviewSessionItem, WebviewStateMessage, WebviewTreeItem } from '../../webviewProtocol/types';
-import type { SettingValue, TauSettingId } from '../../settings/settingsRegistry';
+import type { SettingValue, TaurenSettingId } from '../../settings/settingsRegistry';
 import type { PiClient } from '../../pi/clientTypes';
 import type {
   PiAgentMessage,
@@ -15,7 +15,7 @@ import type {
   PiEvent
 } from '../../pi/types';
 
-suite('TauSessionManager', () => {
+suite('TaurenSessionManager', () => {
   test('tracks background session live status, unread state, and active persistence', async () => {
     const firstClient = new FakePiClient({
       state: {
@@ -167,13 +167,13 @@ suite('TauSessionManager', () => {
       { key: 'below', placement: 'belowEditor', lines: ['Below'] },
       { key: 'below-2', placement: 'belowEditor', lines: ['Still enabled'] }
     ]);
-    assert.strictEqual(harness.tauSettings['tauren.extensions.aboveWidgetsEnabled'], false);
+    assert.strictEqual(harness.taurenSettings['tauren.extensions.aboveWidgetsEnabled'], false);
     harness.manager.dispose();
   });
 
   test('initializes extension widget and status settings from persisted Tauren settings', async () => {
     const harness = createManagerHarness([new FakePiClient()], {
-      tauSettings: {
+      taurenSettings: {
         'tauren.extensions.aboveWidgetsEnabled': false,
         'tauren.extensions.statusBarEnabled': false
       }
@@ -214,9 +214,9 @@ suite('TauSessionManager', () => {
       { key: 'plan', text: 'Planning' }
     ]);
 
-    harness.tauSettings['tauren.extensions.aboveWidgetsEnabled'] = false;
-    harness.tauSettings['tauren.extensions.statusBarEnabled'] = false;
-    harness.manager.refreshTauSettingValues();
+    harness.taurenSettings['tauren.extensions.aboveWidgetsEnabled'] = false;
+    harness.taurenSettings['tauren.extensions.statusBarEnabled'] = false;
+    harness.manager.refreshTaurenSettingValues();
 
     assert.strictEqual(lastState(harness).settings?.values['tauren.extensions.aboveWidgetsEnabled'], false);
     assert.strictEqual(lastState(harness).settings?.values['tauren.extensions.statusBarEnabled'], false);
@@ -280,7 +280,7 @@ suite('TauSessionManager', () => {
     });
 
     assert.strictEqual(lastState(harness).settings?.values['tauren.extensions.statusBarEnabled'], false);
-    assert.strictEqual(harness.tauSettings['tauren.extensions.statusBarEnabled'], false);
+    assert.strictEqual(harness.taurenSettings['tauren.extensions.statusBarEnabled'], false);
     assert.deepStrictEqual(lastState(harness).extensionStatus, []);
 
     extensionUi.setStatus?.('ignored', 'Ignored');
@@ -855,23 +855,23 @@ suite('TauSessionManager', () => {
 });
 
 type ManagerHarness = {
-  manager: TauSessionManager;
+  manager: TaurenSessionManager;
   states: WebviewStateMessage[];
   notifications: { message: string; type: string }[];
   clientOptions: PiClientOptions[];
   customUiMessages: CustomUiHostMessage[];
   extensionEditorMessages: ExtensionEditorHostMessage[];
-  tauSettings: Partial<Record<TauSettingId, SettingValue>>;
+  taurenSettings: Partial<Record<TaurenSettingId, SettingValue>>;
   readonly createCalls: number;
 };
 
 type ManagerHarnessOptions = {
   cwd?: string;
   initialSessionFile?: string;
-  tauSettings?: Partial<Record<TauSettingId, SettingValue>>;
+  taurenSettings?: Partial<Record<TaurenSettingId, SettingValue>>;
   onSessionFileChange?: (sessionFile: string | undefined) => void;
-  listSessions?: TauSessionManagerOptions['listSessions'];
-  loadSessionDiffSnapshot?: TauSessionManagerOptions['loadSessionDiffSnapshot'];
+  listSessions?: TaurenSessionManagerOptions['listSessions'];
+  loadSessionDiffSnapshot?: TaurenSessionManagerOptions['loadSessionDiffSnapshot'];
 };
 
 function createManagerHarness(
@@ -883,11 +883,11 @@ function createManagerHarness(
   const clientOptions: PiClientOptions[] = [];
   const customUiMessages: CustomUiHostMessage[] = [];
   const extensionEditorMessages: ExtensionEditorHostMessage[] = [];
-  const tauSettings: Partial<Record<TauSettingId, SettingValue>> = { ...(options.tauSettings ?? {}) };
+  const taurenSettings: Partial<Record<TaurenSettingId, SettingValue>> = { ...(options.taurenSettings ?? {}) };
   const pendingClients = [...clients];
   let createCalls = 0;
 
-  const manager = new TauSessionManager({
+  const manager = new TaurenSessionManager({
     createClient: (clientOption) => {
       createCalls += 1;
       clientOptions.push(clientOption);
@@ -898,9 +898,9 @@ function createManagerHarness(
     postState: (message) => states.push(message),
     showNotification: (message, type) => notifications.push({ message, type }),
     getCwd: () => options.cwd === undefined && Object.prototype.hasOwnProperty.call(options, 'cwd') ? undefined : options.cwd ?? '/workspace',
-    getTauSettingValues: () => ({ ...tauSettings }),
-    updateTauSetting: async (settingId, value) => {
-      tauSettings[settingId] = value;
+    getTaurenSettingValues: () => ({ ...taurenSettings }),
+    updateTaurenSetting: async (settingId, value) => {
+      taurenSettings[settingId] = value;
     },
     initialSessionFile: options.initialSessionFile,
     onSessionFileChange: options.onSessionFileChange,
@@ -936,7 +936,7 @@ function createManagerHarness(
     clientOptions,
     customUiMessages,
     extensionEditorMessages,
-    tauSettings,
+    taurenSettings,
     get createCalls(): number {
       return createCalls;
     }

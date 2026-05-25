@@ -220,7 +220,7 @@ function createSessionItemMenuElement(options: CreateSessionItemElementOptions):
   button.setAttribute('aria-haspopup', 'menu');
   button.setAttribute('aria-expanded', options.openMenuIndex === options.index ? 'true' : 'false');
   button.disabled = !options.canRunSessionItemCommand(options.session);
-  button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg><span class="tau-icon-action-tooltip">Session commands</span>';
+  button.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 8C5 8.55229 4.55228 9 4 9C3.44772 9 3 8.55229 3 8C3 7.44772 3.44772 7 4 7C4.55228 7 5 7.44772 5 8ZM9 8C9 8.55229 8.55229 9 8 9C7.44772 9 7 8.55229 7 8C7 7.44772 7.44772 7 8 7C8.55229 7 9 7.44772 9 8ZM12 9C12.5523 9 13 8.55229 13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8C11 8.55229 11.4477 9 12 9Z"/></svg><span class="tauren-icon-action-tooltip">Session commands</span>';
   wrap.append(button);
 
   const menu = document.createElement('span');
@@ -251,12 +251,12 @@ function createSessionItemMenuButton(
 ): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'tau-toolbar__menu-item sessions__menu-item';
+  button.className = 'tauren-toolbar__menu-item sessions__menu-item';
   button.setAttribute('role', 'menuitem');
   button.setAttribute('data-session-command', command);
   button.setAttribute('data-session-command-index', String(commandIndex));
   button.disabled = !options.canRunSessionItemCommand(options.session, command);
-  button.innerHTML = '<span class="tau-toolbar__menu-label">' + getSessionItemCommandLabel(command) + '</span>' + getSessionItemCommandIcon(command);
+  button.innerHTML = '<span class="tauren-toolbar__menu-label">' + getSessionItemCommandLabel(command) + '</span>' + getSessionItemCommandIcon(command);
   button.addEventListener('pointerenter', () => options.onCommandActivate(commandIndex, button));
   button.addEventListener('pointerleave', () => options.onCommandHover(button, false));
   button.addEventListener('focus', () => options.onCommandActivate(commandIndex, button));

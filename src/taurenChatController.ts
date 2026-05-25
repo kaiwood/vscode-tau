@@ -9,7 +9,7 @@ import type {
 } from './webviewProtocol/types';
 import { StatePublisher } from './controller/statePublisher';
 import type { PiClient } from './pi/clientTypes';
-import type { TauChatControllerOptions } from './controller/types';
+import type { TaurenChatControllerOptions } from './controller/types';
 import type {
   PiImageContent,
   PiOAuthLoginCallbacks,
@@ -35,10 +35,10 @@ import { SessionViewController } from './sessions/sessionViewController';
 import { SettingsViewController } from './settings/settingsViewController';
 import { NavigationController } from './navigation/navigationController';
 import { getPiStartupCwdState, type PiStartupCwdState } from './workspace/cwdSafety';
-import { getSettingDefinition, isPiSettingId, isTauSettingId, type SettingId, type SettingValue } from './settings/settingsRegistry';
+import { getSettingDefinition, isPiSettingId, isTaurenSettingId, type SettingId, type SettingValue } from './settings/settingsRegistry';
 
-export type { TauChatControllerOptions } from './controller/types';
-export type { TauChatContextUsage, TauChatModelMeta, TauChatSessionMetaSnapshot } from './metadata/sessionMetadata';
+export type { TaurenChatControllerOptions } from './controller/types';
+export type { TaurenChatContextUsage, TaurenChatModelMeta, TaurenChatSessionMetaSnapshot } from './metadata/sessionMetadata';
 
 export type { PiPromptContextAttachment, PiPromptContextInput } from './prompt/types';
 
@@ -67,7 +67,7 @@ type ChatMessageSyncPlan = {
   postedSync: PostedChatSync;
 };
 
-export class TauChatController {
+export class TaurenChatController {
   private readonly promptContext = new PromptContextStore();
   private promptImages: PiPromptImageAttachment[] = [];
   private readonly sessionMetadata: SessionMetadataState;
@@ -94,7 +94,7 @@ export class TauChatController {
   private authState: WebviewAuthState = { providers: [] };
   private authAbortController: AbortController | undefined;
 
-  public constructor(private readonly options: TauChatControllerOptions) {
+  public constructor(private readonly options: TaurenChatControllerOptions) {
     this.sessionDiffController = new SessionDiffController({
       initialSessionFile: options.initialSessionFile,
       getSessionGeneration: () => this.session.generation,
@@ -618,7 +618,7 @@ export class TauChatController {
   private getSettingsValues(piSettings: Partial<Record<SettingId, SettingValue>>): Partial<Record<SettingId, SettingValue>> {
     return {
       ...piSettings,
-      ...(this.options.getTauSettingValues?.() ?? {})
+      ...(this.options.getTaurenSettingValues?.() ?? {})
     };
   }
 
@@ -911,12 +911,12 @@ export class TauChatController {
     }
 
     try {
-      if (isTauSettingId(settingId)) {
-        if (!this.options.updateTauSetting) {
+      if (isTaurenSettingId(settingId)) {
+        if (!this.options.updateTaurenSetting) {
           throw new Error('Tauren settings are not available in this session.');
         }
 
-        await this.options.updateTauSetting(settingId, value);
+        await this.options.updateTaurenSetting(settingId, value);
         this.options.showToast?.('Setting saved.', 'success');
         this.postState();
         return;
@@ -1234,7 +1234,7 @@ export class TauChatController {
     });
   }
 
-  private restoreReadyScriptArming(snapshot: ReturnType<TauChatController['armReadyScriptForUserPrompt']>): void {
+  private restoreReadyScriptArming(snapshot: ReturnType<TaurenChatController['armReadyScriptForUserPrompt']>): void {
     this.readyScriptState.restore(snapshot);
   }
 

@@ -25,8 +25,8 @@ suite('readyScript', () => {
       cwd: '/workspace',
       env: calls[0].env
     }]);
-    assert.strictEqual(calls[0].env?.TAU_READY_CWD, '/workspace');
-    assert.strictEqual(calls[0].env?.TAU_READY_SCRIPT, path.join('/workspace', 'scripts', 'ready.sh'));
+    assert.strictEqual(calls[0].env?.TAUREN_READY_CWD, '/workspace');
+    assert.strictEqual(calls[0].env?.TAUREN_READY_SCRIPT, path.join('/workspace', 'scripts', 'ready.sh'));
     assert.strictEqual(process.unrefCalls, 1);
   });
 

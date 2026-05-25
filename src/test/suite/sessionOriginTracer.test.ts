@@ -6,7 +6,7 @@ import { traceOrigin } from '../../origin/sessionOriginTracer';
 
 suite('SessionOriginTracer', () => {
   test('finds the earliest edit introducing selected text', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-'));
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-origin-'));
 
     try {
       const laterSession = path.join(dir, 'later.jsonl');
@@ -66,7 +66,7 @@ suite('SessionOriginTracer', () => {
   });
 
   test('keeps path-scoped matches ahead of older content-only fallback matches', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-priority-'));
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-origin-priority-'));
 
     try {
       const sessionFile = path.join(dir, 'session.jsonl');
@@ -118,7 +118,7 @@ suite('SessionOriginTracer', () => {
   });
 
   test('falls back to selected text when the current path does not match the original edit path', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-moved-'));
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-origin-moved-'));
 
     try {
       const sessionFile = path.join(dir, 'session.jsonl');
@@ -156,7 +156,7 @@ suite('SessionOriginTracer', () => {
   });
 
   test('skips matches from sessions whose stored cwd no longer exists', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-missing-cwd-'));
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-origin-missing-cwd-'));
 
     try {
       const missingCwdSession = path.join(dir, 'missing.jsonl');
@@ -214,7 +214,7 @@ suite('SessionOriginTracer', () => {
   });
 
   test('finds file origin from write tool calls by path', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tau-origin-write-'));
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tauren-origin-write-'));
 
     try {
       const sessionFile = path.join(dir, 'session.jsonl');
