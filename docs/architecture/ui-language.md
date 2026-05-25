@@ -23,6 +23,9 @@
 - Custom UI Surface: area for Pi extension UIs, either in a lane or a dialog
 - Custom UI Theme: visual styling for Custom UI Surface.
 - Plugin Bridge: Tau bridge for Pi extension UI calls.
+
+## Elements
+
 - Dialog: modal overlay surface for important interactions.
 - Toast: transient notification surface.
 - Busy bar: Bar at the top of the composer containing Changes and Steer/Follow-up controls, shown when Pi is busy.
