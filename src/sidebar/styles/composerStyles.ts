@@ -148,8 +148,35 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
         min-height 180ms ease,
         max-height 180ms ease,
         margin 180ms ease,
-        padding 180ms ease;
+        padding 180ms ease,
+        background-color 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease;
       will-change: opacity, transform, max-height;
+    }
+
+    .composer--drag-over {
+      border-color: color-mix(in srgb, var(--vscode-focusBorder, #0078d4) 70%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 8%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--vscode-focusBorder, #0078d4) 28%, transparent);
+    }
+
+    .composer--drag-neutral {
+      background: color-mix(in srgb, var(--vscode-focusBorder, #0078d4) 12%, var(--vscode-input-background) 88%);
+    }
+
+    .composer--drag-valid {
+      background: color-mix(in srgb, #2ea043 16%, var(--vscode-input-background) 84%);
+      border-color: color-mix(in srgb, #2ea043 76%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 8%, transparent),
+        0 0 0 2px color-mix(in srgb, #2ea043 28%, transparent);
+    }
+
+    .composer--drag-invalid {
+      background: color-mix(in srgb, var(--vscode-errorForeground, #f85149) 16%, var(--vscode-input-background) 84%);
+      border-color: color-mix(in srgb, var(--vscode-errorForeground, #f85149) 76%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 8%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--vscode-errorForeground, #f85149) 28%, transparent);
     }
 
     .tau-view--has-extension-status .composer {

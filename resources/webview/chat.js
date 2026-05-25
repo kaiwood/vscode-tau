@@ -1773,6 +1773,36 @@
     return extensionMatch?.[1] ?? "";
   }
 
+  // src/prompt/imageAttachments.ts
+  var maxPromptImageBytes = 10 * 1024 * 1024;
+  function getSupportedPromptImageMimeType(filePath) {
+    const extension = getLowercaseExtension(filePath);
+    if (extension === ".png") {
+      return "image/png";
+    }
+    if (extension === ".jpg" || extension === ".jpeg") {
+      return "image/jpeg";
+    }
+    if (extension === ".gif") {
+      return "image/gif";
+    }
+    if (extension === ".webp") {
+      return "image/webp";
+    }
+    return void 0;
+  }
+  function getUnsupportedPromptImageMessage(label) {
+    return `Unsupported attachment: ${label}. Tau currently supports PNG, JPEG, GIF, and WebP images.`;
+  }
+  function getPromptImageTooLargeMessage(label) {
+    return `Image too large: ${label} exceeds 10MB.`;
+  }
+  function getLowercaseExtension(filePath) {
+    const normalized = filePath.split(/[\\/]/).pop() ?? filePath;
+    const dotIndex = normalized.lastIndexOf(".");
+    return dotIndex >= 0 ? normalized.slice(dotIndex).toLowerCase() : "";
+  }
+
   // src/diff/lineCount.ts
   function normalizeDiffLineCount(value) {
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
@@ -2014,6 +2044,7 @@
     slashCommandsRefreshRequested = false;
     streamingBehavior = "steer";
     busySubmitHideTimeout;
+    composerDragDepth = 0;
     modelSelectOptionsSignature = "";
     textareaLayoutSignature = "";
     pasteBuffer = new ComposerPasteBuffer();
@@ -2021,6 +2052,12 @@
     removedDiffCounter;
     attachEventListeners() {
       this.options.form.addEventListener("submit", (event) => this.handleSubmit(event));
+      this.options.form.addEventListener("dragenter", (event) => this.handleComposerDragEnter(event));
+      this.options.form.addEventListener("dragover", (event) => this.handleComposerDragOver(event));
+      this.options.form.addEventListener("dragleave", (event) => this.handleComposerDragLeave(event));
+      this.options.form.addEventListener("drop", (event) => {
+        void this.handleComposerDrop(event);
+      });
       this.options.submitButton.addEventListener("click", (event) => this.handleSubmitButtonClick(event));
       this.options.attachButton.addEventListener("click", () => {
         this.options.postMessage({ type: "selectPromptImages" });
@@ -2320,6 +2357,55 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
     }
     isStopSubmitMode() {
       return this.options.getState().busy && this.options.textarea.value.length === 0;
+    }
+    handleComposerDragEnter(event) {
+      if (!event.dataTransfer) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.composerDragDepth += 1;
+      this.syncComposerDragState(classifyComposerDragState(event.dataTransfer));
+    }
+    handleComposerDragOver(event) {
+      if (!event.dataTransfer) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "copy";
+      this.syncComposerDragState(classifyComposerDragState(event.dataTransfer));
+    }
+    handleComposerDragLeave(event) {
+      if (!event.dataTransfer) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.composerDragDepth = Math.max(0, this.composerDragDepth - 1);
+      if (this.composerDragDepth === 0) {
+        this.syncComposerDragState("none");
+      }
+    }
+    async handleComposerDrop(event) {
+      if (!event.dataTransfer) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.composerDragDepth = 0;
+      this.syncComposerDragState("none");
+      const message = await createDroppedPromptImagesMessage(event.dataTransfer);
+      if (message) {
+        this.options.postMessage(message);
+      }
+      this.options.focusPromptInput();
+    }
+    syncComposerDragState(state2) {
+      this.options.form.classList.toggle("composer--drag-over", state2 !== "none");
+      this.options.form.classList.toggle("composer--drag-neutral", state2 === "neutral");
+      this.options.form.classList.toggle("composer--drag-valid", state2 === "valid");
+      this.options.form.classList.toggle("composer--drag-invalid", state2 === "invalid");
     }
     getPromptContextAttachments() {
       const state2 = this.options.getState();
@@ -2850,6 +2936,111 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
     }
     const attachment = value;
     return typeof attachment.id === "string" && typeof attachment.label === "string" && typeof attachment.title === "string" && typeof attachment.mimeType === "string" && typeof attachment.sizeBytes === "number";
+  }
+  async function createDroppedPromptImagesMessage(dataTransfer) {
+    const files = Array.from(dataTransfer.files ?? []);
+    const uris = files.length > 0 ? [] : getDroppedUriTexts(dataTransfer);
+    if (files.length === 0 && uris.length === 0) {
+      return void 0;
+    }
+    const rejections = getDroppedFileRejections(files);
+    if (rejections.length > 0) {
+      return { type: "dropPromptImages", files: [], uris: [], rejections };
+    }
+    const droppedFiles = [];
+    for (const file of files) {
+      try {
+        droppedFiles.push({
+          label: getDroppedFileLabel(file),
+          title: getDroppedFileLabel(file),
+          mimeType: getSupportedPromptImageMimeType(getDroppedFileLabel(file)) ?? file.type,
+          sizeBytes: file.size,
+          data: await readFileAsBase64(file)
+        });
+      } catch {
+        return {
+          type: "dropPromptImages",
+          files: [],
+          uris: [],
+          rejections: [`Cannot read attachment: ${getDroppedFileLabel(file)}.`]
+        };
+      }
+    }
+    return { type: "dropPromptImages", files: droppedFiles, uris };
+  }
+  function getDroppedFileRejections(files) {
+    const rejections = [];
+    for (const file of files) {
+      const label = getDroppedFileLabel(file);
+      if (!getSupportedPromptImageMimeType(label)) {
+        rejections.push(getUnsupportedPromptImageMessage(label));
+        continue;
+      }
+      if (file.size > maxPromptImageBytes) {
+        rejections.push(getPromptImageTooLargeMessage(label));
+      }
+    }
+    return rejections;
+  }
+  function getDroppedFileLabel(file) {
+    return file.name || "dropped file";
+  }
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        resolve(typeof reader.result === "string" ? stripDataUrlPrefix(reader.result) : "");
+      });
+      reader.addEventListener("error", () => reject(reader.error));
+      reader.readAsDataURL(file);
+    });
+  }
+  function stripDataUrlPrefix(value) {
+    const commaIndex = value.indexOf(",");
+    return commaIndex >= 0 ? value.slice(commaIndex + 1) : value;
+  }
+  function classifyComposerDragState(dataTransfer) {
+    if (!dataTransfer) {
+      return "neutral";
+    }
+    const files = Array.from(dataTransfer.files ?? []);
+    if (files.length > 0) {
+      return getDroppedFileRejections(files).length > 0 ? "invalid" : "valid";
+    }
+    const itemStates = Array.from(dataTransfer.items ?? []).filter((item) => item.kind === "file").map(classifyDataTransferFileItem);
+    if (itemStates.includes("invalid")) {
+      return "invalid";
+    }
+    if (itemStates.length > 0 && itemStates.every((state2) => state2 === "valid")) {
+      return "valid";
+    }
+    return "neutral";
+  }
+  function classifyDataTransferFileItem(item) {
+    const file = item.getAsFile();
+    if (file?.name) {
+      return getDroppedFileRejections([file]).length > 0 ? "invalid" : "valid";
+    }
+    if (item.type) {
+      return isSupportedPromptImageMimeType(item.type) ? "valid" : "invalid";
+    }
+    return "neutral";
+  }
+  function isSupportedPromptImageMimeType(value) {
+    return value === "image/png" || value === "image/jpeg" || value === "image/gif" || value === "image/webp";
+  }
+  function getDroppedUriTexts(dataTransfer) {
+    const uriList = parseDroppedUriText(dataTransfer.getData("text/uri-list"));
+    if (uriList.length > 0) {
+      return uriList;
+    }
+    return parseDroppedUriText(dataTransfer.getData("text/plain"));
+  }
+  function parseDroppedUriText(value) {
+    return value.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0 && !line.startsWith("#")).filter(isDroppedUriText);
+  }
+  function isDroppedUriText(value) {
+    return /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value) || value.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(value) || value.startsWith("\\\\");
   }
   function formatBytes(value) {
     if (!Number.isFinite(value) || value < 0) {

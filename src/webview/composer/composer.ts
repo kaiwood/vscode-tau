@@ -1,3 +1,9 @@
+import {
+  getPromptImageTooLargeMessage,
+  getSupportedPromptImageMimeType,
+  getUnsupportedPromptImageMessage,
+  maxPromptImageBytes
+} from '../../prompt/imageAttachments';
 import { requestCodeHighlight } from '../codeHighlighting';
 import { createDiffCounter, formatDiffLineCount, normalizeDiffLineCount, updateDiffCounter } from './diffCounter';
 import { ComposerPasteBuffer } from './paste';
@@ -17,6 +23,7 @@ import type {
 } from '../types';
 
 type PostMessage = (message: unknown) => void;
+type ComposerDragState = 'none' | 'neutral' | 'valid' | 'invalid';
 
 export type ComposerControllerOptions = {
   getState: () => WebviewState;
@@ -59,6 +66,7 @@ export class ComposerController {
   private slashCommandsRefreshRequested = false;
   private streamingBehavior: WebviewStreamingBehavior = 'steer';
   private busySubmitHideTimeout: ReturnType<typeof setTimeout> | undefined;
+  private composerDragDepth = 0;
   private modelSelectOptionsSignature = '';
   private textareaLayoutSignature = '';
   private readonly pasteBuffer = new ComposerPasteBuffer();
@@ -72,6 +80,12 @@ export class ComposerController {
 
   public attachEventListeners(): void {
     this.options.form.addEventListener('submit', (event) => this.handleSubmit(event));
+    this.options.form.addEventListener('dragenter', (event) => this.handleComposerDragEnter(event));
+    this.options.form.addEventListener('dragover', (event) => this.handleComposerDragOver(event));
+    this.options.form.addEventListener('dragleave', (event) => this.handleComposerDragLeave(event));
+    this.options.form.addEventListener('drop', (event) => {
+      void this.handleComposerDrop(event);
+    });
     this.options.submitButton.addEventListener('click', (event) => this.handleSubmitButtonClick(event));
     this.options.attachButton.addEventListener('click', () => {
       this.options.postMessage({ type: 'selectPromptImages' });
@@ -446,6 +460,68 @@ export class ComposerController {
 
   public isStopSubmitMode(): boolean {
     return this.options.getState().busy && this.options.textarea.value.length === 0;
+  }
+
+  private handleComposerDragEnter(event: DragEvent): void {
+    if (!event.dataTransfer) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.composerDragDepth += 1;
+    this.syncComposerDragState(classifyComposerDragState(event.dataTransfer));
+  }
+
+  private handleComposerDragOver(event: DragEvent): void {
+    if (!event.dataTransfer) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'copy';
+    this.syncComposerDragState(classifyComposerDragState(event.dataTransfer));
+  }
+
+  private handleComposerDragLeave(event: DragEvent): void {
+    if (!event.dataTransfer) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.composerDragDepth = Math.max(0, this.composerDragDepth - 1);
+
+    if (this.composerDragDepth === 0) {
+      this.syncComposerDragState('none');
+    }
+  }
+
+  private async handleComposerDrop(event: DragEvent): Promise<void> {
+    if (!event.dataTransfer) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.composerDragDepth = 0;
+    this.syncComposerDragState('none');
+
+    const message = await createDroppedPromptImagesMessage(event.dataTransfer);
+
+    if (message) {
+      this.options.postMessage(message);
+    }
+
+    this.options.focusPromptInput();
+  }
+
+  private syncComposerDragState(state: ComposerDragState): void {
+    this.options.form.classList.toggle('composer--drag-over', state !== 'none');
+    this.options.form.classList.toggle('composer--drag-neutral', state === 'neutral');
+    this.options.form.classList.toggle('composer--drag-valid', state === 'valid');
+    this.options.form.classList.toggle('composer--drag-invalid', state === 'invalid');
   }
 
   private getPromptContextAttachments(): PromptContextAttachment[] {
@@ -1141,6 +1217,156 @@ function isPromptImageAttachment(value: unknown): value is PromptImageAttachment
     && typeof attachment.title === 'string'
     && typeof attachment.mimeType === 'string'
     && typeof attachment.sizeBytes === 'number';
+}
+
+async function createDroppedPromptImagesMessage(dataTransfer: DataTransfer): Promise<unknown | undefined> {
+  const files = Array.from(dataTransfer.files ?? []);
+  const uris = files.length > 0 ? [] : getDroppedUriTexts(dataTransfer);
+
+  if (files.length === 0 && uris.length === 0) {
+    return undefined;
+  }
+
+  const rejections = getDroppedFileRejections(files);
+
+  if (rejections.length > 0) {
+    return { type: 'dropPromptImages', files: [], uris: [], rejections };
+  }
+
+  const droppedFiles = [];
+
+  for (const file of files) {
+    try {
+      droppedFiles.push({
+        label: getDroppedFileLabel(file),
+        title: getDroppedFileLabel(file),
+        mimeType: getSupportedPromptImageMimeType(getDroppedFileLabel(file)) ?? file.type,
+        sizeBytes: file.size,
+        data: await readFileAsBase64(file)
+      });
+    } catch {
+      return {
+        type: 'dropPromptImages',
+        files: [],
+        uris: [],
+        rejections: [`Cannot read attachment: ${getDroppedFileLabel(file)}.`]
+      };
+    }
+  }
+
+  return { type: 'dropPromptImages', files: droppedFiles, uris };
+}
+
+function getDroppedFileRejections(files: readonly File[]): string[] {
+  const rejections: string[] = [];
+
+  for (const file of files) {
+    const label = getDroppedFileLabel(file);
+
+    if (!getSupportedPromptImageMimeType(label)) {
+      rejections.push(getUnsupportedPromptImageMessage(label));
+      continue;
+    }
+
+    if (file.size > maxPromptImageBytes) {
+      rejections.push(getPromptImageTooLargeMessage(label));
+    }
+  }
+
+  return rejections;
+}
+
+function getDroppedFileLabel(file: File): string {
+  return file.name || 'dropped file';
+}
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => {
+      resolve(typeof reader.result === 'string' ? stripDataUrlPrefix(reader.result) : '');
+    });
+    reader.addEventListener('error', () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
+}
+
+function stripDataUrlPrefix(value: string): string {
+  const commaIndex = value.indexOf(',');
+  return commaIndex >= 0 ? value.slice(commaIndex + 1) : value;
+}
+
+function classifyComposerDragState(dataTransfer: DataTransfer | null): ComposerDragState {
+  if (!dataTransfer) {
+    return 'neutral';
+  }
+
+  const files = Array.from(dataTransfer.files ?? []);
+
+  if (files.length > 0) {
+    return getDroppedFileRejections(files).length > 0 ? 'invalid' : 'valid';
+  }
+
+  const itemStates = Array.from(dataTransfer.items ?? [])
+    .filter((item) => item.kind === 'file')
+    .map(classifyDataTransferFileItem);
+
+  if (itemStates.includes('invalid')) {
+    return 'invalid';
+  }
+
+  if (itemStates.length > 0 && itemStates.every((state) => state === 'valid')) {
+    return 'valid';
+  }
+
+  return 'neutral';
+}
+
+function classifyDataTransferFileItem(item: DataTransferItem): Exclude<ComposerDragState, 'none'> {
+  const file = item.getAsFile();
+
+  if (file?.name) {
+    return getDroppedFileRejections([file]).length > 0 ? 'invalid' : 'valid';
+  }
+
+  if (item.type) {
+    return isSupportedPromptImageMimeType(item.type) ? 'valid' : 'invalid';
+  }
+
+  return 'neutral';
+}
+
+function isSupportedPromptImageMimeType(value: string): boolean {
+  return value === 'image/png'
+    || value === 'image/jpeg'
+    || value === 'image/gif'
+    || value === 'image/webp';
+}
+
+function getDroppedUriTexts(dataTransfer: DataTransfer): string[] {
+  const uriList = parseDroppedUriText(dataTransfer.getData('text/uri-list'));
+
+  if (uriList.length > 0) {
+    return uriList;
+  }
+
+  return parseDroppedUriText(dataTransfer.getData('text/plain'));
+}
+
+function parseDroppedUriText(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('#'))
+    .filter(isDroppedUriText);
+}
+
+function isDroppedUriText(value: string): boolean {
+  return /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value)
+    || value.startsWith('/')
+    || /^[a-zA-Z]:[\\/]/.test(value)
+    || value.startsWith('\\\\');
 }
 
 function formatBytes(value: number): string {

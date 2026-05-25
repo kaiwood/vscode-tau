@@ -20,6 +20,13 @@ import type { PiPromptImageAttachment } from './tauChatController';
 import { listPiSessions } from './sessions/piSessionList';
 import { runReadyScript } from './readyScript';
 import { createPromptContextFromEditor } from './prompt/editorContext';
+import {
+  getPromptImageTooLargeMessage,
+  getSupportedPromptImageMimeType,
+  getUnsupportedPromptImageMessage,
+  maxPromptImageBytes,
+  supportedPromptImageExtensions
+} from './prompt/imageAttachments';
 import type { PiPromptContextInput, PiPromptTraceOriginLinkedCommit } from './prompt/types';
 import { findCurrentPathGitCommit, findTraceLinkedGitCommit } from './origin/gitOriginContext';
 import { traceOrigin, type TraceOriginInput, type TraceOriginMatch } from './origin/sessionOriginTracer';
@@ -36,8 +43,6 @@ const tauSidebarFocusContextKey = 'tau.sidebarFocus';
 const tauBusyContextKey = 'tau.busy';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
-const maxPromptImageBytes = 10 * 1024 * 1024;
-const supportedPromptImageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
 type ConfiguredPiClientDependencies = {
   extensionUi: ExtensionUi;
@@ -489,7 +494,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     const label = getPathBasename(uri.fsPath);
 
     if (!mimeType) {
-      return `Unsupported attachment: ${label}. Tau currently supports PNG, JPEG, GIF, and WebP images.`;
+      return getUnsupportedPromptImageMessage(label);
     }
 
     let stat: vscode.FileStat;
@@ -504,7 +509,7 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
 
     if (stat.size > maxPromptImageBytes) {
-      return `Image too large: ${label} exceeds 10MB.`;
+      return getPromptImageTooLargeMessage(label);
     }
 
     let data: Uint8Array;
@@ -522,6 +527,86 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
       label,
       title: uri.fsPath,
       sizeBytes: stat.size
+    };
+  }
+
+  private async dropPromptImages(message: Extract<WebviewMessage, { type: 'dropPromptImages' }>): Promise<void> {
+    if (message.rejections && message.rejections.length > 0) {
+      for (const rejection of message.rejections) {
+        this.showToast(rejection, 'warning');
+      }
+
+      return;
+    }
+
+    const attachments: PiPromptImageAttachment[] = [];
+    const rejected: string[] = [];
+
+    for (const droppedFile of message.files) {
+      const result = this.createPromptImageAttachmentFromDroppedFile(droppedFile);
+
+      if (typeof result === 'string') {
+        rejected.push(result);
+      } else {
+        attachments.push(result);
+      }
+    }
+
+    for (const uriText of message.uris) {
+      const uri = parseDroppedPromptImageUri(uriText);
+
+      if (!uri) {
+        rejected.push('Cannot read dropped attachment.');
+        continue;
+      }
+
+      const result = await this.createPromptImageAttachment(uri);
+
+      if (typeof result === 'string') {
+        rejected.push(result);
+      } else {
+        attachments.push(result);
+      }
+    }
+
+    if (rejected.length > 0) {
+      for (const rejection of rejected) {
+        this.showToast(rejection, 'warning');
+      }
+
+      return;
+    }
+
+    if (attachments.length === 0) {
+      this.showToast('No image files were dropped.', 'warning');
+      return;
+    }
+
+    this.controller.addPromptImages(attachments);
+    await this.focus();
+    this.showToast(`${attachments.length === 1 ? 'Image' : `${attachments.length} images`} attached.`, 'success');
+  }
+
+  private createPromptImageAttachmentFromDroppedFile(file: Extract<WebviewMessage, { type: 'dropPromptImages' }>['files'][number]): PiPromptImageAttachment | string {
+    const label = file.label;
+    const mimeType = getSupportedPromptImageMimeType(label);
+
+    if (!mimeType) {
+      return getUnsupportedPromptImageMessage(label);
+    }
+
+    if (file.sizeBytes > maxPromptImageBytes) {
+      return getPromptImageTooLargeMessage(label);
+    }
+
+    return {
+      id: createPromptImageId(),
+      type: 'image',
+      data: file.data,
+      mimeType,
+      label,
+      title: file.title || label,
+      sizeBytes: file.sizeBytes
     };
   }
 
@@ -609,6 +694,11 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
 
     if (message.type === 'selectPromptImages') {
       await this.selectPromptImages();
+      return;
+    }
+
+    if (message.type === 'dropPromptImages') {
+      await this.dropPromptImages(message);
       return;
     }
 
@@ -1382,30 +1472,21 @@ function isSupportedLocalImagePath(filePath: string): boolean {
   return /\.(?:png|jpe?g|gif|webp)$/i.test(filePath);
 }
 
-function getSupportedPromptImageMimeType(filePath: string): string | undefined {
-  const extension = path.extname(filePath).toLowerCase();
-
-  if (extension === '.png') {
-    return 'image/png';
-  }
-
-  if (extension === '.jpg' || extension === '.jpeg') {
-    return 'image/jpeg';
-  }
-
-  if (extension === '.gif') {
-    return 'image/gif';
-  }
-
-  if (extension === '.webp') {
-    return 'image/webp';
-  }
-
-  return undefined;
-}
-
 function createPromptImageId(): string {
   return `prompt-image-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function parseDroppedPromptImageUri(value: string): vscode.Uri | undefined {
+  try {
+    if (/^[a-zA-Z]:[\\/]/.test(value) || value.startsWith('/') || value.startsWith('\\\\')) {
+      return vscode.Uri.file(value);
+    }
+
+    const uri = vscode.Uri.parse(value, true);
+    return uri.scheme === 'file' || uri.scheme === 'vscode-remote' ? uri : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function isUriInsideWorkspace(uri: vscode.Uri): boolean {

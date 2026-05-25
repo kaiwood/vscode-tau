@@ -299,6 +299,67 @@ suite('TauChatViewProvider', () => {
     provider.dispose();
   });
 
+  test('adds dropped prompt images from the webview', async () => {
+    const provider = new TauChatViewProvider(
+      vscode.Uri.file('/extension'),
+      () => new FakePiClient({
+        state: {
+          model: { provider: 'openai', id: 'live-model', reasoning: false },
+          thinkingLevel: 'off'
+        }
+      }),
+      undefined,
+      undefined,
+      () => '/workspace'
+    );
+    const view = new FakeWebviewView();
+
+    provider.resolveWebviewView(view.asWebviewView());
+    view.webview.fireMessage({
+      type: 'dropPromptImages',
+      files: [{ label: 'diagram.png', title: 'diagram.png', mimeType: 'image/png', sizeBytes: 4, data: 'AAAA' }],
+      uris: []
+    });
+
+    await waitForAssertion(() => {
+      assert.deepStrictEqual(findPostedPromptImages(view)?.map(withoutPromptImageId), [{
+        label: 'diagram.png',
+        title: 'diagram.png',
+        mimeType: 'image/png',
+        sizeBytes: 4
+      }]);
+    });
+    provider.dispose();
+  });
+
+  test('rejects dropped prompt image batches when any item is invalid', async () => {
+    const provider = new TauChatViewProvider(
+      vscode.Uri.file('/extension'),
+      () => new FakePiClient({
+        state: {
+          model: { provider: 'openai', id: 'live-model', reasoning: false },
+          thinkingLevel: 'off'
+        }
+      }),
+      undefined,
+      undefined,
+      () => '/workspace'
+    );
+    const view = new FakeWebviewView();
+
+    provider.resolveWebviewView(view.asWebviewView());
+    view.webview.fireMessage({
+      type: 'dropPromptImages',
+      files: [{ label: 'diagram.png', title: 'diagram.png', mimeType: 'image/png', sizeBytes: 4, data: 'AAAA' }],
+      uris: [],
+      rejections: ['Unsupported attachment: notes.txt. Tau currently supports PNG, JPEG, GIF, and WebP images.']
+    });
+    await flushPromises();
+
+    assert.strictEqual(findPostedPromptImages(view), undefined);
+    provider.dispose();
+  });
+
   test('sends selected editor lines to the composer and clears the editor selection', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: 'alpha\nbeta\ngamma\ndelta',
@@ -676,6 +737,18 @@ function findPostedComposerText(view: FakeWebviewView): string | undefined {
     .filter(isWebviewStateMessage)
     .find((message) => typeof message.composerText === 'string')
     ?.composerText;
+}
+
+function findPostedPromptImages(view: FakeWebviewView): WebviewStateMessage['promptImages'] | undefined {
+  return view.webview.messages
+    .filter(isWebviewStateMessage)
+    .find((message) => Array.isArray(message.promptImages) && message.promptImages.length > 0)
+    ?.promptImages;
+}
+
+function withoutPromptImageId(value: NonNullable<WebviewStateMessage['promptImages']>[number]): Omit<NonNullable<WebviewStateMessage['promptImages']>[number], 'id'> {
+  const { id: _id, ...rest } = value;
+  return rest;
 }
 
 function lastPostedState(view: FakeWebviewView): WebviewStateMessage {

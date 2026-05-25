@@ -182,6 +182,22 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshMetadata' }), { type: 'refreshMetadata' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSlashCommands' }), { type: 'refreshSlashCommands' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'selectPromptImages' }), { type: 'selectPromptImages' });
+    assert.deepStrictEqual(
+      parseWebviewMessage({
+        type: 'dropPromptImages',
+        files: [{ label: 'image.png', title: 'image.png', mimeType: 'image/png', sizeBytes: 4, data: 'AAAA' }],
+        uris: ['file:///tmp/image.webp']
+      }),
+      {
+        type: 'dropPromptImages',
+        files: [{ label: 'image.png', title: 'image.png', mimeType: 'image/png', sizeBytes: 4, data: 'AAAA' }],
+        uris: ['file:///tmp/image.webp']
+      }
+    );
+    assert.deepStrictEqual(
+      parseWebviewMessage({ type: 'dropPromptImages', files: [], uris: [], rejections: ['Unsupported attachment: note.txt.'] }),
+      { type: 'dropPromptImages', files: [], uris: [], rejections: ['Unsupported attachment: note.txt.'] }
+    );
     assert.deepStrictEqual(parseWebviewMessage({ type: 'removePromptImage', id: 'prompt-image-1' }), { type: 'removePromptImage', id: 'prompt-image-1' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'removePromptContext', id: 'context-1' }), { type: 'removePromptContext', id: 'context-1' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'abort' }), { type: 'abort' });
@@ -272,6 +288,10 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setTreeEntryLabel', entryId: '', label: 'checkpoint' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setTreeEntryLabel', entryId: 'entry-1', label: 42 }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSessionName', name: 42 }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'dropPromptImages', files: 'nope', uris: [] }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'dropPromptImages', files: [{ label: '', title: '', mimeType: 'image/png', sizeBytes: 1, data: 'x' }], uris: [] }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'dropPromptImages', files: [], uris: [42] }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'dropPromptImages', files: [], uris: [], rejections: [''] }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'removePromptContext', id: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'copyText', text: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'copyText', text: 42 }), { type: 'unknown' });

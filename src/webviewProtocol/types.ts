@@ -21,6 +21,14 @@ export type WebviewPromptImageAttachment = {
   sizeBytes: number;
 };
 
+export type WebviewDroppedPromptImage = {
+  label: string;
+  title: string;
+  mimeType: string;
+  sizeBytes: number;
+  data: string;
+};
+
 export type WebviewSessionItemCommand = 'rename' | 'showChanges' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
 
 export type WebviewAuthAction = 'login' | 'logout' | 'refresh' | 'cancel';
@@ -82,6 +90,7 @@ export type WebviewMessage =
   | { type: 'refreshMetadata' }
   | { type: 'refreshSlashCommands' }
   | { type: 'selectPromptImages' }
+  | { type: 'dropPromptImages'; files: WebviewDroppedPromptImage[]; uris: string[]; rejections?: string[] }
   | { type: 'removePromptImage'; id: string }
   | { type: 'removePromptContext'; id: string }
   | { type: 'abort' }

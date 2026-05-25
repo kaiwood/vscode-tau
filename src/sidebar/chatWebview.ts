@@ -13,6 +13,7 @@ import { createNonce } from './nonce';
 import type {
   CreateWebviewHtmlOptions,
   CreateWebviewStateMessageOptions,
+  WebviewDroppedPromptImage,
   WebviewMessage,
   WebviewScriptUris,
   WebviewStateMessage
@@ -127,6 +128,19 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return { type: 'refreshSlashCommands' };
     case 'selectPromptImages':
       return { type: 'selectPromptImages' };
+    case 'dropPromptImages': {
+      const files = parseDroppedPromptImages(value.files);
+      const uris = parseStringArray(value.uris);
+      const rejections = 'rejections' in value ? parseStringArray(value.rejections) : [];
+
+      if (!files || !uris || !rejections) {
+        return { type: 'unknown' };
+      }
+
+      return rejections.length > 0
+        ? { type: 'dropPromptImages', files, uris, rejections }
+        : { type: 'dropPromptImages', files, uris };
+    }
     case 'removePromptImage':
       return typeof value.id === 'string' && value.id
         ? { type: 'removePromptImage', id: value.id }
@@ -632,6 +646,57 @@ function escapeHtmlAttribute(value: string): string {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function parseDroppedPromptImages(value: unknown): WebviewDroppedPromptImage[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const files: WebviewDroppedPromptImage[] = [];
+
+  for (const item of value) {
+    if (!isRecord(item)
+      || typeof item.label !== 'string' || !item.label
+      || typeof item.title !== 'string'
+      || typeof item.mimeType !== 'string' || !item.mimeType
+      || typeof item.data !== 'string'
+      || !isNonNegativeFiniteNumber(item.sizeBytes)) {
+      return undefined;
+    }
+
+    files.push({
+      label: item.label,
+      title: item.title,
+      mimeType: item.mimeType,
+      sizeBytes: item.sizeBytes,
+      data: item.data
+    });
+  }
+
+  return files;
+}
+
+function parseStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const strings: string[] = [];
+
+  for (const item of value) {
+    if (typeof item !== 'string' || !item) {
+      return undefined;
+    }
+
+    strings.push(item);
+  }
+
+  return strings;
+}
+
+function isNonNegativeFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 function parsePositiveInteger(value: unknown): number | undefined {
