@@ -1351,7 +1351,7 @@ function getExtensionBackgroundColorsEnabledSetting(): boolean {
 }
 
 function getExtensionMonospaceFontEnabledSetting(): boolean {
-  return vscode.workspace.getConfiguration('tau').get<boolean>('extensions.monospaceFontEnabled', false);
+  return vscode.workspace.getConfiguration('tau').get<boolean>('extensions.monospaceFontEnabled', true);
 }
 
 function getTauSettingValues(globalState?: vscode.Memento): Partial<Record<TauSettingId, SettingValue>> {

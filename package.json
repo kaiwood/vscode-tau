@@ -302,7 +302,7 @@
         },
         "tau.extensions.monospaceFontEnabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Use the editor monospace font for Pi extension widgets and status."
         },
         "tau.blockHttpsImages": {

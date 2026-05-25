@@ -4633,7 +4633,7 @@ ${after}`;
       label: "Use monospace font",
       description: "Use the editor monospace font for Pi extension widgets and status.",
       control: "toggle",
-      defaultValue: false,
+      defaultValue: true,
       liveBehavior: "immediate"
     },
     {

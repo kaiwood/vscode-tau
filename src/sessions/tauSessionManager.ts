@@ -89,7 +89,7 @@ export class TauSessionManager {
     belowWidgetsEnabled: true,
     statusBarEnabled: true,
     backgroundColorsEnabled: true,
-    monospaceFontEnabled: false
+    monospaceFontEnabled: true
   };
 
   public constructor(private readonly options: TauSessionManagerOptions) {
