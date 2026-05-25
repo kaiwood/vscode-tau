@@ -1,4 +1,4 @@
-import { ChatSession, type ChatSnapshotMessage, type ChatSnapshotState } from './chat/chatSession';
+import { ChatSession, type ChatImage, type ChatSnapshotMessage, type ChatSnapshotState } from './chat/chatSession';
 import { createWebviewStateMessage } from './sidebar/chatWebview';
 import type {
   WebviewAuthProvider,
@@ -11,6 +11,7 @@ import { StatePublisher } from './controller/statePublisher';
 import type { PiClient } from './pi/clientTypes';
 import type { TauChatControllerOptions } from './controller/types';
 import type {
+  PiImageContent,
   PiOAuthLoginCallbacks,
   PiPromptStreamingBehavior,
   PiEvent
@@ -41,6 +42,13 @@ export type { TauChatContextUsage, TauChatModelMeta, TauChatSessionMetaSnapshot 
 
 export type { PiPromptContextAttachment, PiPromptContextInput } from './prompt/types';
 
+export type PiPromptImageAttachment = PiImageContent & {
+  id: string;
+  label: string;
+  title: string;
+  sizeBytes: number;
+};
+
 type PostedChatMessageSync = {
   id: string;
   revision: number;
@@ -61,6 +69,7 @@ type ChatMessageSyncPlan = {
 
 export class TauChatController {
   private readonly promptContext = new PromptContextStore();
+  private promptImages: PiPromptImageAttachment[] = [];
   private readonly sessionMetadata: SessionMetadataState;
   private readonly sessionMetadataRefresh: SessionMetadataRefreshController;
   private readonly slashCommandController: LocalSlashCommandController;
@@ -328,6 +337,9 @@ export class TauChatController {
       case 'setThinkingLevel':
         await this.slashCommandController.setThinkingLevel(message.level);
         return;
+      case 'removePromptImage':
+        this.removePromptImage(message.id);
+        return;
       case 'removePromptContext':
         this.removePromptContext(message.id);
         return;
@@ -380,9 +392,11 @@ export class TauChatController {
       await this.refreshSessionMeta({ startClient: true });
     }
 
-    const submittedPrompt = this.session.beginSubmit(message.text);
+    const promptImages = this.consumePromptImages();
+    const submittedPrompt = this.session.beginSubmit(message.text, toChatImages(promptImages));
 
     if (!submittedPrompt) {
+      this.restorePromptImages(promptImages);
       return;
     }
 
@@ -396,7 +410,7 @@ export class TauChatController {
     const previousReadyScriptArmed = this.armReadyScriptForUserPrompt();
 
     try {
-      await this.getClient().prompt(promptText);
+      await this.getClient().prompt(promptText, undefined, toPiImages(promptImages));
     } catch (error) {
       this.restoreReadyScriptArming(previousReadyScriptArmed);
       if (submittedPrompt.sessionGeneration !== this.session.generation) {
@@ -404,6 +418,7 @@ export class TauChatController {
       }
 
       this.restorePromptContext(promptContext);
+      this.restorePromptImages(promptImages);
       this.session.failActivePrompt(getErrorMessage(error));
       this.postState();
     }
@@ -496,6 +511,42 @@ export class TauChatController {
     this.postState();
   }
 
+  public addPromptImages(images: PiPromptImageAttachment[]): void {
+    if (images.length === 0) {
+      return;
+    }
+
+    this.promptImages.push(...images.map((image) => ({ ...image })));
+    this.sessionView.showChat({ clearSessionsError: true });
+    this.postState();
+  }
+
+  public removePromptImage(id: string): void {
+    const nextImages = this.promptImages.filter((image) => image.id !== id);
+
+    if (nextImages.length === this.promptImages.length) {
+      return;
+    }
+
+    this.promptImages = nextImages;
+    this.postState();
+  }
+
+  public takePromptImages(): PiPromptImageAttachment[] {
+    const images = this.consumePromptImages();
+
+    if (images.length > 0) {
+      this.postState();
+    }
+
+    return images;
+  }
+
+  public replacePromptImages(images: PiPromptImageAttachment[]): void {
+    this.promptImages = images.map((image) => ({ ...image }));
+    this.postState();
+  }
+
   public removePromptContext(id: string): void {
     if (this.promptContext.remove(id)) {
       this.postState();
@@ -541,6 +592,7 @@ export class TauChatController {
       animationsEnabled: this.options.getAnimationsEnabled?.() ?? true,
       customUiTheme: this.options.getCustomUiTheme?.() ?? 'default',
       promptContext: this.promptContext.getWebviewAttachments(),
+      promptImages: this.getWebviewPromptImages(),
       composer: this.pendingComposerText
         ? {
           text: this.pendingComposerText.text,
@@ -950,6 +1002,33 @@ export class TauChatController {
     this.promptContext.restore(context);
   }
 
+  private consumePromptImages(): PiPromptImageAttachment[] {
+    const images = this.promptImages.map((image) => ({ ...image }));
+    this.promptImages = [];
+    return images;
+  }
+
+  private restorePromptImages(images: PiPromptImageAttachment[]): void {
+    if (images.length === 0) {
+      return;
+    }
+
+    this.promptImages = [
+      ...images.map((image) => ({ ...image })),
+      ...this.promptImages
+    ];
+  }
+
+  private getWebviewPromptImages(): WebviewStateMessage['promptImages'] {
+    return this.promptImages.map((image) => ({
+      id: image.id,
+      label: image.label,
+      title: image.title,
+      mimeType: image.mimeType,
+      sizeBytes: image.sizeBytes
+    }));
+  }
+
   public refreshSessionMeta(options: { startClient?: boolean; force?: boolean } = {}): Promise<void> {
     return this.sessionMetadataRefresh.refreshSessionMeta(options);
   }
@@ -1018,16 +1097,17 @@ export class TauChatController {
 
     const sessionGeneration = this.session.generation;
     const promptContext = this.consumePromptContext();
+    const promptImages = this.consumePromptImages();
     const promptText = this.formatPromptForPi(trimmedText, promptContext);
 
-    if (promptContext.length > 0) {
+    if (promptContext.length > 0 || promptImages.length > 0) {
       this.postState();
     }
 
     const previousReadyScriptArmed = this.armReadyScriptForUserPrompt(streamingBehavior);
 
     try {
-      await this.getClient().prompt(promptText, streamingBehavior);
+      await this.getClient().prompt(promptText, streamingBehavior, toPiImages(promptImages));
 
       if (sessionGeneration !== this.session.generation) {
         return;
@@ -1048,6 +1128,7 @@ export class TauChatController {
       }
 
       this.restorePromptContext(promptContext);
+      this.restorePromptImages(promptImages);
       this.session.addActivity({
         kind: 'queue',
         title: streamingBehavior === 'followUp' ? 'Failed to queue follow-up' : 'Failed to queue steering',
@@ -1264,6 +1345,31 @@ export class TauChatController {
     this.sessionHistory.setLoading(false);
     this.postState();
   }
+}
+
+function toPiImages(images: PiPromptImageAttachment[]): PiImageContent[] | undefined {
+  if (images.length === 0) {
+    return undefined;
+  }
+
+  return images.map((image) => ({
+    type: 'image',
+    data: image.data,
+    mimeType: image.mimeType
+  }));
+}
+
+function toChatImages(images: PiPromptImageAttachment[]): ChatImage[] | undefined {
+  if (images.length === 0) {
+    return undefined;
+  }
+
+  return images.map((image) => ({
+    type: 'image',
+    data: image.data,
+    mimeType: image.mimeType,
+    alt: image.label
+  }));
 }
 
 function hasAuthStatePayload(state: WebviewAuthState): boolean {

@@ -13,6 +13,7 @@ import type {
   PiExportHtmlResult,
   PiForkMessagesResult,
   PiForkResult,
+  PiImageContent,
   PiLastAssistantText,
   PiMessagesResult,
   PiModel,
@@ -26,7 +27,7 @@ import type {
 export type PiClient = {
   onEvent(listener: (event: PiEvent) => void): () => void;
   onError(listener: (message: string) => void): () => void;
-  prompt(message: string, streamingBehavior?: PiPromptStreamingBehavior): Promise<void>;
+  prompt(message: string, streamingBehavior?: PiPromptStreamingBehavior, images?: PiImageContent[]): Promise<void>;
   abort(): Promise<void>;
   reload(): Promise<void>;
   isRunning(): boolean;

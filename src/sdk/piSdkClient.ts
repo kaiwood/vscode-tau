@@ -12,6 +12,7 @@ import type {
   PiExportHtmlResult,
   PiForkMessagesResult,
   PiForkResult,
+  PiImageContent,
   PiLastAssistantText,
   PiMessagesResult,
   PiModel,
@@ -76,7 +77,7 @@ export class PiSdkClient implements PiClient {
     };
   }
 
-  public async prompt(message: string, streamingBehavior?: PiPromptStreamingBehavior): Promise<void> {
+  public async prompt(message: string, streamingBehavior?: PiPromptStreamingBehavior, images?: PiImageContent[]): Promise<void> {
     const { session } = await this.ensureRuntime();
 
     this.promptSawAgentStart = false;
@@ -102,6 +103,7 @@ export class PiSdkClient implements PiClient {
 
       void session.prompt(message, {
         ...(streamingBehavior ? { streamingBehavior } : {}),
+        ...(images && images.length > 0 ? { images } : {}),
         // Preserve Pi extension compatibility: Tau historically reached Pi through RPC,
         // and extensions may branch on the upstream input source literal.
         source: 'rpc',

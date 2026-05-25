@@ -144,6 +144,19 @@ suite('PiSdkClient', () => {
     harness.client.dispose();
   });
 
+  test('passes images to SDK prompts', async () => {
+    const harness = createSdkHarness();
+
+    await harness.client.prompt('describe', undefined, [{ type: 'image', data: 'abc', mimeType: 'image/png' }]);
+
+    assert.deepStrictEqual(harness.session.promptCalls, [{
+      message: 'describe',
+      images: [{ type: 'image', data: 'abc', mimeType: 'image/png' }],
+      source: 'rpc'
+    }]);
+    harness.client.dispose();
+  });
+
   test('emits prompt handled when an SDK prompt completes without an agent run', async () => {
     const harness = createSdkHarness();
     const events: PiEvent[] = [];
@@ -357,6 +370,7 @@ suite('PiSdkClient', () => {
 
 type PromptOptions = {
   streamingBehavior?: 'steer' | 'followUp';
+  images?: unknown;
   source?: string;
   preflightResult?: (success: boolean) => void;
 };
@@ -392,7 +406,7 @@ class FakeSession {
   public readonly labelChanges: Array<{ entryId: string; label: string | undefined }> = [];
   public readonly messages = [{ role: 'assistant', content: 'last answer' }];
   public readonly availableModels = [this.model];
-  public readonly promptCalls: Array<{ message: string; streamingBehavior?: string; source?: string }> = [];
+  public readonly promptCalls: Array<{ message: string; streamingBehavior?: string; source?: string; images?: unknown }> = [];
   public promptImplementation: (message: string, options?: PromptOptions) => Promise<void> = async (_message, options) => {
     options?.preflightResult?.(true);
   };
@@ -467,6 +481,7 @@ class FakeSession {
     this.promptCalls.push({
       message,
       ...(options?.streamingBehavior ? { streamingBehavior: options.streamingBehavior } : {}),
+      ...(options?.images ? { images: options.images } : {}),
       ...(options?.source ? { source: options.source } : {})
     });
     await this.promptImplementation(message, options);

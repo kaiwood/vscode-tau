@@ -7,6 +7,7 @@ import type {
   WebviewLane,
   WebviewModelOption,
   WebviewPromptContextAttachment,
+  WebviewPromptImageAttachment,
   WebviewSessionItem,
   WebviewSessionItemCommand,
   WebviewSettingsSection,
@@ -33,6 +34,7 @@ export type WebviewApi = {
 export type ModelOption = WebviewModelOption;
 export type SlashCommand = WebviewSlashCommand;
 export type PromptContextAttachment = WebviewPromptContextAttachment;
+export type PromptImageAttachment = WebviewPromptImageAttachment;
 export type SessionItem = WebviewSessionItem;
 export type TreeItem = WebviewTreeItem;
 
@@ -99,6 +101,7 @@ export type WebviewState = {
   allowRemoteImages: boolean;
   welcomeDismissed: boolean;
   promptContext: PromptContextAttachment[];
+  promptImages: PromptImageAttachment[];
   composerText: string;
   composerTextRevision: number;
   composerPaste?: {

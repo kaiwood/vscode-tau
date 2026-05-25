@@ -2022,6 +2022,10 @@
     attachEventListeners() {
       this.options.form.addEventListener("submit", (event) => this.handleSubmit(event));
       this.options.submitButton.addEventListener("click", (event) => this.handleSubmitButtonClick(event));
+      this.options.attachButton.addEventListener("click", () => {
+        this.options.postMessage({ type: "selectPromptImages" });
+        this.options.focusPromptInput();
+      });
       for (const button of this.options.streamingBehaviorButtonElements) {
         button.addEventListener("click", () => this.selectStreamingBehavior(button));
       }
@@ -2075,11 +2079,15 @@
         if (!removeButton) {
           return;
         }
-        const id = removeButton.getAttribute("data-context-id");
-        if (!id) {
+        const contextId = removeButton.getAttribute("data-context-id");
+        const imageId = removeButton.getAttribute("data-image-id");
+        if (contextId) {
+          this.options.postMessage({ type: "removePromptContext", id: contextId });
+        } else if (imageId) {
+          this.options.postMessage({ type: "removePromptImage", id: imageId });
+        } else {
           return;
         }
-        this.options.postMessage({ type: "removePromptContext", id });
         this.options.focusPromptInput();
       });
     }
@@ -2132,8 +2140,10 @@
         return;
       }
       const attachments = this.getPromptContextAttachments();
-      this.options.form.classList.toggle("composer--has-context", attachments.length > 0);
-      this.options.contextBadgesElement.hidden = attachments.length === 0;
+      const images = this.getPromptImageAttachments();
+      const hasAttachments = attachments.length > 0 || images.length > 0;
+      this.options.form.classList.toggle("composer--has-context", hasAttachments);
+      this.options.contextBadgesElement.hidden = !hasAttachments;
       this.options.contextBadgesElement.replaceChildren();
       for (const attachment of attachments) {
         const badge = document.createElement("span");
@@ -2159,6 +2169,29 @@
         tooltipPre.append(tooltipCodeElement);
         tooltip.append(tooltipPre);
         requestCodeHighlight(tooltipCodeElement, tooltipCode, "xml");
+        badge.append(label, remove, tooltip);
+        this.options.contextBadgesElement.append(badge);
+      }
+      for (const image of images) {
+        const badge = document.createElement("span");
+        badge.className = "composer__context-badge composer__context-badge--image";
+        const label = document.createElement("span");
+        label.className = "composer__context-label";
+        label.textContent = "Image: " + image.label;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "composer__context-remove";
+        remove.setAttribute("data-image-id", image.id);
+        remove.setAttribute("aria-label", "Remove image " + image.label);
+        remove.textContent = "\xD7";
+        const tooltip = document.createElement("span");
+        tooltip.className = "composer__context-badge-tooltip";
+        const tooltipPre = document.createElement("pre");
+        const tooltipCodeElement = document.createElement("code");
+        tooltipCodeElement.textContent = `${image.title}
+${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
+        tooltipPre.append(tooltipCodeElement);
+        tooltip.append(tooltipPre);
         badge.append(label, remove, tooltip);
         this.options.contextBadgesElement.append(badge);
       }
@@ -2273,11 +2306,15 @@
         return true;
       }
       const attachments = this.getPromptContextAttachments();
-      if (attachments.length === 0) {
+      const images = this.getPromptImageAttachments();
+      if (attachments.length === 0 && images.length === 0) {
         return false;
       }
       for (const attachment of attachments) {
         this.options.postMessage({ type: "removePromptContext", id: attachment.id });
+      }
+      for (const image of images) {
+        this.options.postMessage({ type: "removePromptImage", id: image.id });
       }
       return true;
     }
@@ -2287,6 +2324,10 @@
     getPromptContextAttachments() {
       const state2 = this.options.getState();
       return Array.isArray(state2.promptContext) ? state2.promptContext.filter(isPromptContextAttachment) : [];
+    }
+    getPromptImageAttachments() {
+      const state2 = this.options.getState();
+      return Array.isArray(state2.promptImages) ? state2.promptImages.filter(isPromptImageAttachment) : [];
     }
     handleSubmit(event) {
       const state2 = this.options.getState();
@@ -2756,6 +2797,7 @@
     getTextareaLayoutSignature() {
       const state2 = this.options.getState();
       const promptContextSignature = state2.promptContext.map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.xml?.length ?? 0].join("\0")).join("\0");
+      const promptImagesSignature = state2.promptImages.map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.mimeType, attachment.sizeBytes].join("\0")).join("\0");
       return [
         this.options.textarea.value,
         window.innerWidth,
@@ -2765,7 +2807,8 @@
         state2.busy ? "1" : "0",
         state2.workspaceDiffStats.addedLines,
         state2.workspaceDiffStats.removedLines,
-        promptContextSignature
+        promptContextSignature,
+        promptImagesSignature
       ].join("");
     }
     getMaxTextareaHeight() {
@@ -2800,6 +2843,26 @@
     }
     const attachment = value;
     return typeof attachment.id === "string" && typeof attachment.label === "string" && typeof attachment.title === "string" && (!("xml" in attachment) || typeof attachment.xml === "string");
+  }
+  function isPromptImageAttachment(value) {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+    const attachment = value;
+    return typeof attachment.id === "string" && typeof attachment.label === "string" && typeof attachment.title === "string" && typeof attachment.mimeType === "string" && typeof attachment.sizeBytes === "number";
+  }
+  function formatBytes(value) {
+    if (!Number.isFinite(value) || value < 0) {
+      return "0 B";
+    }
+    if (value < 1024) {
+      return `${Math.round(value)} B`;
+    }
+    const kib = value / 1024;
+    if (kib < 1024) {
+      return `${Math.round(kib)} KB`;
+    }
+    return `${(kib / 1024).toFixed(1)} MB`;
   }
   function getModelOptionsSignature(modelOptions) {
     return modelOptions.map((model) => [model.provider, model.id, model.name, model.reasoning ? "1" : "0"].join("\0")).join("");
@@ -2985,6 +3048,7 @@
       diffAddedElement: queryRequired(".composer__diff-added"),
       diffRemovedElement: queryRequired(".composer__diff-removed"),
       streamingBehaviorButtonElements: queryAll(".composer__mode-button"),
+      attachButton: queryRequired(".composer__attach"),
       newSessionButton: queryRequired(".composer__add"),
       contextElement: queryRequired(".composer__context"),
       contextValueElement: queryRequired(".composer__context-value"),
@@ -6810,6 +6874,7 @@ ${after}`;
     allowRemoteImages: false,
     welcomeDismissed: false,
     promptContext: [],
+    promptImages: [],
     composerText: "",
     composerTextRevision: 0,
     lane: "chat",
@@ -6853,6 +6918,7 @@ ${after}`;
       allowRemoteImages: typeof record.allowRemoteImages === "boolean" ? record.allowRemoteImages : false,
       welcomeDismissed: Boolean(record.welcomeDismissed),
       promptContext: Array.isArray(record.promptContext) ? record.promptContext : [],
+      promptImages: parsePromptImages(record.promptImages),
       composerText: typeof record.composerText === "string" ? record.composerText : "",
       composerTextRevision: typeof record.composerTextRevision === "number" ? record.composerTextRevision : 0,
       composerPaste: parseComposerPaste(record.composerPaste),
@@ -6871,6 +6937,21 @@ ${after}`;
       treeError: typeof record.treeError === "string" ? record.treeError : "",
       sessionLoading: Boolean(record.sessionLoading)
     };
+  }
+  function parsePromptImages(value) {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value.filter(isPromptImageAttachment2).map((attachment) => ({
+      id: attachment.id,
+      label: attachment.label,
+      title: attachment.title,
+      mimeType: attachment.mimeType,
+      sizeBytes: attachment.sizeBytes
+    }));
+  }
+  function isPromptImageAttachment2(value) {
+    return isRecord4(value) && typeof value.id === "string" && typeof value.label === "string" && typeof value.title === "string" && typeof value.mimeType === "string" && typeof value.sizeBytes === "number";
   }
   function parseComposerPaste(value) {
     if (!isRecord4(value) || typeof value.text !== "string" || typeof value.revision !== "number") {
@@ -7096,6 +7177,7 @@ ${after}`;
     diffAddedElement,
     diffRemovedElement,
     streamingBehaviorButtonElements,
+    attachButton,
     newSessionButton,
     contextElement,
     contextValueElement,
@@ -7165,6 +7247,7 @@ ${after}`;
     form,
     textarea,
     submitButton,
+    attachButton,
     newSessionButton,
     busySubmitElement,
     diffSummaryElement,

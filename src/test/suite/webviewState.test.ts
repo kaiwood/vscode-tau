@@ -14,6 +14,7 @@ suite('Webview state helpers', () => {
     assert.strictEqual(initialWebviewState.allowRemoteImages, false);
     assert.strictEqual(initialWebviewState.welcomeDismissed, false);
     assert.deepStrictEqual(initialWebviewState.auth, { providers: [] });
+    assert.deepStrictEqual(initialWebviewState.promptImages, []);
     assert.deepStrictEqual(initialWebviewState.sessions, []);
   });
 
@@ -39,6 +40,7 @@ suite('Webview state helpers', () => {
       allowRemoteImages: false,
       welcomeDismissed: true,
       promptContext: [{ id: 'context-1', kind: 'file', label: 'file.ts', title: 'src/file.ts' }],
+      promptImages: [{ id: 'prompt-image-1', label: 'screenshot.png', title: '/tmp/screenshot.png', mimeType: 'image/png', sizeBytes: 123 }],
       composerText: 'draft',
       composerTextRevision: 2,
       composerPaste: { text: 'paste', revision: 3 },
@@ -91,6 +93,7 @@ suite('Webview state helpers', () => {
     assert.strictEqual(parsed.treeItems[0]?.entryId, 'entry-1');
     assert.strictEqual(parsed.sessionLoading, true);
     assert.deepStrictEqual(parsed.composerPaste, { text: 'paste', revision: 3 });
+    assert.deepStrictEqual(parsed.promptImages, [{ id: 'prompt-image-1', label: 'screenshot.png', title: '/tmp/screenshot.png', mimeType: 'image/png', sizeBytes: 123 }]);
 
     const settingsParsed = parseWebviewStateMessage({ lane: 'chat', chatFace: 'settings' });
     assert.strictEqual(settingsParsed.lane, 'chat');

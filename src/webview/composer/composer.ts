@@ -10,6 +10,7 @@ import {
 import type {
   ModelOption,
   PromptContextAttachment,
+  PromptImageAttachment,
   SlashCommand,
   WebviewState,
   WebviewStreamingBehavior
@@ -24,6 +25,7 @@ export type ComposerControllerOptions = {
   form: HTMLFormElement;
   textarea: HTMLTextAreaElement;
   submitButton: HTMLButtonElement;
+  attachButton: HTMLButtonElement;
   newSessionButton: HTMLButtonElement;
   busySubmitElement: HTMLElement | undefined;
   diffSummaryElement: HTMLElement;
@@ -71,6 +73,10 @@ export class ComposerController {
   public attachEventListeners(): void {
     this.options.form.addEventListener('submit', (event) => this.handleSubmit(event));
     this.options.submitButton.addEventListener('click', (event) => this.handleSubmitButtonClick(event));
+    this.options.attachButton.addEventListener('click', () => {
+      this.options.postMessage({ type: 'selectPromptImages' });
+      this.options.focusPromptInput();
+    });
 
     for (const button of this.options.streamingBehaviorButtonElements) {
       button.addEventListener('click', () => this.selectStreamingBehavior(button));
@@ -140,13 +146,17 @@ export class ComposerController {
         return;
       }
 
-      const id = removeButton.getAttribute('data-context-id');
+      const contextId = removeButton.getAttribute('data-context-id');
+      const imageId = removeButton.getAttribute('data-image-id');
 
-      if (!id) {
+      if (contextId) {
+        this.options.postMessage({ type: 'removePromptContext', id: contextId });
+      } else if (imageId) {
+        this.options.postMessage({ type: 'removePromptImage', id: imageId });
+      } else {
         return;
       }
 
-      this.options.postMessage({ type: 'removePromptContext', id });
       this.options.focusPromptInput();
     });
   }
@@ -210,8 +220,10 @@ export class ComposerController {
     }
 
     const attachments = this.getPromptContextAttachments();
-    this.options.form.classList.toggle('composer--has-context', attachments.length > 0);
-    this.options.contextBadgesElement.hidden = attachments.length === 0;
+    const images = this.getPromptImageAttachments();
+    const hasAttachments = attachments.length > 0 || images.length > 0;
+    this.options.form.classList.toggle('composer--has-context', hasAttachments);
+    this.options.contextBadgesElement.hidden = !hasAttachments;
     this.options.contextBadgesElement.replaceChildren();
 
     for (const attachment of attachments) {
@@ -244,6 +256,33 @@ export class ComposerController {
       tooltipPre.append(tooltipCodeElement);
       tooltip.append(tooltipPre);
       requestCodeHighlight(tooltipCodeElement, tooltipCode, 'xml');
+
+      badge.append(label, remove, tooltip);
+      this.options.contextBadgesElement.append(badge);
+    }
+
+    for (const image of images) {
+      const badge = document.createElement('span');
+      badge.className = 'composer__context-badge composer__context-badge--image';
+
+      const label = document.createElement('span');
+      label.className = 'composer__context-label';
+      label.textContent = 'Image: ' + image.label;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'composer__context-remove';
+      remove.setAttribute('data-image-id', image.id);
+      remove.setAttribute('aria-label', 'Remove image ' + image.label);
+      remove.textContent = '×';
+
+      const tooltip = document.createElement('span');
+      tooltip.className = 'composer__context-badge-tooltip';
+      const tooltipPre = document.createElement('pre');
+      const tooltipCodeElement = document.createElement('code');
+      tooltipCodeElement.textContent = `${image.title}\n${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
+      tooltipPre.append(tooltipCodeElement);
+      tooltip.append(tooltipPre);
 
       badge.append(label, remove, tooltip);
       this.options.contextBadgesElement.append(badge);
@@ -388,13 +427,18 @@ export class ComposerController {
     }
 
     const attachments = this.getPromptContextAttachments();
+    const images = this.getPromptImageAttachments();
 
-    if (attachments.length === 0) {
+    if (attachments.length === 0 && images.length === 0) {
       return false;
     }
 
     for (const attachment of attachments) {
       this.options.postMessage({ type: 'removePromptContext', id: attachment.id });
+    }
+
+    for (const image of images) {
+      this.options.postMessage({ type: 'removePromptImage', id: image.id });
     }
 
     return true;
@@ -408,6 +452,13 @@ export class ComposerController {
     const state = this.options.getState();
     return Array.isArray(state.promptContext)
       ? state.promptContext.filter(isPromptContextAttachment)
+      : [];
+  }
+
+  private getPromptImageAttachments(): PromptImageAttachment[] {
+    const state = this.options.getState();
+    return Array.isArray(state.promptImages)
+      ? state.promptImages.filter(isPromptImageAttachment)
       : [];
   }
 
@@ -1018,6 +1069,9 @@ export class ComposerController {
     const promptContextSignature = state.promptContext
       .map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.xml?.length ?? 0].join('\u0000'))
       .join('\u0000');
+    const promptImagesSignature = state.promptImages
+      .map((attachment) => [attachment.id, attachment.label, attachment.title, attachment.mimeType, attachment.sizeBytes].join('\u0000'))
+      .join('\u0000');
 
     return [
       this.options.textarea.value,
@@ -1028,7 +1082,8 @@ export class ComposerController {
       state.busy ? '1' : '0',
       state.workspaceDiffStats.addedLines,
       state.workspaceDiffStats.removedLines,
-      promptContextSignature
+      promptContextSignature,
+      promptImagesSignature
     ].join('\u0001');
   }
 
@@ -1073,6 +1128,36 @@ function isPromptContextAttachment(value: unknown): value is PromptContextAttach
     && typeof attachment.label === 'string'
     && typeof attachment.title === 'string'
     && (!('xml' in attachment) || typeof attachment.xml === 'string');
+}
+
+function isPromptImageAttachment(value: unknown): value is PromptImageAttachment {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const attachment = value as Partial<PromptImageAttachment>;
+  return typeof attachment.id === 'string'
+    && typeof attachment.label === 'string'
+    && typeof attachment.title === 'string'
+    && typeof attachment.mimeType === 'string'
+    && typeof attachment.sizeBytes === 'number';
+}
+
+function formatBytes(value: number): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return '0 B';
+  }
+
+  if (value < 1024) {
+    return `${Math.round(value)} B`;
+  }
+
+  const kib = value / 1024;
+  if (kib < 1024) {
+    return `${Math.round(kib)} KB`;
+  }
+
+  return `${(kib / 1024).toFixed(1)} MB`;
 }
 
 function getModelOptionsSignature(modelOptions: readonly ModelOption[]): string {

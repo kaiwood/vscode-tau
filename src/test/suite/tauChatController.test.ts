@@ -17,7 +17,8 @@ import type {
   PiClientOptions,
   PiSessionState,
   PiSessionStats,
-  PiEvent
+  PiEvent,
+  PiImageContent
 } from '../../pi/types';
 
 suite('TauChatController', () => {
@@ -1086,6 +1087,58 @@ suite('TauChatController', () => {
       { role: 'assistant', text: '' }
     ]);
     assert.strictEqual(lastState(harness).promptContext, undefined);
+    harness.controller.dispose();
+  });
+
+  test('submit sends one-shot image attachments and shows them on the user message', async () => {
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client]);
+
+    harness.controller.addPromptImages([{
+      id: 'prompt-image-1',
+      type: 'image',
+      data: 'abc',
+      mimeType: 'image/png',
+      label: 'screenshot.png',
+      title: '/tmp/screenshot.png',
+      sizeBytes: 123
+    }]);
+
+    assert.deepStrictEqual(lastState(harness).promptImages, [
+      { id: 'prompt-image-1', label: 'screenshot.png', title: '/tmp/screenshot.png', mimeType: 'image/png', sizeBytes: 123 }
+    ]);
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'describe this' });
+
+    assert.deepStrictEqual(client.promptImages[0], [{ type: 'image', data: 'abc', mimeType: 'image/png' }]);
+    assert.deepStrictEqual(lastState(harness).messages[0], {
+      role: 'user',
+      text: 'describe this',
+      images: [{ type: 'image', data: 'abc', mimeType: 'image/png', alt: 'screenshot.png' }]
+    });
+    assert.strictEqual(lastState(harness).promptImages, undefined);
+    harness.controller.dispose();
+  });
+
+  test('prompt image attachments can be removed before submit', async () => {
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client]);
+
+    harness.controller.addPromptImages([{
+      id: 'prompt-image-1',
+      type: 'image',
+      data: 'abc',
+      mimeType: 'image/png',
+      label: 'screenshot.png',
+      title: '/tmp/screenshot.png',
+      sizeBytes: 123
+    }]);
+
+    await harness.controller.handleWebviewMessage({ type: 'removePromptImage', id: 'prompt-image-1' });
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: 'hello' });
+
+    assert.strictEqual(client.promptImages[0], undefined);
+    assert.strictEqual(lastState(harness).promptImages, undefined);
     harness.controller.dispose();
   });
 
@@ -2608,6 +2661,7 @@ class FakePiClient implements PiClient {
   public reloadCalls = 0;
   public prompts: string[] = [];
   public promptStreamingBehaviors: Array<'steer' | 'followUp' | undefined> = [];
+  public promptImages: Array<PiImageContent[] | undefined> = [];
   public sessionNames: string[] = [];
   public state: PiSessionState;
   public models: PiModel[];
@@ -2696,9 +2750,10 @@ class FakePiClient implements PiClient {
     };
   }
 
-  public async prompt(message: string, streamingBehavior?: 'steer' | 'followUp'): Promise<void> {
+  public async prompt(message: string, streamingBehavior?: 'steer' | 'followUp', images?: PiImageContent[]): Promise<void> {
     this.prompts.push(message);
     this.promptStreamingBehaviors.push(streamingBehavior);
+    this.promptImages.push(images);
 
     if (this.promptResult) {
       await this.promptResult;

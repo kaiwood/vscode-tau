@@ -125,6 +125,12 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return { type: 'refreshMetadata' };
     case 'refreshSlashCommands':
       return { type: 'refreshSlashCommands' };
+    case 'selectPromptImages':
+      return { type: 'selectPromptImages' };
+    case 'removePromptImage':
+      return typeof value.id === 'string' && value.id
+        ? { type: 'removePromptImage', id: value.id }
+        : { type: 'unknown' };
     case 'removePromptContext':
       return typeof value.id === 'string' && value.id
         ? { type: 'removePromptContext', id: value.id }
@@ -274,6 +280,7 @@ export function createWebviewStateMessage({
   allowRemoteImages = false,
   welcomeDismissed,
   promptContext = [],
+  promptImages = [],
   composer,
   navigation,
   sessionView,
@@ -328,6 +335,10 @@ export function createWebviewStateMessage({
 
   if (promptContext.length > 0) {
     message.promptContext = promptContext.map((attachment) => ({ ...attachment }));
+  }
+
+  if (promptImages.length > 0) {
+    message.promptImages = promptImages.map((attachment) => ({ ...attachment }));
   }
 
   if (composer && typeof composer.revision === 'number' && composer.revision > 0) {
@@ -514,6 +525,12 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
         </span>
       </div>
       <div class="composer__session-actions" role="group" aria-label="Session actions">
+        <button class="composer__button composer__attach" type="button" aria-label="Attach image">
+          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 19 19" fill="none">
+            <path d="M9.5 4.25V14.75M4.25 9.5H14.75" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <span class="composer__button-tooltip">Attach image</span>
+        </button>
         <button class="composer__button composer__add" type="button" aria-label="New session">
           <svg aria-hidden="true" width="19" height="19" viewBox="0 0 19 19" fill="none">
             <path d="M4.25 5.25C4.25 4.42 4.92 3.75 5.75 3.75H11.9C12.73 3.75 13.4 4.42 13.4 5.25V9.8C13.4 10.63 12.73 11.3 11.9 11.3H8.2L5.25 14.05V11.3C4.7 11.3 4.25 10.85 4.25 10.3V5.25Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>

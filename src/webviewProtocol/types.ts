@@ -13,6 +13,14 @@ export type WebviewPromptContextAttachment = {
   xml?: string;
 };
 
+export type WebviewPromptImageAttachment = {
+  id: string;
+  label: string;
+  title: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 export type WebviewSessionItemCommand = 'rename' | 'showChanges' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
 
 export type WebviewAuthAction = 'login' | 'logout' | 'refresh' | 'cancel';
@@ -73,6 +81,8 @@ export type WebviewMessage =
   | { type: 'setSessionName'; name: string }
   | { type: 'refreshMetadata' }
   | { type: 'refreshSlashCommands' }
+  | { type: 'selectPromptImages' }
+  | { type: 'removePromptImage'; id: string }
   | { type: 'removePromptContext'; id: string }
   | { type: 'abort' }
   | { type: 'copyText'; text: string; successMessage?: string }
@@ -225,6 +235,7 @@ export type WebviewStateMessage = Omit<ChatState, 'messages'> & {
   allowRemoteImages?: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];
+  promptImages?: WebviewPromptImageAttachment[];
   composerText?: string;
   composerTextRevision?: number;
   composerPaste?: {
@@ -276,6 +287,7 @@ export type CreateWebviewStateMessageOptions = {
   allowRemoteImages?: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];
+  promptImages?: WebviewPromptImageAttachment[];
   composer?: {
     text?: string;
     revision?: number;

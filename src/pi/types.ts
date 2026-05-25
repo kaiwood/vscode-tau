@@ -84,6 +84,12 @@ export type PiModel = {
   contextWindow?: number;
 };
 
+export type PiImageContent = {
+  type: 'image';
+  data: string;
+  mimeType: string;
+};
+
 export type PiSessionState = {
   model?: PiModel | null;
   thinkingLevel?: string;

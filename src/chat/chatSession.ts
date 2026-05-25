@@ -111,14 +111,18 @@ export class ChatSession {
     };
   }
 
-  public beginSubmit(text: string): SubmittedPrompt | undefined {
+  public beginSubmit(text: string, images?: ChatImage[]): SubmittedPrompt | undefined {
     const trimmedText = text.trim();
 
     if (!trimmedText || this.busy) {
       return undefined;
     }
 
-    this.pushMessage({ role: 'user', text: trimmedText });
+    this.pushMessage({
+      role: 'user',
+      text: trimmedText,
+      ...(images && images.length > 0 ? { images: images.map((image) => ({ ...image })) } : {})
+    });
     this.activeAssistantIndex = this.pushMessage({ role: 'assistant', text: '' });
     this.busy = true;
 

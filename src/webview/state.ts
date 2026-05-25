@@ -27,6 +27,7 @@ export const initialWebviewState: WebviewState = {
   allowRemoteImages: false,
   welcomeDismissed: false,
   promptContext: [],
+  promptImages: [],
   composerText: '',
   composerTextRevision: 0,
   lane: 'chat',
@@ -72,6 +73,7 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     allowRemoteImages: typeof record.allowRemoteImages === 'boolean' ? record.allowRemoteImages : false,
     welcomeDismissed: Boolean(record.welcomeDismissed),
     promptContext: Array.isArray(record.promptContext) ? record.promptContext : [],
+    promptImages: parsePromptImages(record.promptImages),
     composerText: typeof record.composerText === 'string' ? record.composerText : '',
     composerTextRevision: typeof record.composerTextRevision === 'number' ? record.composerTextRevision : 0,
     composerPaste: parseComposerPaste(record.composerPaste),
@@ -90,6 +92,29 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     treeError: typeof record.treeError === 'string' ? record.treeError : '',
     sessionLoading: Boolean(record.sessionLoading)
   };
+}
+
+function parsePromptImages(value: unknown): WebviewState['promptImages'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(isPromptImageAttachment).map((attachment) => ({
+    id: attachment.id,
+    label: attachment.label,
+    title: attachment.title,
+    mimeType: attachment.mimeType,
+    sizeBytes: attachment.sizeBytes
+  }));
+}
+
+function isPromptImageAttachment(value: unknown): value is WebviewState['promptImages'][number] {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.label === 'string'
+    && typeof value.title === 'string'
+    && typeof value.mimeType === 'string'
+    && typeof value.sizeBytes === 'number';
 }
 
 function parseComposerPaste(value: unknown): WebviewState['composerPaste'] {

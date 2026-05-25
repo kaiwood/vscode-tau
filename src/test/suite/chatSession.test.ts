@@ -26,6 +26,18 @@ suite('ChatSession', () => {
     assert.strictEqual(session.beginSubmit('second prompt'), undefined);
   });
 
+  test('beginSubmit attaches images to the user message', () => {
+    const session = new ChatSession();
+
+    session.beginSubmit('describe this', [{ type: 'image', data: 'abc', mimeType: 'image/png', alt: 'screenshot.png' }]);
+
+    assert.deepStrictEqual(session.snapshot().messages[0], {
+      role: 'user',
+      text: 'describe this',
+      images: [{ type: 'image', data: 'abc', mimeType: 'image/png', alt: 'screenshot.png' }]
+    });
+  });
+
   test('webview snapshots include stable message ids and changing revisions', () => {
     const session = new ChatSession();
 

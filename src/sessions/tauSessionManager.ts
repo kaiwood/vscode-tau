@@ -1,4 +1,4 @@
-import { TauChatController } from '../tauChatController';
+import { TauChatController, type PiPromptImageAttachment } from '../tauChatController';
 import { ExtensionCustomUiHost, type CustomUiHostMessage } from '../extensionUi/customUiHost';
 import { ExtensionWidgetHost } from '../extensionUi/extensionWidgetHost';
 import type { ExtensionEditorHostMessage, ExtensionUi } from '../extensionUi/types';
@@ -211,6 +211,10 @@ export class TauSessionManager {
 
   public addPromptContext(context: PiPromptContextInput | PiPromptContextInput[]): void {
     this.active().controller.addPromptContext(context);
+  }
+
+  public addPromptImages(images: PiPromptImageAttachment[]): void {
+    this.active().controller.addPromptImages(images);
   }
 
   public sendTextToComposer(text: string): void {
@@ -780,7 +784,9 @@ export class TauSessionManager {
 
   private movePromptContext(from: OpenSession, to: OpenSession): void {
     const context = from.controller.takePromptContext();
+    const images = from.controller.takePromptImages();
     to.controller.replacePromptContext(context);
+    to.controller.replacePromptImages(images);
   }
 
   private handleSessionMetaChange(id: string, metadata: TauChatSessionMetaSnapshot): void {
@@ -1064,6 +1070,7 @@ function createEmptyState(): WebviewStateMessage {
     animationsEnabled: true,
     customUiTheme: 'default',
     promptContext: [],
+    promptImages: [],
     lane: 'chat',
     sessions: [],
     sessionsRefreshing: false,

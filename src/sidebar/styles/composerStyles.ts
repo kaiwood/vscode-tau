@@ -335,6 +335,12 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       border-color: color-mix(in srgb, #2ea043 62%, transparent);
     }
 
+    .composer__context-badge--image {
+      color: var(--vscode-foreground);
+      background: color-mix(in srgb, #a371f7 28%, var(--vscode-input-background) 72%);
+      border-color: color-mix(in srgb, #a371f7 62%, transparent);
+    }
+
     .composer__context-label {
       min-width: 0;
       overflow: hidden;
@@ -643,6 +649,7 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       display: block;
     }
 
+    .composer__attach,
     .composer__add {
       width: 34px;
       height: 34px;

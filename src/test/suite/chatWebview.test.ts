@@ -181,6 +181,8 @@ suite('Chat webview helpers', () => {
     );
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshMetadata' }), { type: 'refreshMetadata' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSlashCommands' }), { type: 'refreshSlashCommands' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'selectPromptImages' }), { type: 'selectPromptImages' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'removePromptImage', id: 'prompt-image-1' }), { type: 'removePromptImage', id: 'prompt-image-1' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'removePromptContext', id: 'context-1' }), { type: 'removePromptContext', id: 'context-1' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'abort' }), { type: 'abort' });
     assert.deepStrictEqual(

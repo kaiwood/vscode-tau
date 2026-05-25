@@ -16,6 +16,7 @@ import { createSessionDiffStatsFileWatcher, readSessionDiffSnapshot, writeSessio
 import { SessionDiffViewer } from './diff/sessionDiffViewer';
 import { ShikiCodeRenderer } from './highlighting/shikiCodeRenderer';
 import { TauSessionManager } from './sessions/tauSessionManager';
+import type { PiPromptImageAttachment } from './tauChatController';
 import { listPiSessions } from './sessions/piSessionList';
 import { runReadyScript } from './readyScript';
 import { createPromptContextFromEditor } from './prompt/editorContext';
@@ -35,6 +36,8 @@ const tauSidebarFocusContextKey = 'tau.sidebarFocus';
 const tauBusyContextKey = 'tau.busy';
 const contextUsagePollingIntervalMs = 2000;
 const sessionDiffStatsRefreshDelayMs = 250;
+const maxPromptImageBytes = 10 * 1024 * 1024;
+const supportedPromptImageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
 type ConfiguredPiClientDependencies = {
   extensionUi: ExtensionUi;
@@ -441,6 +444,87 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
     await this.focus();
   }
 
+  private async selectPromptImages(): Promise<void> {
+    const uris = await vscode.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: true,
+      title: 'Attach images to next Tau prompt',
+      filters: {
+        Images: supportedPromptImageExtensions,
+        'All files': ['*']
+      }
+    });
+
+    if (!uris || uris.length === 0) {
+      return;
+    }
+
+    const attachments: PiPromptImageAttachment[] = [];
+    const rejected: string[] = [];
+
+    for (const uri of uris) {
+      const result = await this.createPromptImageAttachment(uri);
+
+      if (typeof result === 'string') {
+        rejected.push(result);
+      } else {
+        attachments.push(result);
+      }
+    }
+
+    if (attachments.length > 0) {
+      this.controller.addPromptImages(attachments);
+      await this.focus();
+      this.showToast(`${attachments.length === 1 ? 'Image' : `${attachments.length} images`} attached.`, 'success');
+    }
+
+    for (const message of rejected) {
+      this.showToast(message, 'warning');
+    }
+  }
+
+  private async createPromptImageAttachment(uri: vscode.Uri): Promise<PiPromptImageAttachment | string> {
+    const mimeType = getSupportedPromptImageMimeType(uri.fsPath);
+    const label = getPathBasename(uri.fsPath);
+
+    if (!mimeType) {
+      return `Unsupported attachment: ${label}. Tau currently supports PNG, JPEG, GIF, and WebP images.`;
+    }
+
+    let stat: vscode.FileStat;
+    try {
+      stat = await vscode.workspace.fs.stat(uri);
+    } catch {
+      return `Cannot read attachment: ${label}.`;
+    }
+
+    if (stat.type !== vscode.FileType.File) {
+      return `Unsupported attachment: ${label} is not a file.`;
+    }
+
+    if (stat.size > maxPromptImageBytes) {
+      return `Image too large: ${label} exceeds 10MB.`;
+    }
+
+    let data: Uint8Array;
+    try {
+      data = await vscode.workspace.fs.readFile(uri);
+    } catch {
+      return `Cannot read attachment: ${label}.`;
+    }
+
+    return {
+      id: createPromptImageId(),
+      type: 'image',
+      data: Buffer.from(data).toString('base64'),
+      mimeType,
+      label,
+      title: uri.fsPath,
+      sizeBytes: stat.size
+    };
+  }
+
   public async sendSelectionToComposer(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
 
@@ -520,6 +604,11 @@ export class TauChatViewProvider implements vscode.WebviewViewProvider, vscode.D
 
     if (message.type === 'dismissWelcome') {
       await this.dismissWelcome();
+      return;
+    }
+
+    if (message.type === 'selectPromptImages') {
+      await this.selectPromptImages();
       return;
     }
 
@@ -1291,6 +1380,32 @@ function resolveRelativeWorkspaceUri(workspaceFolder: vscode.WorkspaceFolder, re
 
 function isSupportedLocalImagePath(filePath: string): boolean {
   return /\.(?:png|jpe?g|gif|webp)$/i.test(filePath);
+}
+
+function getSupportedPromptImageMimeType(filePath: string): string | undefined {
+  const extension = path.extname(filePath).toLowerCase();
+
+  if (extension === '.png') {
+    return 'image/png';
+  }
+
+  if (extension === '.jpg' || extension === '.jpeg') {
+    return 'image/jpeg';
+  }
+
+  if (extension === '.gif') {
+    return 'image/gif';
+  }
+
+  if (extension === '.webp') {
+    return 'image/webp';
+  }
+
+  return undefined;
+}
+
+function createPromptImageId(): string {
+  return `prompt-image-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function isUriInsideWorkspace(uri: vscode.Uri): boolean {
