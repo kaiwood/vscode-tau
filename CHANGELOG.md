@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - Maintenance release
+
+- Updated extension keywords and artwork.
+- Refined Tauren naming consistency.
+
 ## 1.0.0 - Initial release
 
 - Initial Tauren release.
