@@ -655,11 +655,6 @@ export const composerStyles = /* css */ `    .tau-view--has-extension-status {
       height: 34px;
     }
 
-    .composer__add svg {
-      width: 28px;
-      height: 28px;
-    }
-
     .composer__button-tooltip {
       position: absolute;
       left: 0;
