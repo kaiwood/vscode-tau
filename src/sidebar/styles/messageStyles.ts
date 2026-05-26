@@ -8,7 +8,7 @@ export const messageStyles = /* css */ `    .tauren-transcript-search {
       align-items: center;
       max-height: 0;
       width: 100%;
-      padding: 0 12px 0 8px;
+      padding: 0 var(--tauren-chat-inline-padding);
       overflow: hidden;
       box-sizing: border-box;
       background: var(--vscode-sideBar-background);
@@ -19,7 +19,7 @@ export const messageStyles = /* css */ `    .tauren-transcript-search {
 
     .tauren-transcript-search--open {
       max-height: 38px;
-      padding: 4px 12px 6px 8px;
+      padding: 4px var(--tauren-chat-inline-padding) 6px;
       opacity: 1;
       transform: translateY(0);
     }
