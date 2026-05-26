@@ -277,6 +277,7 @@ export type WebviewStateMessage = Omit<ChatState, 'messages'> & {
   extensionFooter?: WebviewExtensionFooterEntry;
   extensionWidgets: WebviewExtensionWidgetEntry[];
   startupResources?: WebviewStartupResourceSection[];
+  startupResourcesReloadRevision?: number;
   allowRemoteImages?: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];
@@ -333,6 +334,7 @@ export type CreateWebviewStateMessageOptions = {
   extensionFooter?: WebviewExtensionFooterEntry;
   extensionWidgets?: WebviewExtensionWidgetEntry[];
   startupResources?: WebviewStartupResourceSection[];
+  startupResourcesReloadRevision?: number;
   allowRemoteImages?: boolean;
   welcomeDismissed?: boolean;
   promptContext?: WebviewPromptContextAttachment[];

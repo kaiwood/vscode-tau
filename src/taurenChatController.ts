@@ -89,6 +89,7 @@ export class TaurenChatController {
   private readonly statePublisher: StatePublisher<WebviewStateMessage>;
   private readonly postedChatSyncByMessage = new WeakMap<WebviewStateMessage, PostedChatSync>();
   private lastPostedChatSync: PostedChatSync | undefined;
+  private startupResourcesReloadRevision = 0;
   private workspaceWaitingNoticeAdded = false;
   private workspaceWarningNoticeAdded = false;
   private authState: WebviewAuthState = { providers: [] };
@@ -213,6 +214,9 @@ export class TaurenChatController {
       restartClientForReload: (sessionFile) => {
         this.clientManager.setNextSessionFile(sessionFile);
         this.disposeClient();
+      },
+      markStartupResourcesReloaded: () => {
+        this.startupResourcesReloadRevision += 1;
       },
       showLoginSettings: (mode) => this.showLoginSettings(mode),
       startNewSession: () => this.startNewSession()
@@ -591,6 +595,7 @@ export class TaurenChatController {
       slashCommands: metadataState.slashCommands,
       slashCommandsRefreshing: metadataState.slashCommandsRefreshing,
       startupResources: metadataState.startupResources,
+      startupResourcesReloadRevision: this.startupResourcesReloadRevision,
       outputColors: this.options.getOutputColors?.() ?? true,
       animationsEnabled: this.options.getAnimationsEnabled?.() ?? true,
       customUiTheme: this.options.getCustomUiTheme?.() ?? 'default',

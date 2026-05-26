@@ -106,6 +106,7 @@ export type WebviewState = {
   extensionFooter?: ExtensionFooterEntry;
   extensionWidgets: ExtensionWidgetEntry[];
   startupResources: StartupResourceSection[];
+  startupResourcesReloadRevision: number;
   allowRemoteImages: boolean;
   welcomeDismissed: boolean;
   promptContext: PromptContextAttachment[];

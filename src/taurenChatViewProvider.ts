@@ -387,6 +387,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
   }
 
   public async newSession(): Promise<void> {
+    void this.webviewView?.webview.postMessage({ type: 'optimisticNewSession' });
     this.controller.newSession();
     await this.focus();
   }

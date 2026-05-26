@@ -2024,6 +2024,7 @@ suite('TaurenChatController', () => {
       { role: 'system', text: 'Reloaded keybindings, extensions, skills, prompts, and themes.' }
     ]);
     assert.strictEqual(lastState(harness).modelId, 'claude-test');
+    assert.strictEqual(lastState(harness).startupResourcesReloadRevision, 1);
     assert.deepStrictEqual(lastState(harness).slashCommands, [
       { name: 'skill:new-skill', description: 'Newly added skill', source: 'skill', location: 'project', path: undefined }
     ]);

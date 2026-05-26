@@ -8042,6 +8042,7 @@ ${after}`;
     extensionFooter: void 0,
     extensionWidgets: [],
     startupResources: [],
+    startupResourcesReloadRevision: 0,
     allowRemoteImages: false,
     welcomeDismissed: false,
     promptContext: [],
@@ -8065,6 +8066,107 @@ ${after}`;
     sessionLoading: false,
     perfEnabled: false
   };
+  function createStartupResourcesCache() {
+    return {
+      initialized: false,
+      reloadRevision: 0,
+      resources: []
+    };
+  }
+  function applyStartupResourcesCache(nextState, cache) {
+    let nextCache = cache;
+    if (nextState.startupResourcesReloadRevision > cache.reloadRevision) {
+      nextCache = {
+        initialized: true,
+        reloadRevision: nextState.startupResourcesReloadRevision,
+        resources: cloneStartupResources(nextState.startupResources)
+      };
+    } else if (!cache.initialized && nextState.startupResources.length > 0) {
+      nextCache = {
+        initialized: true,
+        reloadRevision: nextState.startupResourcesReloadRevision,
+        resources: cloneStartupResources(nextState.startupResources)
+      };
+    }
+    if (!nextCache.initialized || areStartupResourcesEqual(nextState.startupResources, nextCache.resources)) {
+      return { state: nextState, cache: nextCache };
+    }
+    return {
+      state: {
+        ...nextState,
+        startupResources: cloneStartupResources(nextCache.resources)
+      },
+      cache: nextCache
+    };
+  }
+  function createOptimisticNewSessionState(previousState) {
+    return {
+      ...previousState,
+      messages: [],
+      busy: false,
+      contextUsageLabel: "",
+      contextUsageTitle: "",
+      contextUsageLevel: "",
+      workspaceDiffStats: { addedLines: 0, removedLines: 0 },
+      composerPaste: void 0,
+      lane: "chat",
+      chatFace: "main",
+      currentSessionFile: "",
+      currentSessionName: "",
+      treeRefreshing: false,
+      treeError: "",
+      sessionLoading: false
+    };
+  }
+  function createProvisionalExtensionUiSnapshot(state2) {
+    return {
+      extensionFooter: state2.extensionFooter ? { ...state2.extensionFooter } : { line: "" },
+      extensionStatus: state2.extensionStatus.map((entry) => ({ ...entry })),
+      extensionWidgets: state2.extensionWidgets.map((widget) => ({
+        ...widget,
+        lines: [...widget.lines],
+        ...widget.blocks ? { blocks: [...widget.blocks] } : {}
+      })),
+      footerPending: shouldReserveExtensionFooter(state2),
+      widgetsPending: state2.extensionWidgets.length > 0
+    };
+  }
+  function applyProvisionalExtensionUiSnapshot(nextState, snapshot) {
+    if (!snapshot) {
+      return { state: nextState, snapshot: void 0 };
+    }
+    const footerPending = snapshot.footerPending && !hasExtensionFooterUi(nextState);
+    const widgetsPending = snapshot.widgetsPending && nextState.extensionWidgets.length === 0;
+    if (!footerPending && !widgetsPending) {
+      return { state: nextState, snapshot: void 0 };
+    }
+    return {
+      state: {
+        ...nextState,
+        ...footerPending ? {
+          extensionFooter: snapshot.extensionFooter,
+          extensionStatus: snapshot.extensionStatus
+        } : {},
+        ...widgetsPending ? {
+          extensionWidgets: snapshot.extensionWidgets
+        } : {}
+      },
+      snapshot: {
+        ...snapshot,
+        footerPending,
+        widgetsPending
+      }
+    };
+  }
+  function hasPendingProvisionalExtensionUi(snapshot) {
+    return Boolean(snapshot?.footerPending || snapshot?.widgetsPending);
+  }
+  function hasExtensionFooterUi(state2) {
+    return state2.extensionFooter !== void 0 || state2.extensionStatus.length > 0;
+  }
+  function shouldReserveExtensionFooter(state2) {
+    return state2.settings.values["tauren.extensions.statusBarEnabled"] !== false;
+  }
   function parseWebviewStateMessage(data, previousState) {
     const record = isRecord5(data) ? data : {};
     return {
@@ -8090,6 +8192,7 @@ ${after}`;
       extensionFooter: parseExtensionFooter(record.extensionFooter),
       extensionWidgets: parseExtensionWidgets(record.extensionWidgets),
       startupResources: parseStartupResources(record.startupResources),
+      startupResourcesReloadRevision: parseNonNegativeInteger(record.startupResourcesReloadRevision, previousState?.startupResourcesReloadRevision ?? 0),
       allowRemoteImages: typeof record.allowRemoteImages === "boolean" ? record.allowRemoteImages : false,
       welcomeDismissed: Boolean(record.welcomeDismissed),
       promptContext: Array.isArray(record.promptContext) ? record.promptContext : [],
@@ -8167,6 +8270,21 @@ ${after}`;
   }
   function isExtensionWidgetEntry(value) {
     return isRecord5(value) && typeof value.key === "string" && (value.placement === "aboveEditor" || value.placement === "belowEditor") && Array.isArray(value.lines);
+  }
+  function parseNonNegativeInteger(value, fallback) {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : fallback;
+  }
+  function cloneStartupResources(resources) {
+    return resources.map((section) => ({
+      name: section.name,
+      items: section.items.slice()
+    }));
+  }
+  function areStartupResourcesEqual(left, right) {
+    return left.length === right.length && left.every((section, index) => {
+      const other = right[index];
+      return other && section.name === other.name && section.items.length === other.items.length && section.items.every((item, itemIndex) => item === other.items[itemIndex]);
+    });
   }
   function parseStartupResources(value) {
     if (!Array.isArray(value)) {
@@ -8409,6 +8527,8 @@ ${after}`;
   busySubmitElement.after(busySubmitHomeMarker);
   var widgetDimensionSignatures = /* @__PURE__ */ new Map();
   var footerDimensionSignature = "";
+  var provisionalExtensionUiSnapshot;
+  var startupResourcesCache = createStartupResourcesCache();
   var sessionsController;
   var settingsController;
   var transcriptSearchController;
@@ -8569,6 +8689,11 @@ ${after}`;
       );
       return;
     }
+    if (event.data?.type === "optimisticNewSession") {
+      applyOptimisticNewSessionTransition();
+      focusPromptInput();
+      return;
+    }
     if (event.data?.type !== "state") {
       return;
     }
@@ -8579,7 +8704,13 @@ ${after}`;
     const previousTreeCount = Array.isArray(state.treeItems) ? state.treeItems.length : 0;
     const isInitialHostState = !hasReceivedHostState;
     hasReceivedHostState = true;
-    const nextState = parseWebviewStateMessage(event.data, state);
+    const parsedState = parseWebviewStateMessage(event.data, state);
+    const startupResourcesResult = applyStartupResourcesCache(parsedState, startupResourcesCache);
+    startupResourcesCache = startupResourcesResult.cache;
+    const provisionalResult = applyProvisionalExtensionUiSnapshot(startupResourcesResult.state, provisionalExtensionUiSnapshot);
+    const nextState = provisionalResult.state;
+    provisionalExtensionUiSnapshot = provisionalResult.snapshot;
+    clearProvisionalExtensionUiIfSettled();
     const hasComposerTextUpdate = nextState.composerTextRevision > 0;
     const hasComposerPasteUpdate = nextState.composerPaste !== void 0;
     state = nextState;
@@ -8866,14 +8997,15 @@ ${after}`;
         widgetDimensionSignatures.delete(key);
       }
     }
-    renderExtensionWidgetContainer(extensionWidgetsAboveElement, aboveWidgets, placeBusySubmitOnTopWidget ? busySubmitElement : void 0);
-    renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets);
+    const renderPlaceholderWidgets = provisionalExtensionUiSnapshot?.widgetsPending === true;
+    renderExtensionWidgetContainer(extensionWidgetsAboveElement, aboveWidgets, placeBusySubmitOnTopWidget ? busySubmitElement : void 0, renderPlaceholderWidgets);
+    renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets, void 0, renderPlaceholderWidgets);
     syncBusySubmitPlacement(placeBusySubmitOnTopWidget);
     extensionWidgetsAboveElement.classList.toggle("extension-widgets--with-busy", placeBusySubmitOnTopWidget);
     viewElement.classList.toggle("tauren-view--has-extension-widgets-above", aboveWidgets.length > 0);
     viewElement.classList.toggle("tauren-view--has-extension-widgets-below", belowWidgets.length > 0);
   }
-  function renderExtensionWidgetContainer(container, widgets, leadingElement) {
+  function renderExtensionWidgetContainer(container, widgets, leadingElement, placeholderWidgets = false) {
     const hasContent = widgets.length > 0 || Boolean(leadingElement);
     container.hidden = !hasContent;
     container.setAttribute("aria-hidden", hasContent ? "false" : "true");
@@ -8888,6 +9020,7 @@ ${after}`;
     for (const widget of widgets) {
       const element = document.createElement("article");
       element.className = "extension-widget";
+      element.classList.toggle("extension-widget--placeholder", placeholderWidgets);
       element.dataset.widgetKey = widget.key;
       element.setAttribute("aria-label", `Pi extension widget ${widget.key}`);
       const blocks = normalizeExtensionRenderBlocks(widget.blocks, widget.lines);
@@ -8927,7 +9060,9 @@ ${after}`;
       fragment.append(element);
     }
     container.replaceChildren(fragment);
-    scheduleExtensionWidgetDimensionsPost(container, widgets);
+    if (!placeholderWidgets) {
+      scheduleExtensionWidgetDimensionsPost(container, widgets);
+    }
   }
   function syncBusySubmitPlacement(aboveWidgets) {
     widgetBusySlotElement.hidden = true;
@@ -9007,15 +9142,17 @@ ${after}`;
   }
   function syncExtensionStatus(hiddenBySurface) {
     const statusEnabled = areExtensionStatusBarEnabled();
+    const placeholderFooter = provisionalExtensionUiSnapshot?.footerPending === true;
     const footerLine = statusEnabled ? state.extensionFooter?.line : void 0;
-    const text = statusEnabled ? footerLine !== void 0 ? footerLine : state.extensionStatus.map((entry) => entry.text.trim()).filter(Boolean).join("  \u2022  ") : "";
-    const hidden = hiddenBySurface || text.length === 0;
+    const text = statusEnabled && !placeholderFooter ? footerLine !== void 0 ? footerLine : state.extensionStatus.map((entry) => entry.text.trim()).filter(Boolean).join("  \u2022  ") : "";
+    const hasStatusSlot = statusEnabled && !hiddenBySurface;
+    const hasAccessibleText = text.length > 0 && !placeholderFooter;
     composerStatusTextElement.replaceChildren();
     renderAnsiTextInto(composerStatusTextElement, text, state.outputColors, { suppressBackgrounds: true });
-    composerStatusElement.hidden = hidden;
-    composerStatusElement.setAttribute("aria-hidden", hidden ? "true" : "false");
-    viewElement.classList.toggle("tauren-view--has-extension-status", !hidden);
-    if (!hidden && footerLine !== void 0) {
+    composerStatusElement.hidden = !hasStatusSlot;
+    composerStatusElement.setAttribute("aria-hidden", hasAccessibleText ? "false" : "true");
+    viewElement.classList.toggle("tauren-view--has-extension-status", hasStatusSlot);
+    if (hasStatusSlot && hasAccessibleText && footerLine !== void 0) {
       scheduleExtensionFooterDimensionsPost();
     } else {
       footerDimensionSignature = "";
@@ -9132,8 +9269,22 @@ ${after}`;
   }
   function startNewSession() {
     sessionsController.cancelSessionNameEdit();
+    applyOptimisticNewSessionTransition();
     vscode.postMessage({ type: "newSession" });
     focusPromptInput();
+  }
+  function applyOptimisticNewSessionTransition() {
+    const wasSessionLane = state.lane === "sessions" || state.lane === "tree";
+    provisionalExtensionUiSnapshot = createProvisionalExtensionUiSnapshot(state);
+    state = createOptimisticNewSessionState(state);
+    suppressFaceTransitionForNextRender();
+    scheduleRender({ returnToChatMain: wasSessionLane });
+  }
+  function clearProvisionalExtensionUiIfSettled() {
+    if (hasPendingProvisionalExtensionUi(provisionalExtensionUiSnapshot)) {
+      return;
+    }
+    provisionalExtensionUiSnapshot = void 0;
   }
   function handleCustomUiClose() {
     if (state.lane !== "chat") {

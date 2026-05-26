@@ -319,6 +319,7 @@ export function createWebviewStateMessage({
   extensionFooter,
   extensionWidgets = [],
   startupResources = [],
+  startupResourcesReloadRevision = 0,
   allowRemoteImages = false,
   welcomeDismissed,
   promptContext = [],
@@ -368,6 +369,10 @@ export function createWebviewStateMessage({
 
   if (startupResources.length > 0) {
     message.startupResources = cloneWebviewStartupResources(startupResources);
+  }
+
+  if (startupResourcesReloadRevision > 0) {
+    message.startupResourcesReloadRevision = Math.max(0, Math.floor(startupResourcesReloadRevision));
   }
 
   if (!includeMessages) {

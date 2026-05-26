@@ -12,7 +12,17 @@ import { MessageListController } from './messages/messageList';
 import { TranscriptSearchController } from './messages/transcriptSearch';
 import { SessionViewController } from './sessions/sessionView';
 import { SettingsPaneController } from './settings/settingsPane';
-import { initialWebviewState, parseWebviewStateMessage } from './state';
+import {
+  applyProvisionalExtensionUiSnapshot,
+  applyStartupResourcesCache,
+  createOptimisticNewSessionState,
+  createProvisionalExtensionUiSnapshot,
+  createStartupResourcesCache,
+  hasPendingProvisionalExtensionUi,
+  initialWebviewState,
+  parseWebviewStateMessage,
+  type ProvisionalExtensionUiSnapshot
+} from './state';
 import type { WebviewState } from './types';
 
 const vscode = acquireVsCodeApi();
@@ -102,6 +112,8 @@ const busySubmitHomeMarker = document.createComment('busy-submit-home');
 busySubmitElement.after(busySubmitHomeMarker);
 const widgetDimensionSignatures = new Map<string, string>();
 let footerDimensionSignature = '';
+let provisionalExtensionUiSnapshot: ProvisionalExtensionUiSnapshot | undefined;
+let startupResourcesCache = createStartupResourcesCache();
 
 let sessionsController: SessionViewController;
 let settingsController: SettingsPaneController;
@@ -286,6 +298,12 @@ window.addEventListener('message', (event) => {
     return;
   }
 
+  if (event.data?.type === 'optimisticNewSession') {
+    applyOptimisticNewSessionTransition();
+    focusPromptInput();
+    return;
+  }
+
   if (event.data?.type !== 'state') {
     return;
   }
@@ -297,7 +315,13 @@ window.addEventListener('message', (event) => {
   const previousTreeCount = Array.isArray(state.treeItems) ? state.treeItems.length : 0;
   const isInitialHostState = !hasReceivedHostState;
   hasReceivedHostState = true;
-  const nextState = parseWebviewStateMessage(event.data, state);
+  const parsedState = parseWebviewStateMessage(event.data, state);
+  const startupResourcesResult = applyStartupResourcesCache(parsedState, startupResourcesCache);
+  startupResourcesCache = startupResourcesResult.cache;
+  const provisionalResult = applyProvisionalExtensionUiSnapshot(startupResourcesResult.state, provisionalExtensionUiSnapshot);
+  const nextState = provisionalResult.state;
+  provisionalExtensionUiSnapshot = provisionalResult.snapshot;
+  clearProvisionalExtensionUiIfSettled();
   const hasComposerTextUpdate = nextState.composerTextRevision > 0;
   const hasComposerPasteUpdate = nextState.composerPaste !== undefined;
   state = nextState;
@@ -659,15 +683,21 @@ function syncExtensionWidgets(hiddenBySurface: boolean): void {
     }
   }
 
-  renderExtensionWidgetContainer(extensionWidgetsAboveElement, aboveWidgets, placeBusySubmitOnTopWidget ? busySubmitElement : undefined);
-  renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets);
+  const renderPlaceholderWidgets = provisionalExtensionUiSnapshot?.widgetsPending === true;
+  renderExtensionWidgetContainer(extensionWidgetsAboveElement, aboveWidgets, placeBusySubmitOnTopWidget ? busySubmitElement : undefined, renderPlaceholderWidgets);
+  renderExtensionWidgetContainer(extensionWidgetsBelowElement, belowWidgets, undefined, renderPlaceholderWidgets);
   syncBusySubmitPlacement(placeBusySubmitOnTopWidget);
   extensionWidgetsAboveElement.classList.toggle('extension-widgets--with-busy', placeBusySubmitOnTopWidget);
   viewElement.classList.toggle('tauren-view--has-extension-widgets-above', aboveWidgets.length > 0);
   viewElement.classList.toggle('tauren-view--has-extension-widgets-below', belowWidgets.length > 0);
 }
 
-function renderExtensionWidgetContainer(container: HTMLElement, widgets: WebviewState['extensionWidgets'], leadingElement?: HTMLElement): void {
+function renderExtensionWidgetContainer(
+  container: HTMLElement,
+  widgets: WebviewState['extensionWidgets'],
+  leadingElement?: HTMLElement,
+  placeholderWidgets = false
+): void {
   const hasContent = widgets.length > 0 || Boolean(leadingElement);
   container.hidden = !hasContent;
   container.setAttribute('aria-hidden', hasContent ? 'false' : 'true');
@@ -686,6 +716,7 @@ function renderExtensionWidgetContainer(container: HTMLElement, widgets: Webview
   for (const widget of widgets) {
     const element = document.createElement('article');
     element.className = 'extension-widget';
+    element.classList.toggle('extension-widget--placeholder', placeholderWidgets);
     element.dataset.widgetKey = widget.key;
     element.setAttribute('aria-label', `Pi extension widget ${widget.key}`);
 
@@ -731,7 +762,10 @@ function renderExtensionWidgetContainer(container: HTMLElement, widgets: Webview
   }
 
   container.replaceChildren(fragment);
-  scheduleExtensionWidgetDimensionsPost(container, widgets);
+
+  if (!placeholderWidgets) {
+    scheduleExtensionWidgetDimensionsPost(container, widgets);
+  }
 }
 
 function syncBusySubmitPlacement(aboveWidgets: boolean): void {
@@ -836,8 +870,9 @@ function isExtensionMonospaceFontEnabled(): boolean {
 
 function syncExtensionStatus(hiddenBySurface: boolean): void {
   const statusEnabled = areExtensionStatusBarEnabled();
+  const placeholderFooter = provisionalExtensionUiSnapshot?.footerPending === true;
   const footerLine = statusEnabled ? state.extensionFooter?.line : undefined;
-  const text = statusEnabled
+  const text = statusEnabled && !placeholderFooter
     ? footerLine !== undefined
       ? footerLine
       : state.extensionStatus
@@ -845,15 +880,16 @@ function syncExtensionStatus(hiddenBySurface: boolean): void {
         .filter(Boolean)
         .join('  •  ')
     : '';
-  const hidden = hiddenBySurface || text.length === 0;
+  const hasStatusSlot = statusEnabled && !hiddenBySurface;
+  const hasAccessibleText = text.length > 0 && !placeholderFooter;
 
   composerStatusTextElement.replaceChildren();
   renderAnsiTextInto(composerStatusTextElement, text, state.outputColors, { suppressBackgrounds: true });
-  composerStatusElement.hidden = hidden;
-  composerStatusElement.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-  viewElement.classList.toggle('tauren-view--has-extension-status', !hidden);
+  composerStatusElement.hidden = !hasStatusSlot;
+  composerStatusElement.setAttribute('aria-hidden', hasAccessibleText ? 'false' : 'true');
+  viewElement.classList.toggle('tauren-view--has-extension-status', hasStatusSlot);
 
-  if (!hidden && footerLine !== undefined) {
+  if (hasStatusSlot && hasAccessibleText && footerLine !== undefined) {
     scheduleExtensionFooterDimensionsPost();
   } else {
     footerDimensionSignature = '';
@@ -1002,8 +1038,25 @@ function handleChatEscape(event: KeyboardEvent): boolean {
 
 function startNewSession(): void {
   sessionsController.cancelSessionNameEdit();
+  applyOptimisticNewSessionTransition();
   vscode.postMessage({ type: 'newSession' });
   focusPromptInput();
+}
+
+function applyOptimisticNewSessionTransition(): void {
+  const wasSessionLane = state.lane === 'sessions' || state.lane === 'tree';
+  provisionalExtensionUiSnapshot = createProvisionalExtensionUiSnapshot(state);
+  state = createOptimisticNewSessionState(state);
+  suppressFaceTransitionForNextRender();
+  scheduleRender({ returnToChatMain: wasSessionLane });
+}
+
+function clearProvisionalExtensionUiIfSettled(): void {
+  if (hasPendingProvisionalExtensionUi(provisionalExtensionUiSnapshot)) {
+    return;
+  }
+
+  provisionalExtensionUiSnapshot = undefined;
 }
 
 function handleCustomUiClose(): void {
