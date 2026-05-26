@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 type PackageJson = {
   name?: unknown;
   contributes?: {
+    keybindings?: Array<{ command?: unknown; key?: unknown; mac?: unknown; when?: unknown }>;
     menus?: {
       'view/title'?: Array<{ command?: unknown; when?: unknown }>;
     };
@@ -42,6 +43,8 @@ suite('Tauren extension', () => {
     assert.ok(commands.includes('tauren.reloadPi'));
     assert.ok(commands.includes('tauren.copyLastResponse'));
     assert.ok(commands.includes('tauren.searchTranscript'));
+    assert.ok(commands.includes('tauren.scrollTranscriptToTop'));
+    assert.ok(commands.includes('tauren.scrollTranscriptToBottom'));
     assert.ok(commands.includes('tauren.openModelPicker'));
     assert.ok(commands.includes('tauren.toggleSettings'));
     assert.ok(commands.includes('tauren.toggleHelp'));
@@ -49,6 +52,30 @@ suite('Tauren extension', () => {
     assert.ok(commands.includes('tauren.toggleSteerFollowUp'));
     assert.ok(commands.includes('tauren.addContext'));
     assert.ok(commands.includes('tauren.traceOrigin'));
+  });
+
+  test('contributes transcript scroll keybindings scoped to sidebar focus', () => {
+    const extension = findTaurenExtension();
+
+    assert.ok(extension, 'Expected the Tauren extension to be available');
+
+    const packageJson = extension.packageJSON as PackageJson;
+    const keybindings = packageJson.contributes?.keybindings ?? [];
+    const scrollTopKeybinding = keybindings.find((entry) => entry.command === 'tauren.scrollTranscriptToTop');
+    const scrollBottomKeybinding = keybindings.find((entry) => entry.command === 'tauren.scrollTranscriptToBottom');
+
+    assert.deepStrictEqual(scrollTopKeybinding, {
+      command: 'tauren.scrollTranscriptToTop',
+      key: 'ctrl+up',
+      mac: 'cmd+up',
+      when: 'tauren.sidebarFocus'
+    });
+    assert.deepStrictEqual(scrollBottomKeybinding, {
+      command: 'tauren.scrollTranscriptToBottom',
+      key: 'ctrl+down',
+      mac: 'cmd+down',
+      when: 'tauren.sidebarFocus'
+    });
   });
 
   test('keeps native new session action visible while busy', () => {

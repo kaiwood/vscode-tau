@@ -401,6 +401,14 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
     this.postTranscriptSearchOpenSoon();
   }
 
+  public scrollTranscriptToTop(): void {
+    this.postTranscriptScroll('top');
+  }
+
+  public scrollTranscriptToBottom(): void {
+    this.postTranscriptScroll('bottom');
+  }
+
   public async toggleSettings(): Promise<void> {
     this.controller.toggleSettings();
 
@@ -1002,6 +1010,14 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
 
   private postTranscriptSearchOpenSoon(): void {
     setTimeout(() => this.postTranscriptSearchOpen(), 0);
+  }
+
+  private postTranscriptScroll(position: 'top' | 'bottom'): void {
+    if (!this.webviewView?.visible || !this.webviewReady) {
+      return;
+    }
+
+    void this.webviewView.webview.postMessage({ type: 'scrollTranscript', position });
   }
 
   private postStreamingBehaviorToggle(): void {

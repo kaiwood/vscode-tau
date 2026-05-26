@@ -142,6 +142,12 @@ export class MessageListController {
     return this.scrollFollowState.followOutput || this.isMessagesAtBottom();
   }
 
+  public scrollMessagesToTop(): void {
+    this.scrollFollowState.followOutput = false;
+    this.options.messagesElement.scrollTop = 0;
+    recordScrollMetrics(this.scrollFollowState, this.getScrollMetrics());
+  }
+
   public scrollMessagesToBottom(): void {
     this.scrollFollowState.followOutput = true;
     this.options.messagesElement.scrollTop = this.options.messagesElement.scrollHeight;

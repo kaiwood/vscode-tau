@@ -249,6 +249,17 @@ window.addEventListener('message', (event) => {
     return;
   }
 
+  if (event.data?.type === 'scrollTranscript') {
+    if (isChatTranscriptScrollable()) {
+      if (event.data.position === 'top') {
+        messagesController.scrollMessagesToTop();
+      } else if (event.data.position === 'bottom') {
+        messagesController.scrollMessagesToBottom();
+      }
+    }
+    return;
+  }
+
   if (event.data?.type === 'toggleStreamingBehavior') {
     composerController.toggleStreamingBehavior();
     return;
@@ -377,6 +388,10 @@ window.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'Escape' && handleChatEscape(event)) {
+    return;
+  }
+
+  if (handleTranscriptEdgeScrollShortcut(event)) {
     return;
   }
 
@@ -829,6 +844,35 @@ function openHelpOverlay(): void {
 
 function closeHelpOverlay(): void {
   helpOverlayElement.hidden = true;
+}
+
+function isChatTranscriptScrollable(): boolean {
+  return state.lane === 'chat'
+    && state.chatFace !== 'settings'
+    && !hasHelpOverlayOpen()
+    && !customUiController.isActive()
+    && !extensionEditorDialogController.isActive();
+}
+
+function handleTranscriptEdgeScrollShortcut(event: KeyboardEvent): boolean {
+  if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) {
+    return false;
+  }
+
+  if (!isChatTranscriptScrollable()) {
+    return false;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (event.key === 'ArrowUp') {
+    messagesController.scrollMessagesToTop();
+  } else {
+    messagesController.scrollMessagesToBottom();
+  }
+
+  return true;
 }
 
 function handleHelpWindowClick(target: Node | null): void {

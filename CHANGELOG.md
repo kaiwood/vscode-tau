@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added transcript top/bottom scroll commands with sidebar-scoped keyboard shortcuts
 - Added searchable transcript UI with command and keyboard shortcut support.
 - Added dynamic Pi startup resource summaries to empty chat screens.
 - Added support for Pi extension `ctx.ui.setFooter(factory)`

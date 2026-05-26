@@ -4216,6 +4216,11 @@ ${after}`;
     shouldFollowOutput() {
       return this.scrollFollowState.followOutput || this.isMessagesAtBottom();
     }
+    scrollMessagesToTop() {
+      this.scrollFollowState.followOutput = false;
+      this.options.messagesElement.scrollTop = 0;
+      recordScrollMetrics(this.scrollFollowState, this.getScrollMetrics());
+    }
     scrollMessagesToBottom() {
       this.scrollFollowState.followOutput = true;
       this.options.messagesElement.scrollTop = this.options.messagesElement.scrollHeight;
@@ -8371,6 +8376,16 @@ ${after}`;
       composerController.openModelPicker();
       return;
     }
+    if (event.data?.type === "scrollTranscript") {
+      if (isChatTranscriptScrollable()) {
+        if (event.data.position === "top") {
+          messagesController.scrollMessagesToTop();
+        } else if (event.data.position === "bottom") {
+          messagesController.scrollMessagesToBottom();
+        }
+      }
+      return;
+    }
     if (event.data?.type === "toggleStreamingBehavior") {
       composerController.toggleStreamingBehavior();
       return;
@@ -8470,6 +8485,9 @@ ${after}`;
       return;
     }
     if (event.key === "Escape" && handleChatEscape(event)) {
+      return;
+    }
+    if (handleTranscriptEdgeScrollShortcut(event)) {
       return;
     }
     if (messagesController.handleChatPageScroll(event)) {
@@ -8832,6 +8850,25 @@ ${after}`;
   }
   function closeHelpOverlay() {
     helpOverlayElement.hidden = true;
+  }
+  function isChatTranscriptScrollable() {
+    return state.lane === "chat" && state.chatFace !== "settings" && !hasHelpOverlayOpen() && !customUiController.isActive() && !extensionEditorDialogController.isActive();
+  }
+  function handleTranscriptEdgeScrollShortcut(event) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown" || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) {
+      return false;
+    }
+    if (!isChatTranscriptScrollable()) {
+      return false;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === "ArrowUp") {
+      messagesController.scrollMessagesToTop();
+    } else {
+      messagesController.scrollMessagesToBottom();
+    }
+    return true;
   }
   function handleHelpWindowClick(target) {
     if (hasHelpOverlayOpen() && (!target || !helpOverlayElement.contains(target))) {

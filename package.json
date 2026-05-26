@@ -104,6 +104,16 @@
         "category": "Tauren"
       },
       {
+        "command": "tauren.scrollTranscriptToTop",
+        "title": "Scroll Transcript to Top",
+        "category": "Tauren"
+      },
+      {
+        "command": "tauren.scrollTranscriptToBottom",
+        "title": "Scroll Transcript to Bottom",
+        "category": "Tauren"
+      },
+      {
         "command": "tauren.openModelPicker",
         "title": "Open Model Picker",
         "category": "Tauren"
@@ -187,6 +197,12 @@
         },
         {
           "command": "tauren.searchTranscript"
+        },
+        {
+          "command": "tauren.scrollTranscriptToTop"
+        },
+        {
+          "command": "tauren.scrollTranscriptToBottom"
         }
       ],
       "view/title": [
@@ -248,6 +264,18 @@
         "command": "tauren.searchTranscript",
         "key": "ctrl+f",
         "mac": "cmd+f",
+        "when": "tauren.sidebarFocus"
+      },
+      {
+        "command": "tauren.scrollTranscriptToTop",
+        "key": "ctrl+up",
+        "mac": "cmd+up",
+        "when": "tauren.sidebarFocus"
+      },
+      {
+        "command": "tauren.scrollTranscriptToBottom",
+        "key": "ctrl+down",
+        "mac": "cmd+down",
         "when": "tauren.sidebarFocus"
       }
     ],
