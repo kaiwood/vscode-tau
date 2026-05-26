@@ -147,6 +147,7 @@ export class TaurenChatController {
       session: this.session,
       postState: () => this.postState(),
       scheduleState: () => this.statePublisher.schedule(),
+      isActiveSession: () => this.options.isActiveSession?.() ?? true,
       refreshSessionDiffStats: () => void this.refreshSessionDiffStats(),
       refreshContextUsage: () => void this.refreshContextUsage({ silent: true }),
       addToolExecution: (event) => this.sessionDiffController.addToolExecution(event),
@@ -229,6 +230,7 @@ export class TaurenChatController {
   }
 
   public dispose(): void {
+    this.piEventHandler.dispose();
     this.statePublisher.dispose();
     this.disposeClient();
   }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Throttled live bash output updates and suppressed background bash output bodies to reduce sidebar slowdown during noisy commands.
 - Added opt-in structured performance diagnostics for session loading, navigation, and webview rendering.
 - Increased session-list metadata cache capacity and bounded long first-message titles.
 - Added persisted, progressive session-list metadata loading for faster large session histories.
