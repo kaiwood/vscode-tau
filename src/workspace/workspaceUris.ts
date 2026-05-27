@@ -1,18 +1,51 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
+type WorkspaceFolderLike = Pick<vscode.WorkspaceFolder, 'uri'>;
+
 export function resolveWorkspaceFileUri(filePath: string): vscode.Uri | undefined {
-  if (path.isAbsolute(filePath)) {
-    return vscode.Uri.file(path.normalize(filePath));
+  return resolveWorkspaceFileUriInFolders(filePath, vscode.workspace.workspaceFolders ?? []);
+}
+
+export function resolveFileReferenceUri(filePath: string): vscode.Uri | undefined {
+  return resolveFileReferenceUriInFolders(filePath, vscode.workspace.workspaceFolders ?? []);
+}
+
+export function resolveWorkspaceFileUriInFolders(filePath: string, workspaceFolders: readonly WorkspaceFolderLike[]): vscode.Uri | undefined {
+  const uri = resolveFileReferenceUriInFolders(filePath, workspaceFolders);
+  return uri ? resolveAbsoluteWorkspaceUri(uri.fsPath, workspaceFolders) : undefined;
+}
+
+export function resolveFileReferenceUriInFolders(filePath: string, workspaceFolders: readonly WorkspaceFolderLike[]): vscode.Uri | undefined {
+  const normalizedInput = filePath.trim();
+
+  if (!normalizedInput) {
+    return undefined;
   }
 
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (/^file:/i.test(normalizedInput)) {
+    try {
+      return vscode.Uri.parse(normalizedInput);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (path.isAbsolute(normalizedInput)) {
+    return vscode.Uri.file(path.normalize(normalizedInput));
+  }
+
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(normalizedInput)) {
+    return undefined;
+  }
+
+  const workspaceFolder = workspaceFolders[0];
 
   if (!workspaceFolder) {
     return undefined;
   }
 
-  return vscode.Uri.file(path.resolve(workspaceFolder.uri.fsPath, filePath));
+  return vscode.Uri.file(path.resolve(workspaceFolder.uri.fsPath, normalizedInput));
 }
 
 export function resolveWorkspaceImageUri(src: string): vscode.Uri | undefined {
@@ -76,9 +109,12 @@ function decodeImagePath(src: string): string | undefined {
   }
 }
 
-function resolveAbsoluteWorkspaceUri(filePath: string): vscode.Uri | undefined {
+function resolveAbsoluteWorkspaceUri(
+  filePath: string,
+  workspaceFolders: readonly WorkspaceFolderLike[] = vscode.workspace.workspaceFolders ?? []
+): vscode.Uri | undefined {
   const normalizedPath = path.normalize(filePath);
-  const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).find((folder) => isPathInsidePath(normalizedPath, folder.uri.fsPath));
+  const workspaceFolder = workspaceFolders.find((folder) => isPathInsidePath(normalizedPath, folder.uri.fsPath));
 
   if (!workspaceFolder) {
     return undefined;
@@ -88,7 +124,7 @@ function resolveAbsoluteWorkspaceUri(filePath: string): vscode.Uri | undefined {
   return resolveRelativeWorkspaceUri(workspaceFolder, relativePath);
 }
 
-function resolveRelativeWorkspaceUri(workspaceFolder: vscode.WorkspaceFolder, relativePath: string): vscode.Uri {
+function resolveRelativeWorkspaceUri(workspaceFolder: WorkspaceFolderLike, relativePath: string): vscode.Uri {
   const parts = relativePath.replace(/\\/g, '/').split('/').filter((part) => part.length > 0);
   return vscode.Uri.joinPath(workspaceFolder.uri, ...parts);
 }

@@ -19,7 +19,7 @@ suite('Settings registry', () => {
     );
     assert.deepStrictEqual(
       getSettingsForSection('workspaceSafety').map((setting) => setting.id),
-      ['tauren.blockHttpsImages', 'tauren.confirmSessionDeletion', 'tauren.rejectEditWriteOutsideWorkspace']
+      ['tauren.blockHttpsImages', 'tauren.confirmSessionDeletion', 'tauren.restrictFileReferencesToWorkspace', 'tauren.rejectEditWriteOutsideWorkspace']
     );
   });
 

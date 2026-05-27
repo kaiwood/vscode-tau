@@ -38,6 +38,7 @@ import { getPiStartupCwdState, isSafeWorkspaceCwd, getUnsafeCwdReason } from './
 import {
   isSupportedLocalImagePath,
   isUriInsideWorkspace,
+  resolveFileReferenceUri,
   resolveWorkspaceFileUri,
   resolveWorkspaceImageUri
 } from './workspace/workspaceUris';
@@ -54,6 +55,7 @@ import {
   getReadyScriptEnabledSetting,
   getReadyScriptSetting,
   getRejectEditWriteOutsideWorkspaceSetting,
+  getRestrictFileReferencesToWorkspaceSetting,
   getShowWelcomeSetting,
   getTaurenSettingValues,
   hasConfiguredShowWelcomeSetting,
@@ -1010,10 +1012,14 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
   }
 
   private async openFileReference(filePath: string, line?: number, column?: number): Promise<void> {
-    const uri = resolveWorkspaceFileUri(filePath);
+    const restrictToWorkspace = getRestrictFileReferencesToWorkspaceSetting();
+    const uri = restrictToWorkspace ? resolveWorkspaceFileUri(filePath) : resolveFileReferenceUri(filePath);
 
     if (!uri) {
-      this.showNotification(`No workspace is open for ${filePath}.`, 'warning');
+      const hasWorkspace = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
+      this.showNotification(restrictToWorkspace && hasWorkspace
+        ? `File is outside the workspace: ${filePath}`
+        : `No workspace is open for ${filePath}.`, 'warning');
       return;
     }
 

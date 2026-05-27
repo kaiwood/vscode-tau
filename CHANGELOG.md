@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added a VS Code progress notification while Trace Origin is running.
+- Restricted webview file-reference opens to workspace files by default, with a Safety setting to allow external local file links.
 - Added support for extension tool-output boxes
 - terminal spinners now work properly
 

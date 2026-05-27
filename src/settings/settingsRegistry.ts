@@ -10,6 +10,7 @@ export type TaurenSettingId =
   | 'tauren.extensions.monospaceFontEnabled'
   | 'tauren.blockHttpsImages'
   | 'tauren.confirmSessionDeletion'
+  | 'tauren.restrictFileReferencesToWorkspace'
   | 'tauren.rejectEditWriteOutsideWorkspace'
   | 'tauren.debugPerformance'
   | 'tauren.readyScript'
@@ -320,6 +321,18 @@ export const settingDefinitions = [
     description: 'Ask before moving Tauren sessions to Trash.',
     control: 'toggle',
     defaultValue: true,
+    liveBehavior: 'immediate',
+    danger: true
+  },
+  {
+    id: 'tauren.restrictFileReferencesToWorkspace',
+    owner: 'tauren',
+    section: 'workspaceSafety',
+    label: 'Restrict file links',
+    description: 'Only open Tauren sidebar file references when they resolve inside the workspace.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'Turn this off to allow Tauren sidebar links to open absolute local files outside the workspace.',
     liveBehavior: 'immediate',
     danger: true
   },

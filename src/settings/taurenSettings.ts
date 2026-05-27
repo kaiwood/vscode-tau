@@ -60,6 +60,10 @@ export function getReadyScriptEnabledSetting(): boolean {
   return vscode.workspace.getConfiguration('tauren').get<boolean>('readyScriptEnabled', true);
 }
 
+export function getRestrictFileReferencesToWorkspaceSetting(): boolean {
+  return vscode.workspace.getConfiguration('tauren').get<boolean>('restrictFileReferencesToWorkspace', true);
+}
+
 export function getRejectEditWriteOutsideWorkspaceSetting(): boolean {
   return vscode.workspace.getConfiguration('tauren').get<boolean>('rejectEditWriteOutsideWorkspace', false);
 }
@@ -109,6 +113,7 @@ export function getTaurenSettingValues(globalState?: vscode.Memento): Partial<Re
     'tauren.extensions.monospaceFontEnabled': getExtensionMonospaceFontEnabledSetting(),
     'tauren.blockHttpsImages': getBlockHttpsImagesSetting(),
     'tauren.confirmSessionDeletion': getConfirmSessionDeletionSetting(),
+    'tauren.restrictFileReferencesToWorkspace': getRestrictFileReferencesToWorkspaceSetting(),
     'tauren.rejectEditWriteOutsideWorkspace': getRejectEditWriteOutsideWorkspaceSetting(),
     'tauren.debugPerformance': getDebugPerformanceSetting(),
     'tauren.readyScript': getReadyScriptSetting() ?? '',

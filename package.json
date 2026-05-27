@@ -373,6 +373,11 @@
           "default": true,
           "description": "Enable running tauren.readyScript when the Pi engine becomes ready. Turn this off to temporarily disable the script without clearing its path."
         },
+        "tauren.restrictFileReferencesToWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only open Tauren sidebar file references when they resolve inside the workspace. Turn this off to allow absolute local files outside the workspace."
+        },
         "tauren.rejectEditWriteOutsideWorkspace": {
           "type": "boolean",
           "default": false,
