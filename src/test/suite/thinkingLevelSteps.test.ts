@@ -18,7 +18,7 @@ suite('thinkingLevelSteps', () => {
     assert.strictEqual(getSteppedThinkingLevel('minimal', 'lower'), 'off');
   });
 
-  test('clamps at bounds and ignores unknown levels', () => {
+  test('returns no change at bounds and ignores unknown levels', () => {
     assert.strictEqual(getSteppedThinkingLevel('xhigh', 'raise'), undefined);
     assert.strictEqual(getSteppedThinkingLevel('off', 'lower'), undefined);
     assert.strictEqual(getSteppedThinkingLevel('', 'raise'), undefined);
