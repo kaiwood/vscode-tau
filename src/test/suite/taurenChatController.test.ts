@@ -1511,6 +1511,25 @@ suite('TaurenChatController', () => {
     harness.controller.dispose();
   });
 
+  test('hotkeys slash command shows Tauren hotkeys without prompting Pi', async () => {
+    const client = new FakePiClient();
+    const harness = createControllerHarness([client], {
+      getHotkeysMarkdown: () => '# Tauren Hotkeys\n\n## Session List\n\n| Key | Function |\n| --- | --- |\n| Esc | Return to chat |'
+    });
+
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/hotkeys' });
+
+    assert.strictEqual(harness.createCalls, 0);
+    assert.deepStrictEqual(client.prompts, []);
+    assert.deepStrictEqual(lastState(harness).messages, [
+      {
+        role: 'system',
+        text: '# Tauren Hotkeys\n\n## Session List\n\n| Key | Function |\n| --- | --- |\n| Esc | Return to chat |'
+      }
+    ]);
+    harness.controller.dispose();
+  });
+
   test('settings slash command opens Tauren settings without prompting Pi', async () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);
@@ -2872,6 +2891,7 @@ type ControllerHarnessOptions = {
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
   getRejectEditWriteOutsideWorkspace?: () => boolean;
+  getHotkeysMarkdown?: () => string;
   isActiveSession?: () => boolean;
   runReadyScript?: TaurenChatControllerOptions['runReadyScript'];
 };
@@ -2917,6 +2937,7 @@ function createControllerHarness(
     getReadyScript: options.getReadyScript,
     getReadyScriptEnabled: options.getReadyScriptEnabled,
     getRejectEditWriteOutsideWorkspace: options.getRejectEditWriteOutsideWorkspace,
+    getHotkeysMarkdown: options.getHotkeysMarkdown,
     isActiveSession: options.isActiveSession,
     runReadyScript: options.runReadyScript
   };

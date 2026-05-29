@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Updated the Marketplace display name for better discoverability
+- Added `/hotkeys` support that prints Tauren sidebar shortcuts in the transcript.
 - Added scoped model cycling configuration to Settings; `/scoped-models` now opens that Settings category.
 - Added `/settings` to open Tauren settings from the composer.
 - Added `/changelog` support that shows the Pi changelog and released Tauren changelog in the transcript.

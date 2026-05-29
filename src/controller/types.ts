@@ -29,6 +29,7 @@ export type TaurenChatControllerOptions = {
   getReadyScript?: () => string | undefined;
   getReadyScriptEnabled?: () => boolean;
   getRejectEditWriteOutsideWorkspace?: () => boolean;
+  getHotkeysMarkdown?: () => string;
   isActiveSession?: () => boolean;
   getTaurenSettingValues?: () => Partial<Record<TaurenSettingId, SettingValue>>;
   updateTaurenSetting?: (id: TaurenSettingId, value: SettingValue) => PromiseLike<void> | Promise<void> | void;

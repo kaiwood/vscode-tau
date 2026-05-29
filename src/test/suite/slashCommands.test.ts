@@ -20,6 +20,7 @@ suite('Slash commands', () => {
     assert.ok(names.includes('import'));
     assert.ok(names.includes('login'));
     assert.ok(names.includes('logout'));
+    assert.ok(names.includes('hotkeys'));
     assert.deepStrictEqual(localSlashCommandNames, names);
     assert.deepStrictEqual(hiddenLocalSlashCommandNames, []);
 
@@ -37,6 +38,7 @@ suite('Slash commands', () => {
     assert.ok(menuNames.includes('import'));
     assert.ok(menuNames.includes('login'));
     assert.ok(menuNames.includes('logout'));
+    assert.ok(menuNames.includes('hotkeys'));
 
     for (const command of localSlashMenuCommands) {
       assert.strictEqual(isBuiltinSlashCommand(command.name), true);
@@ -53,6 +55,7 @@ suite('Slash commands', () => {
     assert.strictEqual(isSupportedBuiltinSlashCommand('logout'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('settings'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('scoped-models'), true);
+    assert.strictEqual(isSupportedBuiltinSlashCommand('hotkeys'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('unknown'), false);
     assert.strictEqual(isBuiltinSlashCommand('unknown'), false);
   });

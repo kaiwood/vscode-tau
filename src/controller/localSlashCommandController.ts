@@ -15,6 +15,7 @@ import {
   getSessionFile
 } from '../sessions/sessionFormatting';
 import { cloneSession, compactSession, exportSessionHtml, forkSession } from '../sessions/sessionClientActions';
+import { formatTaurenHotkeys } from '../hotkeys/hotkeys';
 
 export type LocalSlashCommand = { name: string; args: string };
 
@@ -34,6 +35,7 @@ export type LocalSlashCommandControllerOptions = {
   setComposerText: (text: string) => void;
   restartClientForReload: (sessionFile: string | undefined) => void;
   markStartupResourcesReloaded?: () => void;
+  getHotkeysMarkdown?: () => string;
   showSettings: (section?: WebviewSettingsSection) => void;
   showLoginSettings: (mode: 'login' | 'logout') => void;
   startNewSession: () => void;
@@ -82,6 +84,9 @@ export class LocalSlashCommandController {
           return;
         case 'changelog':
           await this.handleChangelogSlashCommand();
+          return;
+        case 'hotkeys':
+          this.handleHotkeysSlashCommand();
           return;
         case 'tree':
           this.options.sessionView.showTree();
@@ -288,6 +293,11 @@ export class LocalSlashCommandController {
 
   private async handleChangelogSlashCommand(): Promise<void> {
     this.options.session.addSystemMessage(await readCombinedChangelog());
+    this.options.postState();
+  }
+
+  private handleHotkeysSlashCommand(): void {
+    this.options.session.addSystemMessage(this.options.getHotkeysMarkdown?.() ?? formatTaurenHotkeys());
     this.options.postState();
   }
 

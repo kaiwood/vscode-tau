@@ -22,7 +22,7 @@ const localSlashCommandDefinitions: LocalSlashCommandDefinition[] = [
   { name: 'import', description: 'Import and resume a JSONL session', source: 'builtin', supported: true },
   { name: 'share', description: 'Not supported here yet', source: 'unsupported', supported: false },
   { name: 'changelog', description: 'Show Pi and Tauren changelogs', source: 'builtin', supported: true },
-  { name: 'hotkeys', description: 'Terminal-only: use VS Code keybindings instead', source: 'unsupported', supported: false },
+  { name: 'hotkeys', description: 'Show Tauren keyboard shortcuts', source: 'builtin', supported: true },
   { name: 'fork', description: 'Fork from a previous user message', source: 'builtin', supported: true },
   { name: 'clone', description: 'Duplicate the current session', source: 'builtin', supported: true },
   { name: 'tree', description: 'Navigate session tree', source: 'builtin', supported: true },

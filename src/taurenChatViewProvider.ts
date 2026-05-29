@@ -43,6 +43,7 @@ import {
   resolveWorkspaceImageUri
 } from './workspace/workspaceUris';
 import { getAtFileSuggestions } from './fileSuggestions/fileSuggestionProvider';
+import { buildTaurenHotkeysMarkdown } from './hotkeys/vscodeKeybindings';
 import { TaurenPerfRecorder, type TaurenPerfTimer } from './perf/taurenPerf';
 import {
   affectsAnyTaurenExtensionSetting,
@@ -168,6 +169,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       getReadyScript: () => getReadyScriptSetting(),
       getReadyScriptEnabled: () => getReadyScriptEnabledSetting(),
       getRejectEditWriteOutsideWorkspace: () => getRejectEditWriteOutsideWorkspaceSetting(),
+      getHotkeysMarkdown: () => buildTaurenHotkeysMarkdown(this.extensionUri.fsPath),
       getTaurenSettingValues: () => getTaurenSettingValues(this.globalState),
       updateTaurenSetting: (id, value) => this.updateTaurenSetting(id, value),
       runReadyScript: (scriptPath, cwd) => {

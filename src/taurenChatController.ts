@@ -201,6 +201,7 @@ export class TaurenChatController {
       markStartupResourcesReloaded: () => {
         this.startupResourcesReloadRevision += 1;
       },
+      getHotkeysMarkdown: options.getHotkeysMarkdown,
       showSettings: (section) => this.showSettings(section),
       showLoginSettings: (mode) => this.showLoginSettings(mode),
       startNewSession: () => this.startNewSession()

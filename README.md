@@ -83,7 +83,7 @@ Or, as of v2: Skip that part, Tauren also got you covered on the OAuth / API Key
 
 Tauren is heavily keyboard-oriented. I recommend: Play around with the `Esc`-key.
 
-Everything else is mostly discoverable. You'll figure out the rest anyway, but the help icon for keybindings might be worth a visit.
+Everything else is mostly discoverable. If not, /hotkeys is your friend.
 
 ## Development
 
