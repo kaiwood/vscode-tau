@@ -16,6 +16,7 @@ import {
 } from '../sessions/sessionFormatting';
 import { cloneSession, compactSession, exportSessionHtml, forkSession } from '../sessions/sessionClientActions';
 import { formatTaurenHotkeys } from '../hotkeys/hotkeys';
+import { formatShareTranscriptMessage, shareSessionWithGh } from './shareSession';
 
 export type LocalSlashCommand = { name: string; args: string };
 
@@ -117,6 +118,9 @@ export class LocalSlashCommandController {
           return;
         case 'export':
           await this.handleExportSlashCommand(command.args);
+          return;
+        case 'share':
+          await this.handleShareSlashCommand();
           return;
         case 'import':
           await this.handleImportSlashCommand(command.args);
@@ -373,6 +377,12 @@ export class LocalSlashCommandController {
     const result = await exportSessionHtml(this.options.getClient(), outputPath || undefined);
     const path = typeof result.path === 'string' && result.path ? result.path : 'HTML file';
     this.options.session.addSystemMessage(`Exported session to ${path}.`);
+    this.options.postState();
+  }
+
+  private async handleShareSlashCommand(): Promise<void> {
+    const links = await shareSessionWithGh(this.options.getClient());
+    this.options.session.addSystemMessage(formatShareTranscriptMessage(links));
     this.options.postState();
   }
 

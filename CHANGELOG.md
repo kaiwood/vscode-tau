@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `/share` support for creating secret GitHub Gist session links from the sidebar.
+
 ## 1.4.0 - 2026-05-29
 
 - Updated the Marketplace display name for better discoverability

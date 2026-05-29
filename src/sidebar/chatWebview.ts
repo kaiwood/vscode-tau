@@ -169,6 +169,10 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return typeof value.successMessage === 'string' && value.successMessage
         ? { type: 'copyText', text: value.text, successMessage: value.successMessage }
         : { type: 'copyText', text: value.text };
+    case 'openExternal':
+      return typeof value.url === 'string' && isHttpUrl(value.url)
+        ? { type: 'openExternal', url: value.url }
+        : { type: 'unknown' };
     case 'openFile': {
       if (typeof value.path !== 'string' || !value.path) {
         return { type: 'unknown' };
@@ -802,6 +806,15 @@ function parsePositiveInteger(value: unknown): number | undefined {
 
 function parsePositiveNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

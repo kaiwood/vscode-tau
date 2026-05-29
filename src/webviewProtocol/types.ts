@@ -118,6 +118,7 @@ export type WebviewMessage =
   | { type: 'removePromptContext'; id: string }
   | { type: 'abort' }
   | { type: 'copyText'; text: string; successMessage?: string }
+  | { type: 'openExternal'; url: string }
   | { type: 'openFile'; path: string; line?: number; column?: number }
   | { type: 'highlightCode'; id: string; code: string; language: string; themeId?: string }
   | { type: 'resolveLocalImage'; id: string; src: string }

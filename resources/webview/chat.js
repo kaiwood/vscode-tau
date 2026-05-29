@@ -2158,7 +2158,7 @@
     { name: "settings", description: "Open Tauren settings", source: "builtin", supported: true },
     { name: "scoped-models", description: "Configure scoped model cycling", source: "builtin", supported: true },
     { name: "import", description: "Import and resume a JSONL session", source: "builtin", supported: true },
-    { name: "share", description: "Not supported here yet", source: "unsupported", supported: false },
+    { name: "share", description: "Share session as a secret GitHub gist", source: "builtin", supported: true },
     { name: "changelog", description: "Show Pi and Tauren changelogs", source: "builtin", supported: true },
     { name: "hotkeys", description: "Show Tauren keyboard shortcuts", source: "builtin", supported: true },
     { name: "fork", description: "Fork from a previous user message", source: "builtin", supported: true },
@@ -4487,10 +4487,10 @@ ${after}`;
       }
       const openFileButton = target?.closest("[data-open-file-path]");
       if (openFileButton instanceof HTMLElement) {
-        const filePath2 = openFileButton.dataset.openFilePath;
-        if (filePath2) {
+        const filePath = openFileButton.dataset.openFilePath;
+        if (filePath) {
           event.preventDefault();
-          this.options.postMessage({ type: "openFile", path: filePath2 });
+          this.options.postMessage({ type: "openFile", path: filePath });
         }
         return;
       }
@@ -4505,20 +4505,25 @@ ${after}`;
         return;
       }
       const link = target?.closest(".tauren-file-link");
-      if (!(link instanceof HTMLElement)) {
+      if (link instanceof HTMLElement) {
+        const filePath = link.dataset.filePath;
+        if (!filePath) {
+          return;
+        }
+        event.preventDefault();
+        this.options.postMessage({
+          type: "openFile",
+          path: filePath,
+          ...parseDatasetPositiveInteger(link.dataset.line, "line"),
+          ...parseDatasetPositiveInteger(link.dataset.column, "column")
+        });
         return;
       }
-      const filePath = link.dataset.filePath;
-      if (!filePath) {
-        return;
+      const externalLink = target?.closest("a[href]");
+      if (externalLink instanceof HTMLAnchorElement && isHttpUrl(externalLink.href)) {
+        event.preventDefault();
+        this.options.postMessage({ type: "openExternal", url: externalLink.href });
       }
-      event.preventDefault();
-      this.options.postMessage({
-        type: "openFile",
-        path: filePath,
-        ...parseDatasetPositiveInteger(link.dataset.line, "line"),
-        ...parseDatasetPositiveInteger(link.dataset.column, "column")
-      });
     }
     createEmptyStateElement() {
       const state2 = this.options.getState();
@@ -4858,6 +4863,14 @@ ${after}`;
     }
     const numberValue = Number(value);
     return Number.isInteger(numberValue) ? numberValue : void 0;
+  }
+  function isHttpUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
   }
   function parseCssPixelValue2(value) {
     return Number.parseFloat(value) || 0;

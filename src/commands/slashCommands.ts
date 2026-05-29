@@ -20,7 +20,7 @@ const localSlashCommandDefinitions: LocalSlashCommandDefinition[] = [
   { name: 'settings', description: 'Open Tauren settings', source: 'builtin', supported: true },
   { name: 'scoped-models', description: 'Configure scoped model cycling', source: 'builtin', supported: true },
   { name: 'import', description: 'Import and resume a JSONL session', source: 'builtin', supported: true },
-  { name: 'share', description: 'Not supported here yet', source: 'unsupported', supported: false },
+  { name: 'share', description: 'Share session as a secret GitHub gist', source: 'builtin', supported: true },
   { name: 'changelog', description: 'Show Pi and Tauren changelogs', source: 'builtin', supported: true },
   { name: 'hotkeys', description: 'Show Tauren keyboard shortcuts', source: 'builtin', supported: true },
   { name: 'fork', description: 'Fork from a previous user message', source: 'builtin', supported: true },

@@ -1478,12 +1478,12 @@ suite('TaurenChatController', () => {
     const client = new FakePiClient();
     const harness = createControllerHarness([client]);
 
-    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/share' });
+    await harness.controller.handleWebviewMessage({ type: 'submit', text: '/quit' });
 
     assert.strictEqual(harness.createCalls, 0);
     assert.deepStrictEqual(client.prompts, []);
     assert.deepStrictEqual(lastState(harness).messages, [
-      { role: 'system', text: '/share is a Pi terminal command that is not supported in the VS Code sidebar yet.' }
+      { role: 'system', text: '/quit is a Pi terminal command that is not supported in the VS Code sidebar yet.' }
     ]);
     harness.controller.dispose();
   });

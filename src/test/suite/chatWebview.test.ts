@@ -275,6 +275,10 @@ suite('Chat webview helpers', () => {
       { type: 'copyText', text: 'const x = 1;', successMessage: 'Copied code.' }
     );
     assert.deepStrictEqual(
+      parseWebviewMessage({ type: 'openExternal', url: 'https://pi.dev/session/#abc123' }),
+      { type: 'openExternal', url: 'https://pi.dev/session/#abc123' }
+    );
+    assert.deepStrictEqual(
       parseWebviewMessage({ type: 'highlightCode', id: 'highlight-1', code: 'const x = 1;', language: 'typescript' }),
       { type: 'highlightCode', id: 'highlight-1', code: 'const x = 1;', language: 'typescript' }
     );
@@ -351,6 +355,7 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'setSettingsSection', section: 'bogus' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogin', providerId: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogout', providerId: 42 }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'openExternal', url: 'file:///tmp/session.html' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'submit', text: 42 }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'selectSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'deleteSession', sessionPath: '' }), { type: 'unknown' });

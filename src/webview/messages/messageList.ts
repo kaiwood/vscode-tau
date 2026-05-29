@@ -326,23 +326,29 @@ export class MessageListController {
 
     const link = target?.closest('.tauren-file-link');
 
-    if (!(link instanceof HTMLElement)) {
+    if (link instanceof HTMLElement) {
+      const filePath = link.dataset.filePath;
+
+      if (!filePath) {
+        return;
+      }
+
+      event.preventDefault();
+      this.options.postMessage({
+        type: 'openFile',
+        path: filePath,
+        ...parseDatasetPositiveInteger(link.dataset.line, 'line'),
+        ...parseDatasetPositiveInteger(link.dataset.column, 'column')
+      });
       return;
     }
 
-    const filePath = link.dataset.filePath;
+    const externalLink = target?.closest('a[href]');
 
-    if (!filePath) {
-      return;
+    if (externalLink instanceof HTMLAnchorElement && isHttpUrl(externalLink.href)) {
+      event.preventDefault();
+      this.options.postMessage({ type: 'openExternal', url: externalLink.href });
     }
-
-    event.preventDefault();
-    this.options.postMessage({
-      type: 'openFile',
-      path: filePath,
-      ...parseDatasetPositiveInteger(link.dataset.line, 'line'),
-      ...parseDatasetPositiveInteger(link.dataset.column, 'column')
-    });
   }
 
   private createEmptyStateElement(): HTMLElement {
@@ -802,6 +808,15 @@ function parseDatasetInteger(value: string | undefined): number | undefined {
 
   const numberValue = Number(value);
   return Number.isInteger(numberValue) ? numberValue : undefined;
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function parseCssPixelValue(value: string): number {

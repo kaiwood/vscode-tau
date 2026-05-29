@@ -18,6 +18,7 @@ suite('Slash commands', () => {
     assert.ok(names.includes('scoped-models'));
     assert.ok(names.includes('tree'));
     assert.ok(names.includes('import'));
+    assert.ok(names.includes('share'));
     assert.ok(names.includes('login'));
     assert.ok(names.includes('logout'));
     assert.ok(names.includes('hotkeys'));
@@ -36,6 +37,7 @@ suite('Slash commands', () => {
     assert.ok(menuNames.includes('scoped-models'));
     assert.ok(menuNames.includes('tree'));
     assert.ok(menuNames.includes('import'));
+    assert.ok(menuNames.includes('share'));
     assert.ok(menuNames.includes('login'));
     assert.ok(menuNames.includes('logout'));
     assert.ok(menuNames.includes('hotkeys'));
@@ -51,6 +53,7 @@ suite('Slash commands', () => {
     assert.strictEqual(isSupportedBuiltinSlashCommand('resume'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('tree'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('import'), true);
+    assert.strictEqual(isSupportedBuiltinSlashCommand('share'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('login'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('logout'), true);
     assert.strictEqual(isSupportedBuiltinSlashCommand('settings'), true);

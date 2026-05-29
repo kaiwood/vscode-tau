@@ -786,6 +786,11 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       return;
     }
 
+    if (message.type === 'openExternal') {
+      await vscode.env.openExternal(vscode.Uri.parse(message.url));
+      return;
+    }
+
     if (message.type === 'dismissWelcome') {
       await this.dismissWelcome();
       return;
