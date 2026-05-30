@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed `/changelog` hiding Tauren's unreleased section but still showing Pi's `[Unreleased]` heading.
 - Added `/share` support for creating secret GitHub Gist session links from the sidebar.
 
 ## 1.4.0 - 2026-05-29

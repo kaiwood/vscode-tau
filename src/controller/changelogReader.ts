@@ -15,7 +15,7 @@ export async function readCombinedChangelog(): Promise<string> {
 
   return [
     '# Pi Changelog',
-    reverseChangelogSections(normalizeChangelog(piChangelog)),
+    reverseChangelogSections(stripUnreleasedSection(normalizeChangelog(piChangelog))),
     '---',
     '# Tauren Changelog',
     reverseChangelogSections(stripUnreleasedSection(normalizeChangelog(taurenChangelog)))
@@ -41,7 +41,7 @@ function normalizeChangelog(changelog: string): string {
 }
 
 function stripUnreleasedSection(changelog: string): string {
-  const unreleasedMatch = /^##\s+Unreleased\s*$/im.exec(changelog);
+  const unreleasedMatch = /^##\s+\[?Unreleased\]?\s*$/im.exec(changelog);
 
   if (!unreleasedMatch) {
     return changelog;

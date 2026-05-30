@@ -1500,6 +1500,7 @@ suite('TaurenChatController', () => {
     const message = lastState(harness).messages[0];
     assert.strictEqual(message.role, 'system');
     assert.match(message.text, /^# Pi Changelog\n\n## \[/);
+    assert.doesNotMatch(message.text, /# Pi Changelog[\s\S]*## \[?Unreleased\]?/);
     const oldestPiIndex = message.text.indexOf('## [0.10.0]');
     const newestPiIndex = message.text.indexOf('## [0.75.5]');
     assert.notStrictEqual(oldestPiIndex, -1);
