@@ -1,6 +1,7 @@
 import { pruneDisconnectedCodeHighlights, requestCodeHighlightsIn } from '../codeHighlighting';
 import { messagesBottomThreshold } from '../constants';
 import { pruneDisconnectedLocalImageRequests } from './markdown';
+import { shouldRenderQuietEmptyTranscript } from './renderPolicy';
 import { createMessageElement, getActivityBodyExpansion, pruneActivityRenderState, setActivityBodyExpansion, toggleActivityBodyExpansion, updateMessageBodyElement } from './renderMessages';
 import {
   createScrollFollowState,
@@ -46,7 +47,11 @@ export class MessageListController {
 
     if (state.messages.length === 0) {
       this.renderedMessageViews = [];
-      this.options.messagesContentElement.replaceChildren(this.createEmptyStateElement());
+      if (shouldRenderQuietEmptyTranscript(state)) {
+        this.options.messagesContentElement.replaceChildren();
+      } else {
+        this.options.messagesContentElement.replaceChildren(this.createEmptyStateElement());
+      }
       pruneActivityRenderState(new Set());
       pruneDisconnectedMessageRenderState();
       return;

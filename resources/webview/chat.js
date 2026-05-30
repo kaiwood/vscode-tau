@@ -3789,6 +3789,9 @@ ${image.mimeType}, ${formatBytes(image.sizeBytes)}`;
   function shouldRenderMarkdown(message) {
     return !message.error && message.role !== "user";
   }
+  function shouldRenderQuietEmptyTranscript(state2) {
+    return state2.messages.length === 0 && !state2.sessionLoading && state2.settings.values.quietStartup === true;
+  }
 
   // src/webview/messages/renderMessages.ts
   var maxRememberedActivityIds = 1e3;
@@ -4294,7 +4297,11 @@ ${after}`;
       const state2 = this.options.getState();
       if (state2.messages.length === 0) {
         this.renderedMessageViews = [];
-        this.options.messagesContentElement.replaceChildren(this.createEmptyStateElement());
+        if (shouldRenderQuietEmptyTranscript(state2)) {
+          this.options.messagesContentElement.replaceChildren();
+        } else {
+          this.options.messagesContentElement.replaceChildren(this.createEmptyStateElement());
+        }
         pruneActivityRenderState(/* @__PURE__ */ new Set());
         pruneDisconnectedMessageRenderState();
         return;
@@ -5507,6 +5514,16 @@ ${after}`;
       section: "runtime",
       label: "Hide thinking blocks",
       description: "Hide model thinking content in the Tauren transcript.",
+      control: "toggle",
+      defaultValue: false,
+      liveBehavior: "immediate"
+    },
+    {
+      id: "quietStartup",
+      owner: "pi",
+      section: "runtime",
+      label: "Quiet startup",
+      description: "Show a blank Tauren transcript for empty new sessions.",
       control: "toggle",
       defaultValue: false,
       liveBehavior: "immediate"

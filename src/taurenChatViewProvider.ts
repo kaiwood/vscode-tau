@@ -86,6 +86,8 @@ type PendingPerfBoundary = {
   timeout: ReturnType<typeof setTimeout>;
 };
 
+const quietStartupStorageKey = 'tauren.pi.quietStartup';
+
 function getSessionMetadataCacheFile(storageUri: vscode.Uri | undefined): string | undefined {
   return storageUri ? path.join(storageUri.fsPath, sessionMetadataCacheFileName) : undefined;
 }
@@ -100,6 +102,11 @@ function createConfiguredPiClient(
     showNotification: dependencies.showNotification,
     rejectEditWriteOutsideWorkspace: dependencies.getRejectEditWriteOutsideWorkspace
   });
+}
+
+function getQuietStartupFromStateMessage(message: WebviewStateMessage): boolean | undefined {
+  const value = message.settings?.values.quietStartup;
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -128,6 +135,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
     isEnabled: () => this.debugPerformanceEnabled,
     writeLine: (line) => this.writePerfLine(line)
   });
+  private cachedQuietStartup: boolean | undefined;
   private pendingLaneSwitch: PendingPerfBoundary | undefined;
   private pendingSessionSwitch: PendingPerfBoundary | undefined;
   private lastWebviewLane: WebviewLane = 'chat';
@@ -141,6 +149,8 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
     private readonly devRenderInstrumentation = false,
     private readonly sessionMetadataStorageUri?: vscode.Uri
   ) {
+    this.cachedQuietStartup = this.workspaceState?.get<boolean>(quietStartupStorageKey);
+
     const extensionUi: ExtensionUi = {
       notify: (message, notifyType) => this.showNotification(message, notifyType),
       select: (title, options) => vscode.window.showQuickPick(options, {
@@ -394,6 +404,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       cspSource: webviewView.webview.cspSource
     }, {
       welcomeDismissed: this.isWelcomeDismissed(),
+      quietStartup: this.getCachedQuietStartup() === true,
       devRenderInstrumentation: this.devRenderInstrumentation,
       allowRemoteImages: getAllowRemoteImagesSetting()
     });
@@ -928,13 +939,50 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       this.lastWebviewLane = message.lane;
     }
 
+    const stateWithCachedQuietStartup = this.withCachedQuietStartup(message);
+
     return {
-      ...message,
+      ...stateWithCachedQuietStartup,
       customUiTheme: getCustomUiThemeSetting(),
       allowRemoteImages: getAllowRemoteImagesSetting(),
       welcomeDismissed: this.isWelcomeDismissed(),
       perfEnabled: this.debugPerformanceEnabled
     };
+  }
+
+  private withCachedQuietStartup(message: WebviewStateMessage): WebviewStateMessage {
+    const liveQuietStartup = getQuietStartupFromStateMessage(message);
+
+    if (liveQuietStartup !== undefined) {
+      this.setCachedQuietStartup(liveQuietStartup);
+      return message;
+    }
+
+    const cachedQuietStartup = this.getCachedQuietStartup();
+
+    if (cachedQuietStartup === undefined) {
+      return message;
+    }
+
+    return {
+      ...message,
+      settings: {
+        ...message.settings,
+        values: {
+          ...(message.settings?.values ?? {}),
+          quietStartup: cachedQuietStartup
+        }
+      }
+    };
+  }
+
+  private getCachedQuietStartup(): boolean | undefined {
+    return this.cachedQuietStartup;
+  }
+
+  private setCachedQuietStartup(value: boolean): void {
+    this.cachedQuietStartup = value;
+    void this.workspaceState?.update(quietStartupStorageKey, value).then(undefined, () => undefined);
   }
 
   private async dismissWelcome(): Promise<void> {

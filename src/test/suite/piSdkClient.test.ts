@@ -44,6 +44,7 @@ suite('PiSdkClient', () => {
     assert.strictEqual(state.isStreaming, false);
     assert.strictEqual(state.autoCompactionEnabled, true);
     assert.strictEqual(state.hideThinkingBlock, false);
+    assert.strictEqual(state.quietStartup, false);
     assert.deepStrictEqual(await harness.client.getSessionStats(), {
       sessionFile: '/sessions/current.jsonl',
       sessionId: 'session-id',
@@ -373,6 +374,12 @@ suite('PiSdkClient', () => {
     assert.strictEqual(harness.settingsManager.hideThinkingBlock, true);
 
     assert.deepStrictEqual(
+      await harness.client.updateRuntimeSetting('quietStartup', true),
+      { applied: 'live', message: 'Quiet startup updated.' }
+    );
+    assert.strictEqual(harness.settingsManager.quietStartup, true);
+
+    assert.deepStrictEqual(
       await harness.client.updateRuntimeSetting('steeringMode', 'one-at-a-time'),
       { applied: 'live', message: 'Steering delivery updated.' }
     );
@@ -383,7 +390,7 @@ suite('PiSdkClient', () => {
       { applied: 'reload', message: 'Saved. Reload Pi or start a new session to apply.' }
     );
     assert.strictEqual(harness.settingsManager.transport, 'websocket');
-    assert.strictEqual(harness.settingsManager.flushCount, 4);
+    assert.strictEqual(harness.settingsManager.flushCount, 5);
 
     harness.session.availableModels.push({ provider: 'openai', id: 'gpt-small', name: 'GPT Small', reasoning: false });
 
@@ -719,6 +726,7 @@ class FakeSettingsManager {
   public defaultModel: string | undefined;
   public defaultThinkingLevel: string | undefined;
   public hideThinkingBlock = false;
+  public quietStartup = false;
   public transport = 'sse';
   public blockImages = false;
   public imageAutoResize = true;
@@ -765,6 +773,14 @@ class FakeSettingsManager {
 
   public setHideThinkingBlock(hidden: boolean): void {
     this.hideThinkingBlock = hidden;
+  }
+
+  public getQuietStartup(): boolean {
+    return this.quietStartup;
+  }
+
+  public setQuietStartup(quiet: boolean): void {
+    this.quietStartup = quiet;
   }
 
   public getTransport(): string {

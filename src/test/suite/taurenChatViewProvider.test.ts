@@ -256,6 +256,44 @@ suite('TaurenChatViewProvider', () => {
     }
   });
 
+  test('uses cached quiet startup for initial HTML and first state', () => {
+    const workspaceState = new FakeMemento({ 'tauren.pi.quietStartup': true });
+    const provider = new TaurenChatViewProvider(
+      vscode.Uri.file('/extension'),
+      () => new FakePiClient({ state: {} }),
+      workspaceState,
+      undefined,
+      () => '/workspace'
+    );
+    const view = new FakeWebviewView();
+
+    provider.resolveWebviewView(view.asWebviewView());
+
+    assert.doesNotMatch(view.webview.html, /Welcome to Tauren/);
+    assert.doesNotMatch(view.webview.html, /Ask Tauren about this workspace/);
+    assert.strictEqual(lastPostedState(view).settings?.values.quietStartup, true);
+    provider.dispose();
+  });
+
+  test('updates cached quiet startup from live Pi state', async () => {
+    const workspaceState = new FakeMemento({ 'tauren.pi.quietStartup': true });
+    const provider = new TaurenChatViewProvider(
+      vscode.Uri.file('/extension'),
+      () => new FakePiClient({ state: { quietStartup: false } }),
+      workspaceState,
+      undefined,
+      () => '/workspace'
+    );
+    const view = new FakeWebviewView();
+
+    provider.resolveWebviewView(view.asWebviewView());
+    await flushPromises();
+
+    assert.strictEqual(lastPostedState(view).settings?.values.quietStartup, false);
+    assert.strictEqual(workspaceState.get<boolean>('tauren.pi.quietStartup'), false);
+    provider.dispose();
+  });
+
   test('uses plain initial empty state after welcome is dismissed', async () => {
     const configuration = vscode.workspace.getConfiguration('tauren');
     const previousValue = configuration.inspect<boolean>('showWelcome')?.globalValue;

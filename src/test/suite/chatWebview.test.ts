@@ -514,6 +514,18 @@ suite('Chat webview helpers', () => {
     assert.ok(!dismissedHtml.includes('Don\'t show again'));
   });
 
+  test('createWebviewHtml starts with a blank transcript for quiet startup', () => {
+    const html = createWebviewHtml({
+      markdownItScriptUri: 'vscode-resource://markdown-it.js',
+      domPurifyScriptUri: 'vscode-resource://dompurify.js',
+      webviewScriptUri: 'vscode-resource://chat.js'
+    }, { quietStartup: true });
+
+    assert.ok(!html.includes('Welcome to Tauren'));
+    assert.ok(!html.includes('Ask Tauren about this workspace'));
+    assert.ok(!html.includes('Don\'t show again'));
+  });
+
   test('createWebviewHtml omits HTTPS images from CSP by default', () => {
     const html = createWebviewHtml({
       markdownItScriptUri: 'vscode-resource://markdown-it.js',

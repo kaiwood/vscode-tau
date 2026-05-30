@@ -552,7 +552,7 @@ ${chatWebviewStyles}
     <div class="tauren-chat-surface" aria-label="Tauren chat surface">
       <div class="tauren-chat-surface__face tauren-chat-surface__main">
         <section class="messages" aria-live="polite" aria-label="Tauren conversation">
-${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
+${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed), Boolean(options.quietStartup))}
         </section>
         <section class="custom-ui" aria-label="Pi extension UI" role="dialog" tabindex="0" hidden>
           <div class="custom-ui__header">
@@ -665,7 +665,11 @@ ${createInitialEmptyStateHtml(Boolean(options.welcomeDismissed))}
 </html>`;
 }
 
-function createInitialEmptyStateHtml(welcomeDismissed: boolean): string {
+function createInitialEmptyStateHtml(welcomeDismissed: boolean, quietStartup: boolean): string {
+  if (quietStartup) {
+    return '';
+  }
+
   if (welcomeDismissed) {
     return '      <p class="empty-state">Ask Tauren about this workspace.</p>';
   }

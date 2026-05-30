@@ -115,6 +115,7 @@ export type PiSessionState = {
   defaultModel?: string;
   defaultThinkingLevel?: string;
   hideThinkingBlock?: boolean;
+  quietStartup?: boolean;
   transport?: string;
   imageAutoResize?: boolean;
   blockImages?: boolean;

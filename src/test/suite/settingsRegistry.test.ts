@@ -15,7 +15,7 @@ suite('Settings registry', () => {
     );
     assert.deepStrictEqual(
       getSettingsForSection('runtime').map((setting) => setting.id),
-      ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'hideThinkingBlock', 'compaction.enabled', 'retry.enabled', 'steeringMode', 'followUpMode']
+      ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'hideThinkingBlock', 'quietStartup', 'compaction.enabled', 'retry.enabled', 'steeringMode', 'followUpMode']
     );
     assert.deepStrictEqual(
       getSettingsForSection('scopedModels').map((setting) => setting.id),
@@ -30,7 +30,7 @@ suite('Settings registry', () => {
   test('does not surface explicitly excluded settings', () => {
     const ids = settingDefinitions.map((setting) => setting.id);
 
-    for (const excluded of ['theme', 'quietStartup', 'terminal.showImages', 'shellPath', 'httpIdleTimeoutMs']) {
+    for (const excluded of ['theme', 'terminal.showImages', 'shellPath', 'httpIdleTimeoutMs']) {
       assert.ok(!ids.includes(excluded as never), `${excluded} should not be in Tauren settings`);
     }
   });

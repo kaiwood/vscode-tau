@@ -157,6 +157,7 @@ suite('SessionMetadataState', () => {
     assert.strictEqual(postCount > 0, true);
     assert.strictEqual(state.getWebviewState().model.id, 'live-model');
     assert.strictEqual(state.getWebviewState().contextUsage.label, '25%');
+    assert.strictEqual(state.getWebviewState().piSettings.quietStartup, false);
     assert.deepStrictEqual(state.getWebviewState().startupResources, [{ name: 'Context', items: ['AGENTS.md'] }]);
   });
 });

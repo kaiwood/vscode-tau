@@ -21,6 +21,7 @@ export type PiSettingId =
   | 'defaultModel'
   | 'defaultThinkingLevel'
   | 'hideThinkingBlock'
+  | 'quietStartup'
   | 'compaction.enabled'
   | 'retry.enabled'
   | 'steeringMode'
@@ -285,6 +286,16 @@ export const settingDefinitions = [
     section: 'runtime',
     label: 'Hide thinking blocks',
     description: 'Hide model thinking content in the Tauren transcript.',
+    control: 'toggle',
+    defaultValue: false,
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'quietStartup',
+    owner: 'pi',
+    section: 'runtime',
+    label: 'Quiet startup',
+    description: 'Show a blank Tauren transcript for empty new sessions.',
     control: 'toggle',
     defaultValue: false,
     liveBehavior: 'immediate'

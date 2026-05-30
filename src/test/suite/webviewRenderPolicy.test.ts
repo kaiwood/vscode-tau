@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { shouldRenderMarkdown } from '../../webview/messages/renderPolicy';
+import { shouldRenderMarkdown, shouldRenderQuietEmptyTranscript } from '../../webview/messages/renderPolicy';
 
 suite('Webview render policy', () => {
   test('renders user messages as plain text so prompt newlines are preserved by CSS', () => {
@@ -13,5 +13,28 @@ suite('Webview render policy', () => {
 
   test('renders error messages as plain text', () => {
     assert.strictEqual(shouldRenderMarkdown({ role: 'assistant', error: true }), false);
+  });
+
+  test('renders a blank empty transcript when quiet startup is enabled', () => {
+    assert.strictEqual(shouldRenderQuietEmptyTranscript({
+      messages: [],
+      sessionLoading: false,
+      settings: { values: { quietStartup: true } }
+    }), true);
+    assert.strictEqual(shouldRenderQuietEmptyTranscript({
+      messages: [{ role: 'assistant', text: 'History' }],
+      sessionLoading: false,
+      settings: { values: { quietStartup: true } }
+    }), false);
+    assert.strictEqual(shouldRenderQuietEmptyTranscript({
+      messages: [],
+      sessionLoading: true,
+      settings: { values: { quietStartup: true } }
+    }), false);
+    assert.strictEqual(shouldRenderQuietEmptyTranscript({
+      messages: [],
+      sessionLoading: false,
+      settings: { values: { quietStartup: false } }
+    }), false);
   });
 });

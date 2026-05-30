@@ -448,6 +448,10 @@ export class PiSdkClient implements PiClient {
         this.getSettingsManager().setHideThinkingBlock(this.requireBoolean(value, settingId));
         await this.flushSettings();
         return { applied: 'live', message: 'Thinking block visibility updated.' };
+      case 'quietStartup':
+        this.getSettingsManager().setQuietStartup(this.requireBoolean(value, settingId));
+        await this.flushSettings();
+        return { applied: 'live', message: 'Quiet startup updated.' };
       case 'compaction.enabled':
         session.setAutoCompactionEnabled(this.requireBoolean(value, settingId));
         await this.flushSettings();
@@ -724,6 +728,7 @@ export class PiSdkClient implements PiClient {
       defaultModel: callOptionalSettingGetter<string>(settingsManager, 'getDefaultModel'),
       defaultThinkingLevel: callOptionalSettingGetter<string>(settingsManager, 'getDefaultThinkingLevel'),
       hideThinkingBlock: callOptionalSettingGetter<boolean>(settingsManager, 'getHideThinkingBlock'),
+      quietStartup: callOptionalSettingGetter<boolean>(settingsManager, 'getQuietStartup'),
       transport: callOptionalSettingGetter<string>(settingsManager, 'getTransport'),
       blockImages: callOptionalSettingGetter<boolean>(settingsManager, 'getBlockImages'),
       imageAutoResize: callOptionalSettingGetter<boolean>(settingsManager, 'getImageAutoResize'),

@@ -383,6 +383,7 @@ export type WebviewScriptUris = {
 
 export type CreateWebviewHtmlOptions = {
   welcomeDismissed?: boolean;
+  quietStartup?: boolean;
   devRenderInstrumentation?: boolean;
   allowRemoteImages?: boolean;
 };
