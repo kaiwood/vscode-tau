@@ -1,6 +1,9 @@
 node_modules/
 out/
 resources/pi-sdk-runtime/
+docs/.vitepress/cache/
+docs/.vitepress/.temp/
+docs/.vitepress/dist/
 .vscode-test/
 *.vsix
 plan/

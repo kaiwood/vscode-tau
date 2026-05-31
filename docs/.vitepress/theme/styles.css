@@ -1,0 +1,324 @@
+:root {
+  --vp-c-brand-1: #8a5b2f;
+  --vp-c-brand-2: #ad7a43;
+  --vp-c-brand-3: #d7aa70;
+  --vp-c-brand-soft: rgba(173, 122, 67, 0.14);
+  --vp-c-bg: #faf7ef;
+  --vp-c-bg-alt: #f2eee5;
+  --vp-c-bg-soft: rgba(255, 255, 255, 0.74);
+  --vp-c-text-1: #1d1712;
+  --vp-c-text-2: #594f45;
+  --vp-c-divider: rgba(72, 56, 40, 0.16);
+  --vp-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --tauren-card-bg: rgba(255, 255, 255, 0.74);
+  --tauren-card-border: rgba(68, 54, 39, 0.16);
+  --tauren-hero-overlay: linear-gradient(90deg, rgba(250, 247, 239, 0.94), rgba(250, 247, 239, 0.68) 42%, rgba(250, 247, 239, 0.1));
+  --tauren-shadow: 0 24px 80px rgba(43, 32, 21, 0.12);
+}
+
+.dark {
+  --vp-c-brand-1: #f1d7ad;
+  --vp-c-brand-2: #d6aa72;
+  --vp-c-brand-3: #9d6f3b;
+  --vp-c-brand-soft: rgba(214, 170, 114, 0.16);
+  --vp-c-bg: #05080b;
+  --vp-c-bg-alt: #090d11;
+  --vp-c-bg-soft: rgba(10, 15, 19, 0.78);
+  --vp-c-text-1: #fbf1df;
+  --vp-c-text-2: #c5b8a6;
+  --vp-c-divider: rgba(244, 232, 207, 0.15);
+  --tauren-card-bg: rgba(7, 12, 16, 0.72);
+  --tauren-card-border: rgba(244, 232, 207, 0.16);
+  --tauren-hero-overlay: linear-gradient(90deg, rgba(5, 8, 11, 0.96), rgba(5, 8, 11, 0.62) 43%, rgba(5, 8, 11, 0.08));
+  --tauren-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+}
+
+body {
+  letter-spacing: -0.01em;
+}
+
+.VPNav {
+  backdrop-filter: blur(18px);
+}
+
+.VPNavBarTitle .title {
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.VPNavBarTitle .title::before,
+.tauren-mark {
+  display: inline-block;
+  width: 1.55rem;
+  height: 1.55rem;
+  background-color: currentColor;
+  content: "";
+  flex: 0 0 auto;
+  mask: url("./tauren.svg") center / contain no-repeat;
+  -webkit-mask: url("./tauren.svg") center / contain no-repeat;
+}
+
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup .button {
+  font-size: 0.83rem;
+}
+
+.VPSidebar {
+  border-right: 1px solid var(--vp-c-divider);
+}
+
+.VPDoc.has-aside .content-container,
+.VPDoc:not(.has-aside) .content {
+  max-width: 820px;
+}
+
+.VPDoc h1,
+.VPDoc h2 {
+  letter-spacing: -0.04em;
+}
+
+.VPContent.is-home {
+  padding: 0;
+}
+
+.tauren-home {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 24px 0;
+}
+
+.tauren-hero {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 18px;
+  background-color: var(--vp-c-bg-alt);
+  box-shadow: var(--tauren-shadow);
+  isolation: isolate;
+}
+
+.tauren-hero::before,
+.tauren-hero::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+.tauren-hero::before {
+  z-index: -2;
+  background-image: url("../../images/background artwork.png");
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: auto 200%;
+}
+
+.dark .tauren-hero::before {
+  background-position: center top;
+}
+
+.tauren-hero::after {
+  z-index: -1;
+  background: var(--tauren-hero-overlay);
+}
+
+.tauren-hero__content {
+  width: min(520px, 100%);
+  padding: clamp(42px, 8vw, 86px) clamp(24px, 6vw, 64px);
+}
+
+.tauren-eyebrow,
+.tauren-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--vp-c-text-1);
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.tauren-hero h1 {
+  max-width: 11ch;
+  margin: 3.8rem 0 1rem;
+  color: var(--vp-c-text-1);
+  font-size: clamp(3rem, 7.2vw, 5.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+
+.tauren-lede {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.tauren-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2rem;
+}
+
+.tauren-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 1.15rem;
+  border: 1px solid var(--tauren-card-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.tauren-button:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.tauren-button--primary {
+  border-color: transparent;
+  background: var(--vp-c-text-1);
+  color: var(--vp-c-bg);
+}
+
+.tauren-button--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--vp-c-text-1);
+}
+
+.tauren-button--secondary:hover,
+.tauren-card:hover {
+  border-color: var(--vp-c-brand-2);
+}
+
+.tauren-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.tauren-card {
+  display: flex;
+  min-height: 168px;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 22px;
+  border: 1px solid var(--tauren-card-border);
+  border-radius: 12px;
+  background: var(--tauren-card-bg);
+  color: var(--vp-c-text-1);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.04);
+  transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+
+.tauren-card:hover {
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.tauren-card__icon {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  margin-bottom: 0.4rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  color: var(--vp-c-brand-1);
+  font-size: 1.05rem;
+}
+
+.tauren-card strong {
+  font-size: 1rem;
+}
+
+.tauren-card span:last-child {
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.tauren-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 34px;
+  padding: 26px 28px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  background: var(--tauren-card-bg);
+}
+
+.tauren-footer p {
+  margin: 0.35rem 0 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.86rem;
+}
+
+.tauren-footer__brand {
+  margin: 0;
+  color: var(--vp-c-text-1) !important;
+}
+
+.tauren-footer a {
+  color: var(--vp-c-text-1);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .tauren-home {
+    padding-inline: 16px;
+  }
+
+  .tauren-hero {
+    min-height: 520px;
+  }
+
+  .tauren-hero::after {
+    background: linear-gradient(180deg, var(--vp-c-bg) 0%, rgba(0, 0, 0, 0) 110%);
+    opacity: 0.92;
+  }
+
+  .dark .tauren-hero::after {
+    background: linear-gradient(180deg, var(--vp-c-bg) 0%, rgba(0, 0, 0, 0) 110%);
+  }
+
+  .tauren-hero h1 {
+    max-width: 12ch;
+    margin-top: 2.8rem;
+  }
+
+  .tauren-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .tauren-hero {
+    min-height: auto;
+  }
+
+  .tauren-hero__content {
+    padding: 30px 22px 280px;
+  }
+
+  .tauren-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tauren-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

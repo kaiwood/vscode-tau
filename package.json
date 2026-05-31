@@ -406,6 +406,9 @@
     "release": "node scripts/release.js",
     "install:local": "npm run compile && npx --yes @vscode/vsce package --out tauren-local.vsix && code --install-extension tauren-local.vsix --force && node scripts/restart-vscode-extension-host.js",
     "test": "npm run compile -- --pretty false && vscode-test",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "watch": "npm run compile:sdk && node scripts/watch.js",
     "compile:sdk": "node scripts/build-sdk-bundle.js"
   },
@@ -420,7 +423,8 @@
     "esbuild": "^0.28.0",
     "markdown-it": "^14.1.1",
     "mocha": "^11.7.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
     "shiki": "^3.23.0",
