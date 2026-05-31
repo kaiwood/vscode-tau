@@ -38,6 +38,10 @@ export function getConfirmSessionDeletionSetting(): boolean {
   return vscode.workspace.getConfiguration('tauren').get<boolean>('confirmSessionDeletion', true);
 }
 
+export function getUseTaurenShareViewerSetting(): boolean {
+  return vscode.workspace.getConfiguration('tauren').get<boolean>('useTaurenShareViewer', true);
+}
+
 export function getCustomUiThemeSetting(): WebviewCustomUiTheme {
   const value = vscode.workspace.getConfiguration('tauren').get<string>('customUiTheme', 'default');
   return parseWebviewCustomUiTheme(value);
@@ -105,6 +109,7 @@ export function getTaurenSettingValues(globalState?: vscode.Memento): Partial<Re
     'tauren.outputColors': getOutputColorsSetting(),
     'tauren.animationsEnabled': getAnimationsEnabledSetting(),
     'tauren.showWelcome': getShowWelcomeSetting(globalState),
+    'tauren.useTaurenShareViewer': getUseTaurenShareViewerSetting(),
     'tauren.customUiTheme': getCustomUiThemeSetting(),
     'tauren.extensions.aboveWidgetsEnabled': getExtensionAboveWidgetsEnabledSetting(),
     'tauren.extensions.belowWidgetsEnabled': getExtensionBelowWidgetsEnabledSetting(),

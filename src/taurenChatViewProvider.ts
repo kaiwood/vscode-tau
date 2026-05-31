@@ -239,6 +239,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
         }
 
         const affectsWelcome = event.affectsConfiguration('tauren.showWelcome');
+        const affectsShareViewer = event.affectsConfiguration('tauren.useTaurenShareViewer');
         const affectsDebugPerformance = event.affectsConfiguration('tauren.debugPerformance');
         const affectsExtensionSettings = affectsAnyTaurenExtensionSetting(event);
 
@@ -259,6 +260,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
           || event.affectsConfiguration('tauren.animationsEnabled')
           || affectsWelcome
           || event.affectsConfiguration('tauren.customUiTheme')
+          || affectsShareViewer
           || affectsDebugPerformance
           || affectsRemoteImages
           || affectsExtensionSettings

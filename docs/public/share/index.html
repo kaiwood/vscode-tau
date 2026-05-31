@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tauren shared session</title>
+  <style>
+    :root {
+      color-scheme: dark light;
+      --bg: #0f1117;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --card: #171923;
+      --border: rgba(255, 255, 255, 0.14);
+      --accent: #8b5cf6;
+      --danger: #f87171;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --fg: #1f2937;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --border: rgba(31, 41, 55, 0.16);
+        --accent: #6d28d9;
+        --danger: #b91c1c;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(620px, 100%);
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .viewer {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: transparent;
+    }
+
+    body.loaded {
+      overflow: hidden;
+    }
+
+    body.loaded .shell {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell" id="shell">
+    <section class="card" aria-live="polite">
+      <p class="eyebrow">Tauren share viewer</p>
+      <h1 id="title">Loading shared session…</h1>
+      <p id="message">Fetching the exported Pi session from GitHub Gist.</p>
+    </section>
+  </main>
+  <iframe
+    id="viewer"
+    class="viewer"
+    title="Shared Tauren session"
+    sandbox="allow-scripts allow-same-origin allow-downloads"
+    hidden></iframe>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const knownParamNames = new Set(['gist', 'gistId', 'id', 'session', 'leafId', 'targetId']);
+      const shell = document.getElementById('shell');
+      const title = document.getElementById('title');
+      const message = document.getElementById('message');
+      const viewer = document.getElementById('viewer');
+
+      function setStatus(nextTitle, nextMessage, error) {
+        title.textContent = nextTitle;
+        message.textContent = nextMessage;
+        message.classList.toggle('error', Boolean(error));
+      }
+
+      function appendParams(target, source) {
+        for (const [key, value] of source.entries()) {
+          if (isGistQueryParam(key, value)) {
+            continue;
+          }
+          target.append(key, value);
+        }
+      }
+
+      function isGistQueryParam(key, value) {
+        if ((key === 'gist' || key === 'gistId' || key === 'id' || key === 'session') && value) {
+          return true;
+        }
+
+        return value === '' && !knownParamNames.has(key);
+      }
+
+      function parseShareRequest() {
+        const params = new URLSearchParams();
+        const search = new URLSearchParams(window.location.search);
+        let gistId = search.get('gistId') || search.get('gist') || search.get('id') || search.get('session') || '';
+
+        for (const [key, value] of search.entries()) {
+          if (!gistId && value === '' && !knownParamNames.has(key)) {
+            gistId = key;
+            continue;
+          }
+
+          if (isGistQueryParam(key, value)) {
+            continue;
+          }
+
+          params.append(key, value);
+        }
+
+        const hash = window.location.hash.replace(/^#/, '');
+        if (hash) {
+          const separatorIndex = hash.indexOf('?');
+          const hashId = separatorIndex >= 0 ? hash.slice(0, separatorIndex) : hash;
+          const hashQuery = separatorIndex >= 0 ? hash.slice(separatorIndex + 1) : '';
+
+          if (!gistId && hashId && !hashId.includes('=')) {
+            gistId = hashId;
+          } else if (!gistId && hash.includes('=')) {
+            const hashParams = new URLSearchParams(hash);
+            gistId = hashParams.get('gistId') || hashParams.get('gist') || hashParams.get('id') || hashParams.get('session') || '';
+            appendParams(params, hashParams);
+          }
+
+          if (hashQuery) {
+            appendParams(params, new URLSearchParams(hashQuery));
+          }
+        }
+
+        gistId = gistId.trim();
+        if (!/^[a-zA-Z0-9]+$/.test(gistId)) {
+          return { gistId: '', params };
+        }
+
+        return { gistId, params };
+      }
+
+      async function fetchSessionHtml(gistId) {
+        const gistResponse = await fetch('https://api.github.com/gists/' + encodeURIComponent(gistId), {
+          headers: { Accept: 'application/vnd.github+json' }
+        });
+
+        if (!gistResponse.ok) {
+          throw new Error('GitHub returned ' + gistResponse.status + ' for this Gist.');
+        }
+
+        const gist = await gistResponse.json();
+        const files = gist && gist.files ? gist.files : {};
+        const file = files['session.html'] || Object.values(files).find((entry) => {
+          return entry && typeof entry.filename === 'string' && entry.filename.toLowerCase().endsWith('.html');
+        });
+
+        if (!file || !file.raw_url) {
+          throw new Error('This Gist does not contain a session.html file.');
+        }
+
+        const rawResponse = await fetch(file.raw_url);
+        if (!rawResponse.ok) {
+          throw new Error('GitHub returned ' + rawResponse.status + ' while fetching session.html.');
+        }
+
+        return await rawResponse.text();
+      }
+
+      function escapeAttribute(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function injectViewerMetadata(html, gistId, params) {
+        const baseUrl = window.location.origin + window.location.pathname + '?' + encodeURIComponent(gistId);
+        const metadata = [
+          '<meta name="pi-share-base-url" content="' + escapeAttribute(baseUrl) + '">',
+          '<meta name="pi-url-params" content="' + escapeAttribute(params.toString()) + '">'
+        ].join('\n  ');
+
+        if (/<\/head>/i.test(html)) {
+          return html.replace(/<\/head>/i, metadata + '\n</head>');
+        }
+
+        return metadata + '\n' + html;
+      }
+
+      async function main() {
+        const request = parseShareRequest();
+
+        if (!request.gistId) {
+          setStatus('Missing shared session', 'Open this page with a Gist ID, for example /share/#GIST_ID.', true);
+          return;
+        }
+
+        try {
+          const html = await fetchSessionHtml(request.gistId);
+          viewer.srcdoc = injectViewerMetadata(html, request.gistId, request.params);
+          viewer.hidden = false;
+          shell.hidden = true;
+          document.body.classList.add('loaded');
+        } catch (error) {
+          setStatus(
+            'Could not load shared session',
+            error instanceof Error ? error.message : 'Unknown error while loading this shared session.',
+            true
+          );
+        }
+      }
+
+      main();
+    }());
+  </script>
+</body>
+</html>

@@ -5412,6 +5412,17 @@ ${after}`;
       liveBehavior: "immediate"
     },
     {
+      id: "tauren.useTaurenShareViewer",
+      owner: "tauren",
+      section: "appearance",
+      label: "Tauren share viewer",
+      description: "Use the Tauren docs viewer for new shared session links.",
+      control: "toggle",
+      defaultValue: true,
+      helper: "When disabled, /share uses pi.dev unless PI_SHARE_VIEWER_URL is set.",
+      liveBehavior: "immediate"
+    },
+    {
       id: "tauren.customUiTheme",
       owner: "tauren",
       section: "appearance",

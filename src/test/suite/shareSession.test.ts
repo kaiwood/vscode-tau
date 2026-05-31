@@ -18,15 +18,17 @@ suite('Share session', () => {
     assert.strictEqual(parseGistCreateOutput('no url here'), undefined);
   });
 
-  test('formats Pi share viewer links', () => {
+  test('formats share viewer links', () => {
     const previousViewerUrl = process.env.PI_SHARE_VIEWER_URL;
 
     try {
       delete process.env.PI_SHARE_VIEWER_URL;
-      assert.strictEqual(getShareViewerUrl('abc123'), 'https://pi.dev/session/#abc123');
+      assert.strictEqual(getShareViewerUrl('abc123'), 'https://kaiwood.github.io/vscode-tauren/share/#abc123');
+      assert.strictEqual(getShareViewerUrl('abc123', { useTaurenShareViewer: false }), 'https://pi.dev/session/#abc123');
 
       process.env.PI_SHARE_VIEWER_URL = 'https://example.test/viewer/';
       assert.strictEqual(getShareViewerUrl('abc123'), 'https://example.test/viewer/#abc123');
+      assert.strictEqual(getShareViewerUrl('abc123', { useTaurenShareViewer: false }), 'https://example.test/viewer/#abc123');
     } finally {
       if (previousViewerUrl === undefined) {
         delete process.env.PI_SHARE_VIEWER_URL;
@@ -39,10 +41,10 @@ suite('Share session', () => {
   test('formats transcript message with markdown links', () => {
     assert.strictEqual(
       formatShareTranscriptMessage({
-        shareUrl: 'https://pi.dev/session/#abc123',
+        shareUrl: 'https://kaiwood.github.io/vscode-tauren/share/#abc123',
         gistUrl: 'https://gist.github.com/kaiwood/abc123'
       }),
-      'Shared session.\n\nShare URL: [https://pi.dev/session/#abc123](https://pi.dev/session/#abc123)\n\nGist: [https://gist.github.com/kaiwood/abc123](https://gist.github.com/kaiwood/abc123)'
+      'Shared session.\n\nShare URL: [https://kaiwood.github.io/vscode-tauren/share/#abc123](https://kaiwood.github.io/vscode-tauren/share/#abc123)\n\nGist: [https://gist.github.com/kaiwood/abc123](https://gist.github.com/kaiwood/abc123)'
     );
   });
 });

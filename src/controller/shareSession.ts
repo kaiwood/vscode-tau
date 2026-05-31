@@ -4,13 +4,15 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import type { PiClient } from '../pi/clientTypes';
 import { exportSessionHtml } from '../sessions/sessionClientActions';
+import { getUseTaurenShareViewerSetting } from '../settings/taurenSettings';
 
 export type SharedSessionLinks = {
   shareUrl: string;
   gistUrl: string;
 };
 
-const DEFAULT_SHARE_VIEWER_URL = 'https://pi.dev/session/';
+const PI_SHARE_VIEWER_URL = 'https://pi.dev/session/';
+const TAUREN_SHARE_VIEWER_URL = 'https://kaiwood.github.io/vscode-tauren/share/';
 
 export async function shareSessionWithGh(client: PiClient): Promise<SharedSessionLinks> {
   assertGhConfigured();
@@ -23,7 +25,7 @@ export async function shareSessionWithGh(client: PiClient): Promise<SharedSessio
     const gist = await createSecretGist(tmpFile);
 
     return {
-      shareUrl: getShareViewerUrl(gist.gistId),
+      shareUrl: getShareViewerUrl(gist.gistId, { useTaurenShareViewer: getUseTaurenShareViewerSetting() }),
       gistUrl: gist.gistUrl
     };
   } finally {
@@ -41,8 +43,9 @@ export function formatShareTranscriptMessage(links: SharedSessionLinks): string 
   ].join('\n');
 }
 
-export function getShareViewerUrl(gistId: string): string {
-  const baseUrl = process.env.PI_SHARE_VIEWER_URL || DEFAULT_SHARE_VIEWER_URL;
+export function getShareViewerUrl(gistId: string, options: { useTaurenShareViewer?: boolean } = {}): string {
+  const baseUrl = process.env.PI_SHARE_VIEWER_URL
+    || (options.useTaurenShareViewer === false ? PI_SHARE_VIEWER_URL : TAUREN_SHARE_VIEWER_URL);
   return `${baseUrl}#${gistId}`;
 }
 

@@ -7,7 +7,7 @@ suite('Settings registry', () => {
   test('keeps Tauren and Pi settings in requested product sections', () => {
     assert.deepStrictEqual(
       getSettingsForSection('appearance').map((setting) => setting.id),
-      ['tauren.outputColors', 'tauren.animationsEnabled', 'tauren.showWelcome', 'tauren.customUiTheme']
+      ['tauren.outputColors', 'tauren.animationsEnabled', 'tauren.showWelcome', 'tauren.useTaurenShareViewer', 'tauren.customUiTheme']
     );
     assert.deepStrictEqual(
       getSettingsForSection('extensions').map((setting) => setting.id),
@@ -53,6 +53,7 @@ suite('Settings registry', () => {
     assert.strictEqual(normalizeSettingValue('tauren.outputColors', true), true);
     assert.strictEqual(normalizeSettingValue('tauren.outputColors', 'true'), undefined);
     assert.strictEqual(normalizeSettingValue('tauren.showWelcome', false), false);
+    assert.strictEqual(normalizeSettingValue('tauren.useTaurenShareViewer', false), false);
     assert.strictEqual(normalizeSettingValue('tauren.extensions.aboveWidgetsEnabled', false), false);
     assert.strictEqual(normalizeSettingValue('tauren.extensions.belowWidgetsEnabled', false), false);
     assert.strictEqual(normalizeSettingValue('tauren.extensions.monospaceFontEnabled', false), false);

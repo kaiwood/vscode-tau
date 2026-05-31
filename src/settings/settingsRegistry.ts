@@ -2,6 +2,7 @@ export type TaurenSettingId =
   | 'tauren.outputColors'
   | 'tauren.animationsEnabled'
   | 'tauren.showWelcome'
+  | 'tauren.useTaurenShareViewer'
   | 'tauren.customUiTheme'
   | 'tauren.extensions.aboveWidgetsEnabled'
   | 'tauren.extensions.belowWidgetsEnabled'
@@ -169,6 +170,17 @@ export const settingDefinitions = [
     description: 'Show the Welcome to Tauren empty state for new chats.',
     control: 'toggle',
     defaultValue: true,
+    liveBehavior: 'immediate'
+  },
+  {
+    id: 'tauren.useTaurenShareViewer',
+    owner: 'tauren',
+    section: 'appearance',
+    label: 'Tauren share viewer',
+    description: 'Use the Tauren docs viewer for new shared session links.',
+    control: 'toggle',
+    defaultValue: true,
+    helper: 'When disabled, /share uses pi.dev unless PI_SHARE_VIEWER_URL is set.',
     liveBehavior: 'immediate'
   },
   {

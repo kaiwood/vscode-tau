@@ -314,6 +314,11 @@
           "default": true,
           "description": "Show the Welcome to Tauren empty state for new chats. Turn this back on to restore the welcome message after dismissing it."
         },
+        "tauren.useTaurenShareViewer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use the Tauren docs share viewer for new /share links. When disabled, /share uses pi.dev unless PI_SHARE_VIEWER_URL is set."
+        },
         "tauren.confirmSessionDeletion": {
           "type": "boolean",
           "default": true,
