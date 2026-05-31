@@ -8,6 +8,7 @@
 - Added a Pi-backed setting to hide thinking blocks in the Tauren transcript.
 - Added Pi-backed quiet startup support for blank empty transcripts in new sessions.
 - Preserved Session List search text and named-only filter when switching sessions.
+- Added host-side full-content Session List search with progressive indexing.
 - Fixed the Session List to Chat Lane transition drifting diagonally.
 
 ## 1.4.0 - 2026-05-29

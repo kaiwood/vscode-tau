@@ -39,6 +39,19 @@ export type WebviewFileSuggestion = {
 
 export type WebviewSessionItemCommand = 'rename' | 'showChanges' | 'fork' | 'clone' | 'compact' | 'export' | 'delete';
 
+export type WebviewSessionSearchStatus = 'idle' | 'indexing' | 'ready' | 'error';
+
+export type WebviewSessionSearchState = {
+  requestId: number;
+  query: string;
+  namedOnly: boolean;
+  status: WebviewSessionSearchStatus;
+  matchedSessionPaths: string[];
+  indexedCount: number;
+  totalCount: number;
+  error?: string;
+};
+
 export type WebviewAuthAction = 'login' | 'logout' | 'refresh' | 'cancel';
 
 export type WebviewPerfEventName = 'transcript.render' | 'sessionList.render' | 'tree.render';
@@ -100,6 +113,7 @@ export type WebviewMessage =
   | { type: 'authRefresh' }
   | { type: 'authCancel' }
   | { type: 'refreshSessions' }
+  | { type: 'searchSessions'; requestId: number; query: string; namedOnly: boolean }
   | { type: 'showCurrentChanges' }
   | { type: 'dismissWelcome' }
   | { type: 'selectSession'; sessionPath: string }
@@ -294,6 +308,7 @@ export type WebviewStateMessageBase = Omit<ChatState, 'messages'> & {
   sessions?: WebviewSessionItem[];
   sessionsRefreshing?: boolean;
   sessionsError?: string;
+  sessionSearch?: WebviewSessionSearchState;
   currentSessionFile?: string;
   currentSessionName?: string;
   treeItems?: WebviewTreeItem[];
@@ -362,6 +377,7 @@ export type CreateWebviewStateMessageOptions = {
     sessions?: WebviewSessionItem[];
     refreshing?: boolean;
     error?: string;
+    search?: WebviewSessionSearchState;
     currentSessionFile?: string;
     currentSessionName?: string;
     treeItems?: WebviewTreeItem[];

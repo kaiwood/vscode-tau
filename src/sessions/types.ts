@@ -22,6 +22,11 @@ export type SessionListLoadMetrics = {
   cacheMisses: number;
 };
 
+export type SessionListPreviousItem = Pick<
+  PiSessionListItem,
+  'path' | 'id' | 'cwd' | 'name' | 'parentSessionPath' | 'created' | 'modified' | 'messageCount' | 'firstMessage'
+>;
+
 export type ListPiSessionsOptions = {
   cwd?: string;
   sessionDir?: string;
@@ -30,6 +35,7 @@ export type ListPiSessionsOptions = {
   sessionMetadataCacheFile?: string;
   onProgress?: (sessions: PiSessionListItem[]) => void;
   onMetrics?: (metrics: SessionListLoadMetrics) => void;
+  previousSessions?: readonly SessionListPreviousItem[];
 };
 
 export type PiSessionCandidate = {

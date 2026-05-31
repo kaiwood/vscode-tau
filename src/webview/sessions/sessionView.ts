@@ -14,7 +14,7 @@ import {
 } from './sessionItemCommands';
 import { createSessionEmptyElement, eventTargetElement, getSessionListCommandForKey } from './sessionUiHelpers';
 import { TopSessionControls } from './topSessionControls';
-import type { SessionItem, SessionItemCommand, WebviewState } from '../types';
+import type { SessionItem, SessionItemCommand, SessionSearchState, WebviewState } from '../types';
 
 type PostMessage = (message: unknown) => void;
 
@@ -23,6 +23,7 @@ const sessionListVirtualizationThreshold = 500;
 const sessionListVirtualOverscan = 8;
 const defaultSessionListItemHeight = 54;
 const defaultSessionListTopOffset = 72;
+const sessionSearchDebounceMs = 150;
 
 export type SessionViewControllerOptions = {
   getState: () => WebviewState;
@@ -45,6 +46,8 @@ export class SessionViewController {
   private sessionListSelectedIndex = 0;
   private sessionSearchQuery = '';
   private sessionNamedOnlyFilter = false;
+  private sessionSearchRequestId = 0;
+  private pendingSessionSearchRequest: ReturnType<typeof setTimeout> | undefined;
   private sessionPointerHoverEnabled = false;
   private openSessionListMenuIndex: number | undefined;
   private openSessionListMenuCommandIndex = 0;
@@ -222,13 +225,15 @@ export class SessionViewController {
       this.openSessionListMenuPosition = undefined;
       this.clearPendingSessionItemMenuClose();
     }
-    header.textContent = state.sessionsRefreshing
+    const headerText = state.sessionsRefreshing
       ? 'Loading sessions...'
       : filtersActive && visibleIndexes.length !== count
       ? visibleIndexes.length + ' of ' + count + ' sessions'
       : count === 1
       ? '1 session'
       : count + ' sessions';
+    const searchStatusText = this.getSessionSearchStatusText();
+    header.textContent = searchStatusText ? `${headerText} · ${searchStatusText}` : headerText;
     this.options.sessionsElement.append(header);
 
     if (state.sessionsError) {
@@ -1217,6 +1222,7 @@ export class SessionViewController {
     }
 
     this.sessionSearchQuery = value;
+    this.scheduleSessionSearchRequest();
     this.closeSessionItemMenus();
     this.renderSessions();
     requestAnimationFrame(() => {
@@ -1227,6 +1233,28 @@ export class SessionViewController {
         input.setSelectionRange(selectionStart, selectionEnd ?? selectionStart);
       }
     });
+  }
+
+  private scheduleSessionSearchRequest(): void {
+    if (this.pendingSessionSearchRequest) {
+      clearTimeout(this.pendingSessionSearchRequest);
+      this.pendingSessionSearchRequest = undefined;
+    }
+
+    const requestId = this.sessionSearchRequestId + 1;
+    this.sessionSearchRequestId = requestId;
+    const query = this.sessionSearchQuery.trim();
+    const namedOnly = this.sessionNamedOnlyFilter;
+
+    if (!query) {
+      this.options.postMessage({ type: 'searchSessions', requestId, query: '', namedOnly });
+      return;
+    }
+
+    this.pendingSessionSearchRequest = setTimeout(() => {
+      this.pendingSessionSearchRequest = undefined;
+      this.options.postMessage({ type: 'searchSessions', requestId, query, namedOnly });
+    }, sessionSearchDebounceMs);
   }
 
   private handleSessionSearchKeydown(event: KeyboardEvent, input: HTMLInputElement): boolean {
@@ -1316,8 +1344,57 @@ export class SessionViewController {
 
   private toggleNamedOnlyFilter(): void {
     this.sessionNamedOnlyFilter = !this.sessionNamedOnlyFilter;
+    this.scheduleSessionSearchRequest();
     this.closeSessionItemMenus();
     this.renderSessions();
+  }
+
+  private getCurrentHostSessionSearch(): SessionSearchState | undefined {
+    const state = this.options.getState();
+    const query = this.sessionSearchQuery.trim();
+    const search = state.sessionSearch;
+
+    if (!query || !search || search.requestId !== this.sessionSearchRequestId) {
+      return undefined;
+    }
+
+    return search.query === query && search.namedOnly === this.sessionNamedOnlyFilter ? search : undefined;
+  }
+
+  private getSessionSearchStatusText(): string {
+    const query = this.sessionSearchQuery.trim();
+    const state = this.options.getState();
+    const currentSearch = this.getCurrentHostSessionSearch();
+    const search = currentSearch ?? state.sessionSearch;
+
+    if (query && this.pendingSessionSearchRequest) {
+      return 'Searching sessions…';
+    }
+
+    if (!search || search.totalCount === 0) {
+      return '';
+    }
+
+    if (query && !currentSearch) {
+      return 'Searching titles while full-content search catches up…';
+    }
+
+    if (search.status === 'error') {
+      return search.error || 'Session search index failed.';
+    }
+
+    if (search.status === 'indexing') {
+      const count = Math.min(search.indexedCount, search.totalCount);
+      return query
+        ? `Full-content search indexing ${count}/${search.totalCount} sessions…`
+        : `Indexing session search ${count}/${search.totalCount}…`;
+    }
+
+    if (query && search.status === 'ready') {
+      return 'Full-content search ready.';
+    }
+
+    return '';
   }
 
   private hasActiveSessionListFilters(): boolean {
@@ -1374,9 +1451,11 @@ export class SessionViewController {
 
   private getVisibleSessionIndexes(): number[] {
     const state = this.options.getState();
+    const hostSearch = this.getCurrentHostSessionSearch();
 
     return getVisibleSessionIndexes(Array.isArray(state.sessions) ? state.sessions : [], this.sessionSearchQuery, {
-      namedOnly: this.sessionNamedOnlyFilter
+      namedOnly: this.sessionNamedOnlyFilter,
+      matchedSessionPaths: hostSearch?.matchedSessionPaths
     });
   }
 

@@ -20,6 +20,22 @@ suite('Webview session search', () => {
     assert.deepStrictEqual(getVisibleSessionIndexes(sessions, 'needle'), []);
   });
 
+  test('uses host search result ordering when matched paths are provided', () => {
+    const sessions = [
+      createSession({ path: '/sessions/alpha.jsonl', name: 'Alpha plan' }),
+      createSession({ path: '/sessions/beta.jsonl', name: 'Beta review' }),
+      createSession({ path: '/sessions/gamma.jsonl', name: '', firstMessage: 'Gamma fallback' })
+    ];
+
+    assert.deepStrictEqual(getVisibleSessionIndexes(sessions, 'content', {
+      matchedSessionPaths: ['/sessions/gamma.jsonl', '/sessions/alpha.jsonl']
+    }), [2, 0]);
+    assert.deepStrictEqual(getVisibleSessionIndexes(sessions, 'content', {
+      namedOnly: true,
+      matchedSessionPaths: ['/sessions/gamma.jsonl', '/sessions/alpha.jsonl']
+    }), [0]);
+  });
+
   test('filters named sessions as a secondary filter', () => {
     const sessions = [
       createSession({ name: 'Alpha plan', firstMessage: 'ignored' }),

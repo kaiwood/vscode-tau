@@ -89,6 +89,12 @@ export function parseWebviewMessage(value: unknown): WebviewMessage {
       return { type: 'authCancel' };
     case 'refreshSessions':
       return { type: 'refreshSessions' };
+    case 'searchSessions': {
+      const requestId = parsePositiveInteger(value.requestId);
+      return requestId !== undefined && typeof value.query === 'string' && typeof value.namedOnly === 'boolean'
+        ? { type: 'searchSessions', requestId, query: value.query, namedOnly: value.namedOnly }
+        : { type: 'unknown' };
+    }
     case 'showCurrentChanges':
       return { type: 'showCurrentChanges' };
     case 'dismissWelcome':
@@ -452,6 +458,12 @@ export function createWebviewStateMessage({
     message.sessions = sessionView.sessions ?? [];
     message.sessionsRefreshing = sessionView.refreshing ?? false;
     message.sessionsError = sessionView.error ?? '';
+    if (sessionView.search) {
+      message.sessionSearch = {
+        ...sessionView.search,
+        matchedSessionPaths: sessionView.search.matchedSessionPaths.slice()
+      };
+    }
     message.currentSessionFile = sessionView.currentSessionFile ?? '';
     message.currentSessionName = sessionView.currentSessionName ?? '';
     message.treeItems = sessionView.treeItems ?? [];

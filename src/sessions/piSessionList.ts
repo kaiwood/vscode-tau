@@ -20,6 +20,11 @@ type SessionFileStats = {
   stats: Stats;
 };
 
+type SessionFileLoad = {
+  file: SessionFileStats;
+  stale?: CachedSessionInfo;
+};
+
 export async function listPiSessions(options: ListPiSessionsOptions = {}): Promise<PiSessionListItem[]> {
   const env = options.env ?? process.env;
   const sessionDir = options.sessionDir
@@ -59,14 +64,16 @@ async function listSessionsFromDir(sessionDir: string, options: ListPiSessionsOp
   );
   const existingFiles = fileStats.filter((file): file is SessionFileStats => Boolean(file));
   const persistedCache = await readSessionMetadataCache(options.sessionMetadataCacheFile);
+  const previousSessions = createPreviousSessionCache(options.previousSessions);
   const entriesByPath = new Map<string, CachedSessionInfo>();
   const readyEntries: CachedSessionInfo[] = [];
-  const filesToLoadCheap: SessionFileStats[] = [];
+  const filesToLoadCheap: SessionFileLoad[] = [];
   const filesToParse: SessionFileStats[] = [];
   let cacheHits = 0;
 
   for (const file of existingFiles) {
     const cached = persistedCache.get(file.path);
+    const stale = cached ?? previousSessions.get(file.path);
 
     if (cached && cached.mtimeMs === file.stats.mtimeMs && cached.size === file.stats.size) {
       const entry = {
@@ -78,7 +85,7 @@ async function listSessionsFromDir(sessionDir: string, options: ListPiSessionsOp
       readyEntries.push(entry);
       cacheHits += 1;
     } else {
-      filesToLoadCheap.push(file);
+      filesToLoadCheap.push({ file, ...(stale ? { stale } : {}) });
     }
   }
 
@@ -103,7 +110,7 @@ async function listSessionsFromDir(sessionDir: string, options: ListPiSessionsOp
     }
 
     entriesByPath.set(entry.session.path, entry);
-    filesToParse.push(filesToLoadCheap[index]);
+    filesToParse.push(filesToLoadCheap[index].file);
   }
 
   if (entriesByPath.size > 0) {
@@ -158,6 +165,20 @@ async function listSessionCandidatesFromDir(sessionDir: string): Promise<PiSessi
   );
 
   return sessions.filter((session): session is PiSessionCandidate => Boolean(session));
+}
+
+function createPreviousSessionCache(sessions: ListPiSessionsOptions['previousSessions']): Map<string, CachedSessionInfo> {
+  const cache = new Map<string, CachedSessionInfo>();
+
+  for (const session of sessions ?? []) {
+    cache.set(session.path, {
+      mtimeMs: Number.NaN,
+      size: Number.NaN,
+      session: { ...session }
+    });
+  }
+
+  return cache;
 }
 
 function decorateSessions(
@@ -286,7 +307,9 @@ async function buildSessionInfo(filePath: string, knownStats?: Stats): Promise<R
   }
 }
 
-async function buildCheapSessionInfo(file: SessionFileStats): Promise<CachedSessionInfo | undefined> {
+async function buildCheapSessionInfo(load: SessionFileLoad): Promise<CachedSessionInfo | undefined> {
+  const { file, stale } = load;
+
   try {
     const header = await readSessionJsonlHeader(file.path);
 
@@ -295,18 +318,20 @@ async function buildCheapSessionInfo(file: SessionFileStats): Promise<CachedSess
     }
 
     const created = parseDate(header.timestamp, file.stats.mtime);
+    const staleSession = stale?.session.id === header.id ? stale.session : undefined;
     return {
       mtimeMs: file.stats.mtimeMs,
       size: file.stats.size,
       session: {
         path: file.path,
         id: header.id,
-        cwd: typeof header.cwd === 'string' ? header.cwd : '',
-        parentSessionPath: typeof header.parentSession === 'string' ? header.parentSession : undefined,
-        created: created.toISOString(),
-        modified: file.stats.mtime.toISOString(),
-        messageCount: 0,
-        firstMessage: 'Loading metadata…',
+        cwd: typeof header.cwd === 'string' ? header.cwd : staleSession?.cwd ?? '',
+        parentSessionPath: typeof header.parentSession === 'string' ? header.parentSession : staleSession?.parentSessionPath,
+        created: staleSession?.created ?? created.toISOString(),
+        modified: staleSession?.modified ?? file.stats.mtime.toISOString(),
+        messageCount: staleSession?.messageCount ?? 0,
+        firstMessage: staleSession?.firstMessage ?? 'Loading metadata…',
+        ...(staleSession?.name ? { name: staleSession.name } : {}),
         metadataState: 'loading'
       }
     };

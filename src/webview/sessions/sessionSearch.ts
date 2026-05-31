@@ -3,6 +3,7 @@ import type { SessionItem } from '../types';
 
 export type SessionVisibilityFilter = {
   namedOnly?: boolean;
+  matchedSessionPaths?: readonly string[];
 };
 
 export function getVisibleSessionIndexes(
@@ -15,6 +16,11 @@ export function getVisibleSessionIndexes(
   }
 
   const normalizedQuery = query.trim().toLowerCase();
+
+  if (normalizedQuery && filter.matchedSessionPaths) {
+    return getMatchedSessionIndexes(sessions, filter.matchedSessionPaths, filter.namedOnly);
+  }
+
   const indexes: number[] = [];
 
   for (let index = 0; index < sessions.length; index += 1) {
@@ -28,6 +34,38 @@ export function getVisibleSessionIndexes(
       continue;
     }
 
+    indexes.push(index);
+  }
+
+  return indexes;
+}
+
+function getMatchedSessionIndexes(
+  sessions: readonly SessionItem[],
+  matchedSessionPaths: readonly string[],
+  namedOnly: boolean | undefined
+): number[] {
+  const sessionIndexes = new Map<string, number>();
+
+  for (let index = 0; index < sessions.length; index += 1) {
+    sessionIndexes.set(sessions[index].path, index);
+  }
+
+  const indexes: number[] = [];
+  const seen = new Set<number>();
+
+  for (const path of matchedSessionPaths) {
+    const index = sessionIndexes.get(path);
+
+    if (index === undefined || seen.has(index)) {
+      continue;
+    }
+
+    if (namedOnly && !sessions[index].name?.trim()) {
+      continue;
+    }
+
+    seen.add(index);
     indexes.push(index);
   }
 

@@ -1,8 +1,10 @@
 import type { NavigationController } from '../navigation/navigationController';
 import type {
   WebviewLane,
+  WebviewMessage,
   WebviewSessionItem,
   WebviewSessionItemCommand,
+  WebviewSessionSearchState,
   WebviewTreeItem
 } from '../webviewProtocol/types';
 import type { TaurenChatControllerOptions } from '../controller/types';
@@ -22,11 +24,13 @@ import {
   getSessionDisplayName,
   normalizeSessionPath
 } from './sessionFormatting';
+import { SessionSearchIndex } from './sessionSearchIndex';
 
 export type SessionViewState = {
   sessions: WebviewSessionItem[];
   refreshing: boolean;
   error: string;
+  search?: WebviewSessionSearchState;
   currentSessionFile?: string;
   currentSessionName: string;
   treeItems: WebviewTreeItem[];
@@ -72,6 +76,10 @@ export class SessionViewController {
   private treeError = '';
   private sessionsRefreshSequence = 0;
   private treeRefreshSequence = 0;
+  private readonly sessionSearchIndex = new SessionSearchIndex();
+  private sessionSearchState: WebviewSessionSearchState | undefined;
+  private pendingSessionSearchProgressPost: ReturnType<typeof setTimeout> | undefined;
+  private readonly pendingSessionItemNames = new Map<string, string | undefined>();
   private readonly fallbackSessionPaths = new Set<string>();
   private readonly sessionItemNameRenameSequences = new Map<string, number>();
   private sessionFile: string | undefined;
@@ -110,6 +118,7 @@ export class SessionViewController {
       sessions: this.sessions,
       refreshing: this.sessionsRefreshing,
       error: this.sessionsError,
+      search: this.sessionSearchState,
       currentSessionFile: this.sessionFile,
       currentSessionName: this.sessionName,
       treeItems: this.treeItems,
@@ -137,6 +146,7 @@ export class SessionViewController {
     const hasCachedSessions = this.sessions.length > 0;
     this.options.navigation.showLane('sessions', { post: false });
     this.sessionsError = '';
+    this.refreshSessionSearchState({ post: false });
     this.options.postState();
 
     if (!hasCachedSessions) {
@@ -216,6 +226,7 @@ export class SessionViewController {
     try {
       const listSessions = this.options.listSessions ?? defaultListSessions;
       const sessions = await listSessions(this.options.getCwd?.(), this.sessionFile, {
+        previousSessions: this.sessions,
         onProgress: (progressSessions) => {
           if (refreshId !== this.sessionsRefreshSequence) {
             return;
@@ -238,8 +249,33 @@ export class SessionViewController {
     } finally {
       if (refreshId === this.sessionsRefreshSequence) {
         this.sessionsRefreshing = false;
+        if (this.sessionSearchState?.query) {
+          this.startSessionSearchIndexing();
+        }
         this.options.postState();
       }
+    }
+  }
+
+  public searchSessions(message: Extract<WebviewMessage, { type: 'searchSessions' }>): void {
+    const query = message.query.trim();
+    const progress = this.sessionSearchIndex.getProgress();
+
+    this.sessionSearchState = {
+      requestId: message.requestId,
+      query,
+      namedOnly: message.namedOnly,
+      status: this.getSessionSearchStatus(progress),
+      matchedSessionPaths: [],
+      indexedCount: progress.indexedCount,
+      totalCount: progress.totalCount
+    };
+
+    if (query) {
+      this.startSessionSearchIndexing();
+      this.updateSessionSearchResults(message.requestId, query, message.namedOnly);
+    } else {
+      this.options.postState();
     }
   }
 
@@ -459,8 +495,10 @@ export class SessionViewController {
 
     const trimmedName = name.trim();
     const previousName = typeof session.name === 'string' ? session.name : undefined;
+    const nextName = trimmedName || undefined;
     const renameSequence = (this.sessionItemNameRenameSequences.get(normalizedPath) ?? 0) + 1;
     this.sessionItemNameRenameSequences.set(normalizedPath, renameSequence);
+    this.pendingSessionItemNames.set(normalizedPath, nextName);
     this.sessionsError = '';
 
     if (!isCurrentSession) {
@@ -498,6 +536,7 @@ export class SessionViewController {
     } finally {
       if (this.sessionItemNameRenameSequences.get(normalizedPath) === renameSequence) {
         this.sessionItemNameRenameSequences.delete(normalizedPath);
+        this.pendingSessionItemNames.delete(normalizedPath);
       }
     }
   }
@@ -630,7 +669,12 @@ export class SessionViewController {
   }
 
   private applySessionList(sessions: WebviewSessionItem[]): void {
-    this.sessions = this.mergeCurrentSessionFallback(sessions);
+    this.sessions = this.applyPendingSessionItemNames(this.mergeCurrentSessionFallback(sessions));
+    this.sessionSearchIndex.setSessions(this.sessions);
+    this.refreshSessionSearchState({ post: false });
+    if (this.sessionSearchState?.query) {
+      this.startSessionSearchIndexing();
+    }
     const currentSession = this.sessions.find((session) => this.sessionFile
       ? normalizeSessionPath(session.path) === normalizeSessionPath(this.sessionFile)
       : session.current);
@@ -638,6 +682,107 @@ export class SessionViewController {
     if (currentSession) {
       this.applyCurrentSessionName(currentSession.name ?? '');
     }
+  }
+
+  private startSessionSearchIndexing(): void {
+    if (this.options.navigation.lane !== 'sessions' && !this.sessionSearchState?.query) {
+      return;
+    }
+
+    this.sessionSearchIndex.startIndexing(() => this.handleSessionSearchIndexProgress());
+    this.refreshSessionSearchState({ post: false });
+  }
+
+  private handleSessionSearchIndexProgress(): void {
+    this.refreshSessionSearchState({ post: false });
+
+    if (this.pendingSessionSearchProgressPost) {
+      return;
+    }
+
+    this.pendingSessionSearchProgressPost = setTimeout(() => {
+      this.pendingSessionSearchProgressPost = undefined;
+      this.refreshSessionSearchState({ post: false });
+      this.options.postState();
+    }, 100);
+  }
+
+  private refreshSessionSearchState(options: { post: boolean }): void {
+    const current = this.sessionSearchState;
+    const progress = this.sessionSearchIndex.getProgress();
+
+    if (!current) {
+      this.sessionSearchState = {
+        requestId: 0,
+        query: '',
+        namedOnly: false,
+        status: this.getSessionSearchStatus(progress),
+        matchedSessionPaths: [],
+        indexedCount: progress.indexedCount,
+        totalCount: progress.totalCount
+      };
+    } else if (current.query) {
+      this.updateSessionSearchResults(current.requestId, current.query, current.namedOnly, { post: false });
+    } else {
+      this.sessionSearchState = {
+        ...current,
+        status: this.getSessionSearchStatus(progress),
+        indexedCount: progress.indexedCount,
+        totalCount: progress.totalCount
+      };
+    }
+
+    if (options.post) {
+      this.options.postState();
+    }
+  }
+
+  private updateSessionSearchResults(
+    requestId: number,
+    query: string,
+    namedOnly: boolean,
+    options: { post?: boolean } = {}
+  ): void {
+    const result = this.sessionSearchIndex.search(query, { namedOnly });
+
+    this.sessionSearchState = {
+      requestId,
+      query,
+      namedOnly,
+      status: this.getSessionSearchStatus(result),
+      matchedSessionPaths: result.matchedSessionPaths,
+      indexedCount: result.indexedCount,
+      totalCount: result.totalCount
+    };
+
+    if (options.post !== false) {
+      this.options.postState();
+    }
+  }
+
+  private getSessionSearchStatus(progress: { indexedCount: number; totalCount: number; indexing: boolean }): WebviewSessionSearchState['status'] {
+    if (progress.totalCount === 0) {
+      return 'idle';
+    }
+
+    return progress.indexing || progress.indexedCount < progress.totalCount ? 'indexing' : 'ready';
+  }
+
+  private applyPendingSessionItemNames(sessions: WebviewSessionItem[]): WebviewSessionItem[] {
+    if (this.pendingSessionItemNames.size === 0) {
+      return sessions;
+    }
+
+    return sessions.map((session) => {
+      const normalizedPath = normalizeSessionPath(session.path);
+
+      if (!this.pendingSessionItemNames.has(normalizedPath)) {
+        return session;
+      }
+
+      const pendingName = this.pendingSessionItemNames.get(normalizedPath);
+      return { ...session, name: pendingName };
+    });
   }
 
   private mergeCurrentSessionFallback(sessions: WebviewSessionItem[]): WebviewSessionItem[] {
@@ -694,6 +839,8 @@ export class SessionViewController {
   private removeFallbackSession(normalizedPath: string, isCurrentSession: boolean): void {
     this.fallbackSessionPaths.delete(normalizedPath);
     this.sessions = this.sessions.filter((entry) => normalizeSessionPath(entry.path) !== normalizedPath);
+    this.sessionSearchIndex.setSessions(this.sessions);
+    this.refreshSessionSearchState({ post: false });
 
     if (isCurrentSession) {
       this.options.startNewSession({ lane: 'sessions' });
@@ -717,6 +864,11 @@ export class SessionViewController {
       return { ...session, name: nextName };
     });
 
+    if (changed) {
+      this.sessionSearchIndex.setSessions(this.sessions);
+      this.refreshSessionSearchState({ post: false });
+    }
+
     return changed;
   }
 
@@ -736,6 +888,11 @@ export class SessionViewController {
       changed = true;
       return { ...session, name: nextName };
     });
+
+    if (changed) {
+      this.sessionSearchIndex.setSessions(this.sessions);
+      this.refreshSessionSearchState({ post: false });
+    }
 
     return changed;
   }

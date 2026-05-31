@@ -232,6 +232,50 @@ suite('Pi session list', () => {
     }
   });
 
+  test('uses previous metadata for cheap changed-file progress rows', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tauren-sessions-cache-stale-progress-'));
+
+    try {
+      const sessionPath = join(dir, 'renamed.jsonl');
+      await writeFile(sessionPath, [
+        JSON.stringify({ type: 'session', version: 3, id: 'renamed', timestamp: '2026-01-01T00:00:00.000Z', cwd: '/workspace' }),
+        JSON.stringify({ type: 'message', id: 'u1', parentId: null, message: { role: 'user', timestamp: 1767225601000, content: 'Original prompt' } }),
+        JSON.stringify({ type: 'session_info', id: 'n1', timestamp: '2026-01-01T00:00:02.000Z', name: 'Renamed session' })
+      ].join('\n') + '\n');
+
+      const progress: Array<{ modified: string; firstMessage: string; metadataState?: string }> = [];
+      const sessions = await listPiSessions({
+        sessionDir: dir,
+        previousSessions: [{
+          path: sessionPath,
+          id: 'renamed',
+          cwd: '/workspace',
+          created: '2026-01-01T00:00:00.000Z',
+          modified: '2026-01-01T00:00:01.000Z',
+          messageCount: 1,
+          firstMessage: 'Original prompt'
+        }],
+        onProgress: (items) => {
+          if (items[0]) {
+            progress.push({
+              modified: items[0].modified,
+              firstMessage: items[0].firstMessage,
+              metadataState: items[0].metadataState
+            });
+          }
+        }
+      });
+
+      assert.strictEqual(progress[0].modified, '2026-01-01T00:00:01.000Z');
+      assert.strictEqual(progress[0].firstMessage, 'Original prompt');
+      assert.strictEqual(progress[0].metadataState, 'loading');
+      assert.strictEqual(sessions[0].modified, '2026-01-01T00:00:01.000Z');
+      assert.strictEqual(sessions[0].name, 'Renamed session');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test('publishes cheap loading rows before exact metadata is parsed', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'tauren-sessions-cheap-progress-'));
 

@@ -11,6 +11,7 @@ import type {
   WebviewPromptContextAttachment,
   WebviewPromptImageAttachment,
   WebviewSessionItem,
+  WebviewSessionSearchState,
   WebviewStartupResourceSection,
   WebviewSessionItemCommand,
   WebviewSettingsSection,
@@ -40,6 +41,7 @@ export type FileSuggestion = WebviewFileSuggestion;
 export type PromptContextAttachment = WebviewPromptContextAttachment;
 export type PromptImageAttachment = WebviewPromptImageAttachment;
 export type SessionItem = WebviewSessionItem;
+export type SessionSearchState = WebviewSessionSearchState;
 export type TreeItem = WebviewTreeItem;
 
 export type ChatImage = {
@@ -126,6 +128,7 @@ export type WebviewState = {
   sessions: SessionItem[];
   sessionsRefreshing: boolean;
   sessionsError: string;
+  sessionSearch: SessionSearchState;
   currentSessionFile: string;
   currentSessionName: string;
   treeItems: TreeItem[];

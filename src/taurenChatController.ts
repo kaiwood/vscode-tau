@@ -285,6 +285,9 @@ export class TaurenChatController {
       case 'refreshSessions':
         await this.sessionView.refreshSessions();
         return;
+      case 'searchSessions':
+        this.sessionView.searchSessions(message);
+        return;
       case 'showCurrentChanges':
         await this.sessionView.showCurrentSessionChanges();
         return;

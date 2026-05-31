@@ -5990,6 +5990,9 @@ ${after}`;
       return [];
     }
     const normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery && filter.matchedSessionPaths) {
+      return getMatchedSessionIndexes(sessions, filter.matchedSessionPaths, filter.namedOnly);
+    }
     const indexes = [];
     for (let index = 0; index < sessions.length; index += 1) {
       const session = sessions[index];
@@ -5999,6 +6002,26 @@ ${after}`;
       if (normalizedQuery && !getSessionDisplayName(session).toLowerCase().includes(normalizedQuery)) {
         continue;
       }
+      indexes.push(index);
+    }
+    return indexes;
+  }
+  function getMatchedSessionIndexes(sessions, matchedSessionPaths, namedOnly) {
+    const sessionIndexes = /* @__PURE__ */ new Map();
+    for (let index = 0; index < sessions.length; index += 1) {
+      sessionIndexes.set(sessions[index].path, index);
+    }
+    const indexes = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const path of matchedSessionPaths) {
+      const index = sessionIndexes.get(path);
+      if (index === void 0 || seen.has(index)) {
+        continue;
+      }
+      if (namedOnly && !sessions[index].name?.trim()) {
+        continue;
+      }
+      seen.add(index);
       indexes.push(index);
     }
     return indexes;
@@ -6721,6 +6744,7 @@ ${after}`;
   var sessionListVirtualOverscan = 8;
   var defaultSessionListItemHeight = 54;
   var defaultSessionListTopOffset = 72;
+  var sessionSearchDebounceMs = 150;
   var SessionViewController = class {
     constructor(options) {
       this.options = options;
@@ -6750,6 +6774,8 @@ ${after}`;
     sessionListSelectedIndex = 0;
     sessionSearchQuery = "";
     sessionNamedOnlyFilter = false;
+    sessionSearchRequestId = 0;
+    pendingSessionSearchRequest;
     sessionPointerHoverEnabled = false;
     openSessionListMenuIndex;
     openSessionListMenuCommandIndex = 0;
@@ -6875,7 +6901,9 @@ ${after}`;
         this.openSessionListMenuPosition = void 0;
         this.clearPendingSessionItemMenuClose();
       }
-      header.textContent = state2.sessionsRefreshing ? "Loading sessions..." : filtersActive && visibleIndexes.length !== count ? visibleIndexes.length + " of " + count + " sessions" : count === 1 ? "1 session" : count + " sessions";
+      const headerText = state2.sessionsRefreshing ? "Loading sessions..." : filtersActive && visibleIndexes.length !== count ? visibleIndexes.length + " of " + count + " sessions" : count === 1 ? "1 session" : count + " sessions";
+      const searchStatusText = this.getSessionSearchStatusText();
+      header.textContent = searchStatusText ? `${headerText} \xB7 ${searchStatusText}` : headerText;
       this.options.sessionsElement.append(header);
       if (state2.sessionsError) {
         const error = document.createElement("div");
@@ -7638,6 +7666,7 @@ ${after}`;
         return;
       }
       this.sessionSearchQuery = value;
+      this.scheduleSessionSearchRequest();
       this.closeSessionItemMenus();
       this.renderSessions();
       requestAnimationFrame(() => {
@@ -7647,6 +7676,24 @@ ${after}`;
           input.setSelectionRange(selectionStart, selectionEnd ?? selectionStart);
         }
       });
+    }
+    scheduleSessionSearchRequest() {
+      if (this.pendingSessionSearchRequest) {
+        clearTimeout(this.pendingSessionSearchRequest);
+        this.pendingSessionSearchRequest = void 0;
+      }
+      const requestId = this.sessionSearchRequestId + 1;
+      this.sessionSearchRequestId = requestId;
+      const query = this.sessionSearchQuery.trim();
+      const namedOnly = this.sessionNamedOnlyFilter;
+      if (!query) {
+        this.options.postMessage({ type: "searchSessions", requestId, query: "", namedOnly });
+        return;
+      }
+      this.pendingSessionSearchRequest = setTimeout(() => {
+        this.pendingSessionSearchRequest = void 0;
+        this.options.postMessage({ type: "searchSessions", requestId, query, namedOnly });
+      }, sessionSearchDebounceMs);
     }
     handleSessionSearchKeydown(event, input) {
       if (event.altKey || event.ctrlKey || event.metaKey) {
@@ -7718,8 +7765,44 @@ ${after}`;
     }
     toggleNamedOnlyFilter() {
       this.sessionNamedOnlyFilter = !this.sessionNamedOnlyFilter;
+      this.scheduleSessionSearchRequest();
       this.closeSessionItemMenus();
       this.renderSessions();
+    }
+    getCurrentHostSessionSearch() {
+      const state2 = this.options.getState();
+      const query = this.sessionSearchQuery.trim();
+      const search = state2.sessionSearch;
+      if (!query || !search || search.requestId !== this.sessionSearchRequestId) {
+        return void 0;
+      }
+      return search.query === query && search.namedOnly === this.sessionNamedOnlyFilter ? search : void 0;
+    }
+    getSessionSearchStatusText() {
+      const query = this.sessionSearchQuery.trim();
+      const state2 = this.options.getState();
+      const currentSearch = this.getCurrentHostSessionSearch();
+      const search = currentSearch ?? state2.sessionSearch;
+      if (query && this.pendingSessionSearchRequest) {
+        return "Searching sessions\u2026";
+      }
+      if (!search || search.totalCount === 0) {
+        return "";
+      }
+      if (query && !currentSearch) {
+        return "Searching titles while full-content search catches up\u2026";
+      }
+      if (search.status === "error") {
+        return search.error || "Session search index failed.";
+      }
+      if (search.status === "indexing") {
+        const count = Math.min(search.indexedCount, search.totalCount);
+        return query ? `Full-content search indexing ${count}/${search.totalCount} sessions\u2026` : `Indexing session search ${count}/${search.totalCount}\u2026`;
+      }
+      if (query && search.status === "ready") {
+        return "Full-content search ready.";
+      }
+      return "";
     }
     hasActiveSessionListFilters() {
       return Boolean(this.sessionSearchQuery.trim()) || this.sessionNamedOnlyFilter;
@@ -7762,8 +7845,10 @@ ${after}`;
     }
     getVisibleSessionIndexes() {
       const state2 = this.options.getState();
+      const hostSearch = this.getCurrentHostSessionSearch();
       return getVisibleSessionIndexes(Array.isArray(state2.sessions) ? state2.sessions : [], this.sessionSearchQuery, {
-        namedOnly: this.sessionNamedOnlyFilter
+        namedOnly: this.sessionNamedOnlyFilter,
+        matchedSessionPaths: hostSearch?.matchedSessionPaths
       });
     }
     isSessionIndexVisible(index) {
@@ -8546,6 +8631,7 @@ ${after}`;
     sessions: [],
     sessionsRefreshing: false,
     sessionsError: "",
+    sessionSearch: createEmptySessionSearchState(),
     currentSessionFile: "",
     currentSessionName: "",
     treeItems: [],
@@ -8697,6 +8783,7 @@ ${after}`;
       sessions: Array.isArray(record.sessions) ? record.sessions : [],
       sessionsRefreshing: Boolean(record.sessionsRefreshing),
       sessionsError: typeof record.sessionsError === "string" ? record.sessionsError : "",
+      sessionSearch: parseSessionSearchState(record.sessionSearch, previousState?.sessionSearch),
       currentSessionFile: typeof record.currentSessionFile === "string" ? record.currentSessionFile : "",
       currentSessionName: typeof record.currentSessionName === "string" ? record.currentSessionName : "",
       treeItems: Array.isArray(record.treeItems) ? record.treeItems : [],
@@ -8704,6 +8791,37 @@ ${after}`;
       treeError: typeof record.treeError === "string" ? record.treeError : "",
       sessionLoading: Boolean(record.sessionLoading),
       perfEnabled: Boolean(record.perfEnabled)
+    };
+  }
+  function createEmptySessionSearchState() {
+    return {
+      requestId: 0,
+      query: "",
+      namedOnly: false,
+      status: "idle",
+      matchedSessionPaths: [],
+      indexedCount: 0,
+      totalCount: 0
+    };
+  }
+  function parseSessionSearchState(value, fallback) {
+    if (!isRecord6(value)) {
+      return fallback ?? createEmptySessionSearchState();
+    }
+    const status = value.status === "indexing" || value.status === "ready" || value.status === "error" ? value.status : "idle";
+    const requestId = parseNonNegativeInteger(value.requestId, 0);
+    const indexedCount = parseNonNegativeInteger(value.indexedCount, 0);
+    const totalCount = parseNonNegativeInteger(value.totalCount, 0);
+    const matchedSessionPaths = Array.isArray(value.matchedSessionPaths) ? value.matchedSessionPaths.filter((path) => typeof path === "string" && path.length > 0) : [];
+    return {
+      requestId,
+      query: typeof value.query === "string" ? value.query : "",
+      namedOnly: Boolean(value.namedOnly),
+      status,
+      matchedSessionPaths,
+      indexedCount,
+      totalCount,
+      ...typeof value.error === "string" && value.error ? { error: value.error } : {}
     };
   }
   function parsePromptImages(value) {

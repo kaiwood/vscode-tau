@@ -206,6 +206,10 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'authRefresh' }), { type: 'authRefresh' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'authCancel' }), { type: 'authCancel' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'refreshSessions' }), { type: 'refreshSessions' });
+    assert.deepStrictEqual(
+      parseWebviewMessage({ type: 'searchSessions', requestId: 1, query: 'session list', namedOnly: true }),
+      { type: 'searchSessions', requestId: 1, query: 'session list', namedOnly: true }
+    );
     assert.deepStrictEqual(parseWebviewMessage({ type: 'showCurrentChanges' }), { type: 'showCurrentChanges' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'dismissWelcome' }), { type: 'dismissWelcome' });
     assert.deepStrictEqual(
@@ -357,6 +361,9 @@ suite('Chat webview helpers', () => {
     assert.deepStrictEqual(parseWebviewMessage({ type: 'authLogout', providerId: 42 }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'openExternal', url: 'file:///tmp/session.html' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'submit', text: 42 }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'searchSessions', requestId: 0, query: 'x', namedOnly: false }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'searchSessions', requestId: 1, query: 42, namedOnly: false }), { type: 'unknown' });
+    assert.deepStrictEqual(parseWebviewMessage({ type: 'searchSessions', requestId: 1, query: 'x', namedOnly: 'yes' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'selectSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'deleteSession', sessionPath: '' }), { type: 'unknown' });
     assert.deepStrictEqual(parseWebviewMessage({ type: 'sessionItemCommand', sessionPath: '', command: 'compact' }), { type: 'unknown' });

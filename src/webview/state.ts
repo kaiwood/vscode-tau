@@ -51,6 +51,7 @@ export const initialWebviewState: WebviewState = {
   sessions: [],
   sessionsRefreshing: false,
   sessionsError: '',
+  sessionSearch: createEmptySessionSearchState(),
   currentSessionFile: '',
   currentSessionName: '',
   treeItems: [],
@@ -230,6 +231,7 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     sessions: Array.isArray(record.sessions) ? record.sessions : [],
     sessionsRefreshing: Boolean(record.sessionsRefreshing),
     sessionsError: typeof record.sessionsError === 'string' ? record.sessionsError : '',
+    sessionSearch: parseSessionSearchState(record.sessionSearch, previousState?.sessionSearch),
     currentSessionFile: typeof record.currentSessionFile === 'string' ? record.currentSessionFile : '',
     currentSessionName: typeof record.currentSessionName === 'string' ? record.currentSessionName : '',
     treeItems: Array.isArray(record.treeItems) ? record.treeItems : [],
@@ -237,6 +239,48 @@ export function parseWebviewStateMessage(data: unknown, previousState?: WebviewS
     treeError: typeof record.treeError === 'string' ? record.treeError : '',
     sessionLoading: Boolean(record.sessionLoading),
     perfEnabled: Boolean(record.perfEnabled)
+  };
+}
+
+function createEmptySessionSearchState(): WebviewState['sessionSearch'] {
+  return {
+    requestId: 0,
+    query: '',
+    namedOnly: false,
+    status: 'idle',
+    matchedSessionPaths: [],
+    indexedCount: 0,
+    totalCount: 0
+  };
+}
+
+function parseSessionSearchState(
+  value: unknown,
+  fallback: WebviewState['sessionSearch'] | undefined
+): WebviewState['sessionSearch'] {
+  if (!isRecord(value)) {
+    return fallback ?? createEmptySessionSearchState();
+  }
+
+  const status = value.status === 'indexing' || value.status === 'ready' || value.status === 'error'
+    ? value.status
+    : 'idle';
+  const requestId = parseNonNegativeInteger(value.requestId, 0);
+  const indexedCount = parseNonNegativeInteger(value.indexedCount, 0);
+  const totalCount = parseNonNegativeInteger(value.totalCount, 0);
+  const matchedSessionPaths = Array.isArray(value.matchedSessionPaths)
+    ? value.matchedSessionPaths.filter((path): path is string => typeof path === 'string' && path.length > 0)
+    : [];
+
+  return {
+    requestId,
+    query: typeof value.query === 'string' ? value.query : '',
+    namedOnly: Boolean(value.namedOnly),
+    status,
+    matchedSessionPaths,
+    indexedCount,
+    totalCount,
+    ...(typeof value.error === 'string' && value.error ? { error: value.error } : {})
   };
 }
 

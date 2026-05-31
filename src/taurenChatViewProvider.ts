@@ -5,6 +5,7 @@ import {
   parseWebviewMessage
 } from './sidebar/chatWebview';
 import type { SettingValue, TaurenSettingId } from './settings/settingsRegistry';
+import type { SessionListProgressOptions } from './controller/types';
 import type { WebviewLane, WebviewMessage, WebviewPerfEvent, WebviewSessionItem, WebviewStateMessage } from './webviewProtocol/types';
 import { type PiClientFactory, type PiClient } from './pi/clientTypes';
 import type { PiClientOptions } from './pi/types';
@@ -218,7 +219,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       onSessionFileChange: (sessionFile) => this.writeCurrentSessionFile(sessionFile),
       loadSessionDiffSnapshot: (sessionFile) => readSessionDiffSnapshot(this.workspaceState, sessionFile),
       saveSessionDiffSnapshot: (sessionFile, snapshot) => writeSessionDiffSnapshot(this.workspaceState, sessionFile, snapshot),
-      listSessions: (cwd, currentSessionFile, options) => this.listSessionsWithPerf(cwd, currentSessionFile, options?.onProgress),
+      listSessions: (cwd, currentSessionFile, options) => this.listSessionsWithPerf(cwd, currentSessionFile, options),
       deleteSession: (sessionPath, displayName) => this.deleteSession(sessionPath, displayName),
       showSessionChanges: (sessionPath, displayName) => this.sessionDiffViewer.showSessionChanges(sessionPath, displayName)
     });
@@ -282,7 +283,7 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
   private async listSessionsWithPerf(
     cwd: string | undefined,
     currentSessionFile: string | undefined,
-    onProgress: ((sessions: WebviewSessionItem[]) => void) | undefined
+    options: SessionListProgressOptions | undefined
   ): Promise<WebviewSessionItem[]> {
     const timer = this.perf.start('sessionList.load');
     let metrics: { sessionCount: number; totalBytes: number; cacheHits: number; cacheMisses: number } | undefined;
@@ -290,7 +291,8 @@ export class TaurenChatViewProvider implements vscode.WebviewViewProvider, vscod
       cwd,
       currentSessionFile,
       sessionMetadataCacheFile: getSessionMetadataCacheFile(this.sessionMetadataStorageUri),
-      onProgress,
+      onProgress: options?.onProgress,
+      previousSessions: options?.previousSessions,
       ...(this.perf.enabled ? {
         onMetrics: (nextMetrics) => {
           metrics = nextMetrics;

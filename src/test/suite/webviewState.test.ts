@@ -76,6 +76,15 @@ suite('Webview state helpers', () => {
       sessions: [{ path: '/session.jsonl' }],
       sessionsRefreshing: true,
       sessionsError: 'failed',
+      sessionSearch: {
+        requestId: 2,
+        query: 'needle',
+        namedOnly: true,
+        status: 'indexing',
+        matchedSessionPaths: ['/session.jsonl', 42],
+        indexedCount: 1,
+        totalCount: 2
+      },
       currentSessionFile: '/session.jsonl',
       currentSessionName: 'Session',
       treeItems: [{ entryId: 'entry-1', role: 'user', text: 'Prompt', current: true }],
@@ -106,6 +115,15 @@ suite('Webview state helpers', () => {
     });
     assert.strictEqual(parsed.auth.progress?.userCode, 'ABCD-EFGH');
     assert.strictEqual(parsed.sessions[0]?.path, '/session.jsonl');
+    assert.deepStrictEqual(parsed.sessionSearch, {
+      requestId: 2,
+      query: 'needle',
+      namedOnly: true,
+      status: 'indexing',
+      matchedSessionPaths: ['/session.jsonl'],
+      indexedCount: 1,
+      totalCount: 2
+    });
     assert.strictEqual(parsed.treeItems[0]?.entryId, 'entry-1');
     assert.strictEqual(parsed.sessionLoading, true);
     assert.strictEqual(parsed.composerTextMode, 'append');
