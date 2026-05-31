@@ -5800,17 +5800,26 @@ ${after}`;
   }
 
   // src/webview/sessions/sessionElements.ts
+  function getSessionIndicatorKinds(session) {
+    const indicators = [];
+    if (session.liveStatus === "running" || session.liveStatus === "error") {
+      indicators.push(session.liveStatus);
+    } else if (session.liveStatus === "done" && !session.current) {
+      indicators.push("done");
+    }
+    return indicators;
+  }
   function createSessionItemElement(options) {
     const { session, index } = options;
     const item = document.createElement("div");
     item.id = "session-" + index;
-    item.className = "sessions__item" + (index === options.selectedIndex ? " sessions__item--active" : "") + (session.current ? " sessions__item--current" : "") + (session.metadataState === "loading" ? " sessions__item--loading" : "") + (session.liveStatus ? " sessions__item--" + session.liveStatus : "") + (session.unread ? " sessions__item--unread" : "");
+    item.className = "sessions__item" + (index === options.selectedIndex ? " sessions__item--active" : "") + (session.current ? " sessions__item--current" : "") + (session.metadataState === "loading" ? " sessions__item--loading" : "") + (session.liveStatus ? " sessions__item--" + session.liveStatus : "");
     item.setAttribute("role", "option");
     item.setAttribute("aria-selected", index === options.selectedIndex ? "true" : "false");
     item.setAttribute("data-index", String(index));
     const prefix = document.createElement("span");
     prefix.className = "sessions__prefix";
-    prefix.textContent = (session.liveStatus === "running" ? "\u25CF " : "") + buildSessionTreePrefix(session);
+    prefix.textContent = buildSessionTreePrefix(session);
     item.append(prefix);
     const title = document.createElement("span");
     title.className = "sessions__title";
@@ -5941,6 +5950,10 @@ ${after}`;
   function createSessionItemMenuElement(options) {
     const wrap = document.createElement("span");
     wrap.className = "sessions__menu-wrap";
+    const indicators = createSessionIndicatorsElement(options.session);
+    if (indicators) {
+      wrap.append(indicators);
+    }
     const button = document.createElement("button");
     button.type = "button";
     button.className = "sessions__menu-button";
@@ -5967,6 +5980,31 @@ ${after}`;
     }
     wrap.append(menu);
     return wrap;
+  }
+  function createSessionIndicatorsElement(session) {
+    const indicatorKinds = getSessionIndicatorKinds(session);
+    if (indicatorKinds.length === 0) {
+      return void 0;
+    }
+    const indicators = document.createElement("span");
+    indicators.className = "sessions__indicators";
+    indicators.title = indicatorKinds.map(getSessionIndicatorLabel).join(" \xB7 ");
+    indicators.setAttribute("aria-label", indicators.title);
+    for (const kind of indicatorKinds) {
+      const indicator = document.createElement("span");
+      indicator.className = "sessions__indicator sessions__indicator--" + kind;
+      indicators.append(indicator);
+    }
+    return indicators;
+  }
+  function getSessionIndicatorLabel(kind) {
+    if (kind === "running") {
+      return "Running";
+    }
+    if (kind === "done") {
+      return "Ready";
+    }
+    return "Error";
   }
   function createSessionItemMenuButton(command, commandIndex, options) {
     const button = document.createElement("button");

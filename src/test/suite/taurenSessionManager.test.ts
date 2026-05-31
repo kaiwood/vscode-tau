@@ -16,7 +16,7 @@ import type {
 } from '../../pi/types';
 
 suite('TaurenSessionManager', () => {
-  test('tracks background session live status, unread state, and active persistence', async () => {
+  test('tracks background session live status and active persistence', async () => {
     const firstClient = new FakePiClient({
       state: {
         sessionFile: '/sessions/one.jsonl',
@@ -39,7 +39,6 @@ suite('TaurenSessionManager', () => {
 
     let backgroundSession = findSession(lastState(harness), '/sessions/one.jsonl');
     assert.strictEqual(backgroundSession?.liveStatus, 'running');
-    assert.strictEqual(backgroundSession?.unread, false);
     assert.strictEqual(sessionFiles.at(-1), undefined);
 
     const persistenceCountBeforeBackgroundEnd = sessionFiles.length;
@@ -48,12 +47,13 @@ suite('TaurenSessionManager', () => {
 
     backgroundSession = findSession(lastState(harness), '/sessions/one.jsonl');
     assert.strictEqual(backgroundSession?.liveStatus, 'done');
-    assert.strictEqual(backgroundSession?.unread, true);
     assert.strictEqual(sessionFiles.length, persistenceCountBeforeBackgroundEnd);
 
     await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
     await flushPromises();
 
+    backgroundSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(backgroundSession?.liveStatus, 'idle');
     assert.strictEqual(sessionFiles.at(-1), '/sessions/one.jsonl');
     assert.strictEqual(lastState(harness).currentSessionFile, '/sessions/one.jsonl');
     harness.manager.dispose();
@@ -611,7 +611,6 @@ suite('TaurenSessionManager', () => {
     assert.strictEqual(harness.customUiMessages.some((message) => message.type === 'customUiShow'), false);
     const backgroundSession = findSession(lastState(harness), '/sessions/one.jsonl');
     assert.strictEqual(backgroundSession?.customUiOpen, true);
-    assert.strictEqual(backgroundSession?.unread, true);
 
     await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
     await flushPromises();

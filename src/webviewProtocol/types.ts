@@ -201,7 +201,6 @@ export type WebviewSessionItem = {
   ancestorContinues: boolean[];
   current: boolean;
   liveStatus?: 'idle' | 'running' | 'done' | 'error';
-  unread?: boolean;
   customUiOpen?: boolean;
 };
 

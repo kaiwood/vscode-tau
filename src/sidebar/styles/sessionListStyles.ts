@@ -335,13 +335,33 @@ export const sessionListStyles = /* css */ `    .sessions__search {
       white-space: nowrap;
     }
 
-    .sessions__item--running .sessions__prefix {
-      color: var(--vscode-testing-iconQueued, var(--vscode-progressBar-background, var(--vscode-focusBorder)));
+    .sessions__indicators {
+      display: inline-flex;
+      flex: 0 0 auto;
+      gap: 4px;
+      align-items: center;
+      min-height: 22px;
     }
 
-    .sessions__item--unread .sessions__title::after {
-      content: ' •';
-      color: var(--vscode-focusBorder);
+    .sessions__indicator {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--vscode-descriptionForeground);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-sideBar-background) 70%, transparent);
+    }
+
+    .sessions__indicator--running {
+      background: var(--vscode-testing-iconQueued, var(--vscode-terminal-ansiYellow, var(--vscode-progressBar-background, var(--vscode-focusBorder))));
+    }
+
+    .sessions__indicator--done {
+      background: var(--vscode-testing-iconPassed, var(--vscode-terminal-ansiGreen, var(--vscode-charts-green, var(--vscode-foreground))));
+    }
+
+    .sessions__indicator--error {
+      background: var(--vscode-testing-iconFailed, var(--vscode-errorForeground));
     }
 
     .sessions__cwd {
@@ -356,11 +376,15 @@ export const sessionListStyles = /* css */ `    .sessions__search {
 
     .sessions__menu-wrap {
       position: relative;
+      display: inline-flex;
       grid-column: 3;
       grid-row: 1 / 3;
-      align-self: start;
-      width: 22px;
-      height: 22px;
+      gap: 6px;
+      align-items: start;
+      justify-content: flex-end;
+      justify-self: end;
+      min-width: 22px;
+      min-height: 22px;
     }
 
     .sessions__menu-button {

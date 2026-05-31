@@ -73,7 +73,6 @@ function createSession(overrides: Partial<WebviewSessionItem>): WebviewSessionIt
     ancestorContinues: overrides.ancestorContinues ?? [],
     current: overrides.current ?? false,
     liveStatus: overrides.liveStatus,
-    unread: overrides.unread,
     customUiOpen: overrides.customUiOpen
   };
 }

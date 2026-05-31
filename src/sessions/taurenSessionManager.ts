@@ -66,7 +66,6 @@ type OpenSession = {
   state: WebviewStateMessage | undefined;
   sessionFile: string | undefined;
   status: OpenSessionStatus;
-  unread: boolean;
   title: string;
   customUiOpen: boolean;
   customUiHost: ExtensionCustomUiHost | undefined;
@@ -328,7 +327,6 @@ export class TaurenSessionManager {
     this.sessionCatalog = [];
     active.sessionFile = sessionFile;
     active.title = sessionFile ? 'Loading session' : 'New session';
-    active.unread = false;
     active.status = 'idle';
     this.cancelPendingExtensionEditor();
     active.customUiHost?.cancelActive();
@@ -496,7 +494,6 @@ export class TaurenSessionManager {
       state: undefined,
       sessionFile: initialSessionFile,
       status: 'idle',
-      unread: false,
       title: options.initial ? 'Current session' : options.sessionFile ? 'Loading session' : 'New session',
       customUiOpen: false,
       customUiHost,
@@ -553,7 +550,9 @@ export class TaurenSessionManager {
     }
 
     this.activeSessionId = id;
-    session.unread = false;
+    if (session.status === 'done') {
+      session.status = 'idle';
+    }
     session.forceFullStatePost = true;
 
     if (previousActive.id !== session.id) {
@@ -842,10 +841,6 @@ export class TaurenSessionManager {
 
     session.customUiOpen = active;
 
-    if (active && id !== this.activeSessionId) {
-      session.unread = true;
-    }
-
     const disposedInactiveSession = this.reconcileSessionDisposal();
 
     if (id === this.activeSessionId || this.active().state?.lane === 'sessions' || disposedInactiveSession) {
@@ -876,7 +871,6 @@ export class TaurenSessionManager {
       return;
     }
 
-    const wasBusy = session.state?.busy ?? false;
     const previousSessionFile = getSessionFile(session.sessionFile);
     const nextSessionFile = getSessionFile(message.currentSessionFile);
     const storedMessage = resolveWebviewStateMessageMessages(message, session.state);
@@ -888,12 +882,9 @@ export class TaurenSessionManager {
       this.sessionCatalog = message.sessions;
     }
     session.sessionFile = nextSessionFile;
-    session.status = getStatus(storedMessage, session.status);
+    const nextStatus = getStatus(storedMessage, session.status);
+    session.status = id === this.activeSessionId && nextStatus === 'done' ? 'idle' : nextStatus;
     session.title = getOpenSessionTitle(storedMessage, resetToEmptySession ? 'New session' : session.title);
-
-    if (id !== this.activeSessionId && (storedMessage.busy || wasBusy !== storedMessage.busy || messageCount > 0)) {
-      session.unread = true;
-    }
 
     if (id === this.activeSessionId) {
       this.updateActivePersistence(session);
@@ -949,7 +940,7 @@ export class TaurenSessionManager {
     this.options.postState({
       ...outboundState,
       ...(composerPaste ? { composerPaste } : {}),
-      sessions: augmentSessions(sessions ?? [], this.sessions, this.activeSessionId),
+      sessions: augmentSessions(sessions ?? [], this.sessions),
       currentSessionName: state.currentSessionName || active.title,
       extensionStatus: this.extensionSettings.statusBarEnabled ? formatExtensionStatuses(active.extensionStatuses) : [],
       extensionFooter: this.extensionSettings.statusBarEnabled ? active.extensionFooterHost.getEntry() : undefined,
@@ -1160,7 +1151,7 @@ function getStatus(message: WebviewStateMessage, previous: OpenSessionStatus): O
     return 'error';
   }
 
-  if (previous === 'running' || messages.length > 0) {
+  if (previous === 'running' || (previous === 'done' && messages.length > 0)) {
     return 'done';
   }
 
@@ -1183,7 +1174,7 @@ function getOpenSessionTitle(message: WebviewStateMessage, fallback: string): st
   return fallback;
 }
 
-function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSession[], activeSessionId: string): WebviewSessionItem[] {
+function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSession[]): WebviewSessionItem[] {
   return sessions.map((session) => {
     const sessionPath = normalizeSessionPath(session.path);
     const openSession = openSessions.find((entry) => {
@@ -1201,7 +1192,6 @@ function augmentSessions(sessions: WebviewSessionItem[], openSessions: OpenSessi
       ...session,
       name,
       liveStatus: openSession.status,
-      unread: openSession.unread || (openSession.customUiOpen && openSession.id !== activeSessionId),
       customUiOpen: openSession.customUiOpen
     };
   });

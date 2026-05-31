@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { getSessionIndicatorKinds } from '../../webview/sessions/sessionElements';
 import { getSessionDisplayName, getSessionNameEditValue } from '../../webview/sessions/sessionFormat';
 import type { SessionItem } from '../../webview/types';
 
@@ -22,6 +23,14 @@ suite('Webview session format', () => {
     assert.strictEqual(getSessionDisplayName(session), 'Loading metadata…');
     assert.strictEqual(getSessionNameEditValue(session), '');
   });
+
+  test('uses separate right-side indicators for live status', () => {
+    assert.deepStrictEqual(getSessionIndicatorKinds(createSession({ liveStatus: 'running' })), ['running']);
+    assert.deepStrictEqual(getSessionIndicatorKinds(createSession({ liveStatus: 'done' })), ['done']);
+    assert.deepStrictEqual(getSessionIndicatorKinds(createSession({ current: true, liveStatus: 'done' })), []);
+    assert.deepStrictEqual(getSessionIndicatorKinds(createSession({ liveStatus: 'error' })), ['error']);
+    assert.deepStrictEqual(getSessionIndicatorKinds(createSession({ liveStatus: 'idle' })), []);
+  });
 });
 
 function createSession(overrides: Partial<SessionItem>): SessionItem {
@@ -40,7 +49,6 @@ function createSession(overrides: Partial<SessionItem>): SessionItem {
     isLast: overrides.isLast ?? true,
     ancestorContinues: overrides.ancestorContinues ?? [],
     current: overrides.current ?? false,
-    liveStatus: overrides.liveStatus,
-    unread: overrides.unread
+    liveStatus: overrides.liveStatus
   };
 }

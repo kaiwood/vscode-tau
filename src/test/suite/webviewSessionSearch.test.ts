@@ -83,7 +83,6 @@ function createSession(overrides: Partial<SessionItem>): SessionItem {
     isLast: overrides.isLast ?? true,
     ancestorContinues: overrides.ancestorContinues ?? [],
     current: overrides.current ?? false,
-    liveStatus: overrides.liveStatus,
-    unread: overrides.unread
+    liveStatus: overrides.liveStatus
   };
 }
