@@ -67,6 +67,7 @@ type OpenSession = {
   sessionFile: string | undefined;
   status: OpenSessionStatus;
   readyUntilUserReply: boolean;
+  recoveredErrorAcknowledged: boolean;
   title: string;
   customUiOpen: boolean;
   customUiHost: ExtensionCustomUiHost | undefined;
@@ -334,6 +335,7 @@ export class TaurenSessionManager {
     active.title = sessionFile ? 'Loading session' : 'New session';
     active.status = 'idle';
     active.readyUntilUserReply = false;
+    active.recoveredErrorAcknowledged = false;
     this.cancelPendingExtensionEditor();
     active.customUiHost?.cancelActive();
     active.customUiOpen = false;
@@ -501,6 +503,7 @@ export class TaurenSessionManager {
       sessionFile: initialSessionFile,
       status: 'idle',
       readyUntilUserReply: false,
+      recoveredErrorAcknowledged: false,
       title: options.initial ? 'Current session' : options.sessionFile ? 'Loading session' : 'New session',
       customUiOpen: false,
       customUiHost,
@@ -557,9 +560,7 @@ export class TaurenSessionManager {
     }
 
     this.activeSessionId = id;
-    if (session.status === 'done' && !session.readyUntilUserReply) {
-      session.status = 'idle';
-    }
+    this.acknowledgeSessionStatusOnOpen(session);
     session.forceFullStatePost = true;
 
     if (previousActive.id !== session.id) {
@@ -696,6 +697,19 @@ export class TaurenSessionManager {
 
     session.readyUntilUserReply = false;
     if (session.status === 'done') {
+      session.status = 'idle';
+    }
+  }
+
+  private acknowledgeSessionStatusOnOpen(session: OpenSession): void {
+    if (session.status === 'error' && session.state && !endsWithError(session.state)) {
+      session.recoveredErrorAcknowledged = true;
+      session.readyUntilUserReply = endsWithOpenAssistantQuestion(session.state);
+      session.status = session.readyUntilUserReply ? 'done' : 'idle';
+      return;
+    }
+
+    if (session.status === 'done' && !session.readyUntilUserReply) {
       session.status = 'idle';
     }
   }
@@ -900,7 +914,10 @@ export class TaurenSessionManager {
       this.sessionCatalog = message.sessions;
     }
     session.sessionFile = nextSessionFile;
-    const nextStatus = getStatus(storedMessage, session.status);
+    if (endsWithError(storedMessage)) {
+      session.recoveredErrorAcknowledged = false;
+    }
+    const nextStatus = getStatus(storedMessage, session.status, session.recoveredErrorAcknowledged);
     session.readyUntilUserReply = nextStatus === 'done' && endsWithOpenAssistantQuestion(storedMessage);
     session.status = id === this.activeSessionId && nextStatus === 'done' && !session.readyUntilUserReply ? 'idle' : nextStatus;
     session.title = getOpenSessionTitle(storedMessage, resetToEmptySession ? 'New session' : session.title);
@@ -1159,14 +1176,14 @@ function countAvailableProviders(modelOptions: WebviewStateMessage['modelOptions
   return new Set((modelOptions ?? []).map((model) => model.provider).filter(Boolean)).size;
 }
 
-function getStatus(message: WebviewStateMessage, previous: OpenSessionStatus): OpenSessionStatus {
+function getStatus(message: WebviewStateMessage, previous: OpenSessionStatus, recoveredErrorAcknowledged: boolean): OpenSessionStatus {
   if (message.busy) {
     return 'running';
   }
 
   const messages = message.messages ?? [];
 
-  if (messages.some((entry) => entry.error)) {
+  if (endsWithError(message) || (messages.some((entry) => entry.error) && !recoveredErrorAcknowledged)) {
     return 'error';
   }
 
@@ -1175,6 +1192,11 @@ function getStatus(message: WebviewStateMessage, previous: OpenSessionStatus): O
   }
 
   return 'idle';
+}
+
+function endsWithError(message: WebviewStateMessage): boolean {
+  const messages = message.messages ?? [];
+  return messages[messages.length - 1]?.error === true;
 }
 
 function endsWithOpenAssistantQuestion(message: WebviewStateMessage): boolean {

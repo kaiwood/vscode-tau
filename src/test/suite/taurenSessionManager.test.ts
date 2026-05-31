@@ -110,6 +110,90 @@ suite('TaurenSessionManager', () => {
     harness.manager.dispose();
   });
 
+  test('dismisses recovered error status when opening a session', async () => {
+    const firstClient = new FakePiClient({ state: { sessionFile: '/sessions/one.jsonl' } });
+    const secondClient = new FakePiClient();
+    const harness = createManagerHarness([firstClient, secondClient], {
+      initialSessionFile: '/sessions/one.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => createSessionItems(currentSessionFile)
+    });
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'try this' });
+    firstClient.emit({ type: 'message_update', assistantMessageEvent: { type: 'error', reason: 'failed' } });
+    firstClient.emit({ type: 'agent_end' });
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'retry' });
+    firstClient.emit({ type: 'message_update', assistantMessageEvent: { type: 'text_delta', delta: 'Recovered.' } });
+    firstClient.emit({ type: 'agent_end' });
+    await harness.manager.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+    await harness.manager.handleWebviewMessage({ type: 'showLane', lane: 'sessions' });
+
+    let recoveredSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(recoveredSession?.liveStatus, 'error');
+
+    await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
+    await flushPromises();
+
+    recoveredSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(recoveredSession?.liveStatus, 'idle');
+    harness.manager.dispose();
+  });
+
+  test('keeps terminal error status when opening a session', async () => {
+    const firstClient = new FakePiClient({ state: { sessionFile: '/sessions/one.jsonl' } });
+    const secondClient = new FakePiClient();
+    const harness = createManagerHarness([firstClient, secondClient], {
+      initialSessionFile: '/sessions/one.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => createSessionItems(currentSessionFile)
+    });
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'try this' });
+    firstClient.emit({ type: 'message_update', assistantMessageEvent: { type: 'error', reason: 'failed' } });
+    firstClient.emit({ type: 'agent_end' });
+    await harness.manager.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+    await harness.manager.handleWebviewMessage({ type: 'showLane', lane: 'sessions' });
+
+    let failedSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(failedSession?.liveStatus, 'error');
+
+    await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
+    await flushPromises();
+
+    failedSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(failedSession?.liveStatus, 'error');
+    harness.manager.dispose();
+  });
+
+  test('shows ready after opening a recovered error session that ends with an assistant question', async () => {
+    const firstClient = new FakePiClient({ state: { sessionFile: '/sessions/one.jsonl' } });
+    const secondClient = new FakePiClient();
+    const harness = createManagerHarness([firstClient, secondClient], {
+      initialSessionFile: '/sessions/one.jsonl',
+      listSessions: async (_cwd, currentSessionFile) => createSessionItems(currentSessionFile)
+    });
+
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'try this' });
+    firstClient.emit({ type: 'message_update', assistantMessageEvent: { type: 'error', reason: 'failed' } });
+    firstClient.emit({ type: 'agent_end' });
+    await harness.manager.handleWebviewMessage({ type: 'submit', text: 'retry' });
+    firstClient.emit({ type: 'message_update', assistantMessageEvent: { type: 'text_delta', delta: 'Should I continue?' } });
+    firstClient.emit({ type: 'agent_end' });
+    await harness.manager.handleWebviewMessage({ type: 'newSession' });
+    await flushPromises();
+    await harness.manager.handleWebviewMessage({ type: 'showLane', lane: 'sessions' });
+
+    let recoveredSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(recoveredSession?.liveStatus, 'error');
+
+    await harness.manager.handleWebviewMessage({ type: 'selectSession', sessionPath: '/sessions/one.jsonl' });
+    await flushPromises();
+
+    recoveredSession = findSession(lastState(harness), '/sessions/one.jsonl');
+    assert.strictEqual(recoveredSession?.liveStatus, 'done');
+    harness.manager.dispose();
+  });
+
   test('surfaces extension status entries for the active session', async () => {
     const harness = createManagerHarness([new FakePiClient()]);
 
